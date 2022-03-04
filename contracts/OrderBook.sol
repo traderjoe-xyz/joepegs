@@ -41,7 +41,7 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
 
     /// @notice Mapping from NFT contract address => NFT token ID => maker orders
     mapping(address => mapping(uint256 => OrderTypes.MakerOrder[]))
-        public makerOrders;
+        private makerOrders;
 
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
@@ -66,6 +66,14 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
         );
         currencyManager = ICurrencyManager(_currencyManager);
         executionManager = IExecutionManager(_executionManager);
+    }
+
+    function getMakerOrders(address collection, uint256 tokenId)
+        external
+        view
+        returns (OrderTypes.MakerOrder[] memory)
+    {
+        return makerOrders[collection][tokenId];
     }
 
     function createMakerOrder(OrderTypes.MakerOrder calldata makerOrder)
