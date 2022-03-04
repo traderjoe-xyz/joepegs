@@ -21,16 +21,17 @@ import {IOrderBook} from "./interfaces/IOrderBook.sol";
 import {OrderTypes} from "./libraries/OrderTypes.sol";
 import {SignatureChecker} from "./libraries/SignatureChecker.sol";
 
+/**
+ * @title OrderBook
+ * @notice Manages and performs validation of orders placed on the exchange
+ */
 contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
 
-    bytes32 public immutable DOMAIN_SEPARATOR;
-
-    ICurrencyManager public currencyManager;
-    IExecutionManager public executionManager;
+    ILooksRareExchange public exchange;
 
     mapping(address => uint256) public userMinOrderNonce;
     mapping(address => mapping(uint256 => bool))
@@ -45,32 +46,21 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
 
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
-    event NewCurrencyManager(address indexed currencyManager);
-    event NewExecutionManager(address indexed executionManager);
+    event NewExchange(address indexed user, address newExchange);
 
-    /**
-     * @notice Constructor
-     * @param _currencyManager currency manager address
-     * @param _executionManager execution manager address
-     */
-    constructor(address _currencyManager, address _executionManager) {
-        // Calculate the domain separator
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f, // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-                0xda9101ba92939daf4bb2e18cd5f942363b9297fbc3232c9dd964abb1fb70ed71, // keccak256("LooksRareExchange")
-                0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6, // keccak256(bytes("1")) for versionId = 1
-                block.chainid,
-                address(this)
-            )
+    function setExchange(address _exchange) external onlyOwner {
+        require(
+            _exchange != address(0),
+            "OrderBook: Expected non-zero address for exchange"
         );
-        currencyManager = ICurrencyManager(_currencyManager);
-        executionManager = IExecutionManager(_executionManager);
+        exchange = ILooksRareExchange(_exchange);
+        emit NewExchange(msg.sender, _exchange);
     }
 
     function getMakerOrders(address collection, uint256 tokenId)
         external
         view
+        override
         returns (OrderTypes.MakerOrder[] memory)
     {
         return makerOrders[collection][tokenId];
@@ -149,38 +139,6 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Update currency manager
-     * @param _currencyManager new currency manager address
-     */
-    function updateCurrencyManager(address _currencyManager)
-        external
-        onlyOwner
-    {
-        require(
-            _currencyManager != address(0),
-            "Owner: Cannot be null address"
-        );
-        currencyManager = ICurrencyManager(_currencyManager);
-        emit NewCurrencyManager(_currencyManager);
-    }
-
-    /**
-     * @notice Update execution manager
-     * @param _executionManager new execution manager address
-     */
-    function updateExecutionManager(address _executionManager)
-        external
-        onlyOwner
-    {
-        require(
-            _executionManager != address(0),
-            "Owner: Cannot be null address"
-        );
-        executionManager = IExecutionManager(_executionManager);
-        emit NewExecutionManager(_executionManager);
-    }
-
-    /**
      * @notice Check whether user order nonce is executed or cancelled
      * @param user address of user
      * @param orderNonce nonce of the order
@@ -201,6 +159,11 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
         OrderTypes.MakerOrder calldata makerOrder,
         bytes32 orderHash
     ) public view override {
+        require(
+            address(exchange) != address(0),
+            "OrderBook: Expected exchange to be initialized"
+        );
+
         // Verify whether order nonce has expired
         require(
             (
@@ -225,20 +188,24 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
                 makerOrder.v,
                 makerOrder.r,
                 makerOrder.s,
-                DOMAIN_SEPARATOR
+                exchange.DOMAIN_SEPARATOR()
             ),
             "Signature: Invalid"
         );
 
         // Verify whether the currency is whitelisted
         require(
-            currencyManager.isCurrencyWhitelisted(makerOrder.currency),
+            exchange.currencyManager().isCurrencyWhitelisted(
+                makerOrder.currency
+            ),
             "Currency: Not whitelisted"
         );
 
         // Verify whether strategy can be executed
         require(
-            executionManager.isStrategyWhitelisted(makerOrder.strategy),
+            exchange.executionManager().isStrategyWhitelisted(
+                makerOrder.strategy
+            ),
             "Strategy: Not whitelisted"
         );
     }
