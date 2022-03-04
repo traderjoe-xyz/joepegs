@@ -12,6 +12,7 @@
     "abi"
   ],
   "scripts": {
+    "compile": "hardhat compile",
     "test": "hardhat test"
   },
   "devDependencies": {
