@@ -23,7 +23,10 @@ contract CurrencyManager is ICurrencyManager, Ownable {
      * @param currency address of the currency to add
      */
     function addCurrency(address currency) external override onlyOwner {
-        require(!_whitelistedCurrencies.contains(currency), "Currency: Already whitelisted");
+        require(
+            !_whitelistedCurrencies.contains(currency),
+            "Currency: Already whitelisted"
+        );
         _whitelistedCurrencies.add(currency);
 
         emit CurrencyWhitelisted(currency);
@@ -34,7 +37,10 @@ contract CurrencyManager is ICurrencyManager, Ownable {
      * @param currency address of the currency to remove
      */
     function removeCurrency(address currency) external override onlyOwner {
-        require(_whitelistedCurrencies.contains(currency), "Currency: Not whitelisted");
+        require(
+            _whitelistedCurrencies.contains(currency),
+            "Currency: Not whitelisted"
+        );
         _whitelistedCurrencies.remove(currency);
 
         emit CurrencyRemoved(currency);
@@ -44,14 +50,24 @@ contract CurrencyManager is ICurrencyManager, Ownable {
      * @notice Returns if a currency is in the system
      * @param currency address of the currency
      */
-    function isCurrencyWhitelisted(address currency) external view override returns (bool) {
+    function isCurrencyWhitelisted(address currency)
+        external
+        view
+        override
+        returns (bool)
+    {
         return _whitelistedCurrencies.contains(currency);
     }
 
     /**
      * @notice View number of whitelisted currencies
      */
-    function viewCountWhitelistedCurrencies() external view override returns (uint256) {
+    function viewCountWhitelistedCurrencies()
+        external
+        view
+        override
+        returns (uint256)
+    {
         return _whitelistedCurrencies.length();
     }
 

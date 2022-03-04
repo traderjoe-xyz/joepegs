@@ -26,7 +26,10 @@ contract StrategyStandardSaleForFixedPrice is IExecutionStrategy {
      * @param makerBid maker bid order
      * @return (whether strategy can be executed, tokenId to execute, amount of tokens to execute)
      */
-    function canExecuteTakerAsk(OrderTypes.TakerOrder calldata takerAsk, OrderTypes.MakerOrder calldata makerBid)
+    function canExecuteTakerAsk(
+        OrderTypes.TakerOrder calldata takerAsk,
+        OrderTypes.MakerOrder calldata makerBid
+    )
         external
         view
         override
@@ -52,7 +55,10 @@ contract StrategyStandardSaleForFixedPrice is IExecutionStrategy {
      * @param makerAsk maker ask order
      * @return (whether strategy can be executed, tokenId to execute, amount of tokens to execute)
      */
-    function canExecuteTakerBid(OrderTypes.TakerOrder calldata takerBid, OrderTypes.MakerOrder calldata makerAsk)
+    function canExecuteTakerBid(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    )
         external
         view
         override

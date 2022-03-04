@@ -74,7 +74,8 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     ITransferSelectorNFT public transferSelectorNFT;
 
     mapping(address => uint256) public userMinOrderNonce;
-    mapping(address => mapping(uint256 => bool)) private _isUserOrderNonceExecutedOrCancelled;
+    mapping(address => mapping(uint256 => bool))
+        private _isUserOrderNonceExecutedOrCancelled;
 
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
@@ -156,8 +157,14 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param minNonce minimum user nonce
      */
     function cancelAllOrdersForSender(uint256 minNonce) external {
-        require(minNonce > userMinOrderNonce[msg.sender], "Cancel: Order nonce lower than current");
-        require(minNonce < userMinOrderNonce[msg.sender] + 500000, "Cancel: Cannot cancel more orders");
+        require(
+            minNonce > userMinOrderNonce[msg.sender],
+            "Cancel: Order nonce lower than current"
+        );
+        require(
+            minNonce < userMinOrderNonce[msg.sender] + 500000,
+            "Cancel: Cannot cancel more orders"
+        );
         userMinOrderNonce[msg.sender] = minNonce;
 
         emit CancelAllOrders(msg.sender, minNonce);
@@ -167,12 +174,19 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @notice Cancel maker orders
      * @param orderNonces array of order nonces
      */
-    function cancelMultipleMakerOrders(uint256[] calldata orderNonces) external {
+    function cancelMultipleMakerOrders(uint256[] calldata orderNonces)
+        external
+    {
         require(orderNonces.length > 0, "Cancel: Cannot be empty");
 
         for (uint256 i = 0; i < orderNonces.length; i++) {
-            require(orderNonces[i] >= userMinOrderNonce[msg.sender], "Cancel: Order nonce lower than current");
-            _isUserOrderNonceExecutedOrCancelled[msg.sender][orderNonces[i]] = true;
+            require(
+                orderNonces[i] >= userMinOrderNonce[msg.sender],
+                "Cancel: Order nonce lower than current"
+            );
+            _isUserOrderNonceExecutedOrCancelled[msg.sender][
+                orderNonces[i]
+            ] = true;
         }
 
         emit CancelMultipleOrders(msg.sender, orderNonces);
@@ -187,13 +201,23 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
     ) external payable override nonReentrant {
-        require((makerAsk.isOrderAsk) && (!takerBid.isOrderAsk), "Order: Wrong sides");
+        require(
+            (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
+            "Order: Wrong sides"
+        );
         require(makerAsk.currency == WETH, "Order: Currency must be WETH");
-        require(msg.sender == takerBid.taker, "Order: Taker must be the sender");
+        require(
+            msg.sender == takerBid.taker,
+            "Order: Taker must be the sender"
+        );
 
         // If not enough ETH to cover the price, use WETH
         if (takerBid.price > msg.value) {
-            IERC20(WETH).safeTransferFrom(msg.sender, address(this), (takerBid.price - msg.value));
+            IERC20(WETH).safeTransferFrom(
+                msg.sender,
+                address(this),
+                (takerBid.price - msg.value)
+            );
         } else {
             require(takerBid.price == msg.value, "Order: Msg.value too high");
         }
@@ -206,13 +230,21 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         _validateOrder(makerAsk, askHash);
 
         // Retrieve execution parameters
-        (bool isExecutionValid, uint256 tokenId, uint256 amount) = IExecutionStrategy(makerAsk.strategy)
-            .canExecuteTakerBid(takerBid, makerAsk);
+        (
+            bool isExecutionValid,
+            uint256 tokenId,
+            uint256 amount
+        ) = IExecutionStrategy(makerAsk.strategy).canExecuteTakerBid(
+                takerBid,
+                makerAsk
+            );
 
         require(isExecutionValid, "Strategy: Execution invalid");
 
         // Update maker ask order status to true (prevents replay)
-        _isUserOrderNonceExecutedOrCancelled[makerAsk.signer][makerAsk.nonce] = true;
+        _isUserOrderNonceExecutedOrCancelled[makerAsk.signer][
+            makerAsk.nonce
+        ] = true;
 
         // Execution part 1/2
         _transferFeesAndFundsWithWETH(
@@ -225,7 +257,13 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         );
 
         // Execution part 2/2
-        _transferNonFungibleToken(makerAsk.collection, makerAsk.signer, takerBid.taker, tokenId, amount);
+        _transferNonFungibleToken(
+            makerAsk.collection,
+            makerAsk.signer,
+            takerBid.taker,
+            tokenId,
+            amount
+        );
 
         emit TakerBid(
             askHash,
@@ -246,25 +284,38 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param takerBid taker bid order
      * @param makerAsk maker ask order
      */
-    function matchAskWithTakerBid(OrderTypes.TakerOrder calldata takerBid, OrderTypes.MakerOrder calldata makerAsk)
-        external
-        override
-        nonReentrant
-    {
-        require((makerAsk.isOrderAsk) && (!takerBid.isOrderAsk), "Order: Wrong sides");
-        require(msg.sender == takerBid.taker, "Order: Taker must be the sender");
+    function matchAskWithTakerBid(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    ) external override nonReentrant {
+        require(
+            (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
+            "Order: Wrong sides"
+        );
+        require(
+            msg.sender == takerBid.taker,
+            "Order: Taker must be the sender"
+        );
 
         // Check the maker ask order
         bytes32 askHash = makerAsk.hash();
         _validateOrder(makerAsk, askHash);
 
-        (bool isExecutionValid, uint256 tokenId, uint256 amount) = IExecutionStrategy(makerAsk.strategy)
-            .canExecuteTakerBid(takerBid, makerAsk);
+        (
+            bool isExecutionValid,
+            uint256 tokenId,
+            uint256 amount
+        ) = IExecutionStrategy(makerAsk.strategy).canExecuteTakerBid(
+                takerBid,
+                makerAsk
+            );
 
         require(isExecutionValid, "Strategy: Execution invalid");
 
         // Update maker ask order status to true (prevents replay)
-        _isUserOrderNonceExecutedOrCancelled[makerAsk.signer][makerAsk.nonce] = true;
+        _isUserOrderNonceExecutedOrCancelled[makerAsk.signer][
+            makerAsk.nonce
+        ] = true;
 
         // Execution part 1/2
         _transferFeesAndFunds(
@@ -279,7 +330,13 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         );
 
         // Execution part 2/2
-        _transferNonFungibleToken(makerAsk.collection, makerAsk.signer, takerBid.taker, tokenId, amount);
+        _transferNonFungibleToken(
+            makerAsk.collection,
+            makerAsk.signer,
+            takerBid.taker,
+            tokenId,
+            amount
+        );
 
         emit TakerBid(
             askHash,
@@ -300,28 +357,47 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param takerAsk taker ask order
      * @param makerBid maker bid order
      */
-    function matchBidWithTakerAsk(OrderTypes.TakerOrder calldata takerAsk, OrderTypes.MakerOrder calldata makerBid)
-        external
-        override
-        nonReentrant
-    {
-        require((!makerBid.isOrderAsk) && (takerAsk.isOrderAsk), "Order: Wrong sides");
-        require(msg.sender == takerAsk.taker, "Order: Taker must be the sender");
+    function matchBidWithTakerAsk(
+        OrderTypes.TakerOrder calldata takerAsk,
+        OrderTypes.MakerOrder calldata makerBid
+    ) external override nonReentrant {
+        require(
+            (!makerBid.isOrderAsk) && (takerAsk.isOrderAsk),
+            "Order: Wrong sides"
+        );
+        require(
+            msg.sender == takerAsk.taker,
+            "Order: Taker must be the sender"
+        );
 
         // Check the maker bid order
         bytes32 bidHash = makerBid.hash();
         _validateOrder(makerBid, bidHash);
 
-        (bool isExecutionValid, uint256 tokenId, uint256 amount) = IExecutionStrategy(makerBid.strategy)
-            .canExecuteTakerAsk(takerAsk, makerBid);
+        (
+            bool isExecutionValid,
+            uint256 tokenId,
+            uint256 amount
+        ) = IExecutionStrategy(makerBid.strategy).canExecuteTakerAsk(
+                takerAsk,
+                makerBid
+            );
 
         require(isExecutionValid, "Strategy: Execution invalid");
 
         // Update maker bid order status to true (prevents replay)
-        _isUserOrderNonceExecutedOrCancelled[makerBid.signer][makerBid.nonce] = true;
+        _isUserOrderNonceExecutedOrCancelled[makerBid.signer][
+            makerBid.nonce
+        ] = true;
 
         // Execution part 1/2
-        _transferNonFungibleToken(makerBid.collection, msg.sender, makerBid.signer, tokenId, amount);
+        _transferNonFungibleToken(
+            makerBid.collection,
+            msg.sender,
+            makerBid.signer,
+            tokenId,
+            amount
+        );
 
         // Execution part 2/2
         _transferFeesAndFunds(
@@ -353,8 +429,14 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @notice Update currency manager
      * @param _currencyManager new currency manager address
      */
-    function updateCurrencyManager(address _currencyManager) external onlyOwner {
-        require(_currencyManager != address(0), "Owner: Cannot be null address");
+    function updateCurrencyManager(address _currencyManager)
+        external
+        onlyOwner
+    {
+        require(
+            _currencyManager != address(0),
+            "Owner: Cannot be null address"
+        );
         currencyManager = ICurrencyManager(_currencyManager);
         emit NewCurrencyManager(_currencyManager);
     }
@@ -363,8 +445,14 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @notice Update execution manager
      * @param _executionManager new execution manager address
      */
-    function updateExecutionManager(address _executionManager) external onlyOwner {
-        require(_executionManager != address(0), "Owner: Cannot be null address");
+    function updateExecutionManager(address _executionManager)
+        external
+        onlyOwner
+    {
+        require(
+            _executionManager != address(0),
+            "Owner: Cannot be null address"
+        );
         executionManager = IExecutionManager(_executionManager);
         emit NewExecutionManager(_executionManager);
     }
@@ -373,7 +461,10 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @notice Update protocol fee and recipient
      * @param _protocolFeeRecipient new recipient for protocol fees
      */
-    function updateProtocolFeeRecipient(address _protocolFeeRecipient) external onlyOwner {
+    function updateProtocolFeeRecipient(address _protocolFeeRecipient)
+        external
+        onlyOwner
+    {
         protocolFeeRecipient = _protocolFeeRecipient;
         emit NewProtocolFeeRecipient(_protocolFeeRecipient);
     }
@@ -382,8 +473,14 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @notice Update royalty fee manager
      * @param _royaltyFeeManager new fee manager address
      */
-    function updateRoyaltyFeeManager(address _royaltyFeeManager) external onlyOwner {
-        require(_royaltyFeeManager != address(0), "Owner: Cannot be null address");
+    function updateRoyaltyFeeManager(address _royaltyFeeManager)
+        external
+        onlyOwner
+    {
+        require(
+            _royaltyFeeManager != address(0),
+            "Owner: Cannot be null address"
+        );
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
         emit NewRoyaltyFeeManager(_royaltyFeeManager);
     }
@@ -392,8 +489,14 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @notice Update transfer selector NFT
      * @param _transferSelectorNFT new transfer selector address
      */
-    function updateTransferSelectorNFT(address _transferSelectorNFT) external onlyOwner {
-        require(_transferSelectorNFT != address(0), "Owner: Cannot be null address");
+    function updateTransferSelectorNFT(address _transferSelectorNFT)
+        external
+        onlyOwner
+    {
+        require(
+            _transferSelectorNFT != address(0),
+            "Owner: Cannot be null address"
+        );
         transferSelectorNFT = ITransferSelectorNFT(_transferSelectorNFT);
 
         emit NewTransferSelectorNFT(_transferSelectorNFT);
@@ -404,7 +507,10 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param user address of user
      * @param orderNonce nonce of the order
      */
-    function isUserOrderNonceExecutedOrCancelled(address user, uint256 orderNonce) external view returns (bool) {
+    function isUserOrderNonceExecutedOrCancelled(
+        address user,
+        uint256 orderNonce
+    ) external view returns (bool) {
         return _isUserOrderNonceExecutedOrCancelled[user][orderNonce];
     }
 
@@ -437,27 +543,54 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             uint256 protocolFeeAmount = _calculateProtocolFee(strategy, amount);
 
             // Check if the protocol fee is different than 0 for this strategy
-            if ((protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)) {
-                IERC20(currency).safeTransferFrom(from, protocolFeeRecipient, protocolFeeAmount);
+            if (
+                (protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)
+            ) {
+                IERC20(currency).safeTransferFrom(
+                    from,
+                    protocolFeeRecipient,
+                    protocolFeeAmount
+                );
                 finalSellerAmount -= protocolFeeAmount;
             }
         }
 
         // 2. Royalty fee
         {
-            (address royaltyFeeRecipient, uint256 royaltyFeeAmount) = royaltyFeeManager
-                .calculateRoyaltyFeeAndGetRecipient(collection, tokenId, amount);
+            (
+                address royaltyFeeRecipient,
+                uint256 royaltyFeeAmount
+            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
+                    collection,
+                    tokenId,
+                    amount
+                );
 
             // Check if there is a royalty fee and that it is different to 0
-            if ((royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)) {
-                IERC20(currency).safeTransferFrom(from, royaltyFeeRecipient, royaltyFeeAmount);
+            if (
+                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
+            ) {
+                IERC20(currency).safeTransferFrom(
+                    from,
+                    royaltyFeeRecipient,
+                    royaltyFeeAmount
+                );
                 finalSellerAmount -= royaltyFeeAmount;
 
-                emit RoyaltyPayment(collection, tokenId, royaltyFeeRecipient, currency, royaltyFeeAmount);
+                emit RoyaltyPayment(
+                    collection,
+                    tokenId,
+                    royaltyFeeRecipient,
+                    currency,
+                    royaltyFeeAmount
+                );
             }
         }
 
-        require((finalSellerAmount * 10000) >= (minPercentageToAsk * amount), "Fees: Higher than expected");
+        require(
+            (finalSellerAmount * 10000) >= (minPercentageToAsk * amount),
+            "Fees: Higher than expected"
+        );
 
         // 3. Transfer final amount (post-fees) to seller
         {
@@ -490,27 +623,52 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             uint256 protocolFeeAmount = _calculateProtocolFee(strategy, amount);
 
             // Check if the protocol fee is different than 0 for this strategy
-            if ((protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)) {
-                IERC20(WETH).safeTransfer(protocolFeeRecipient, protocolFeeAmount);
+            if (
+                (protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)
+            ) {
+                IERC20(WETH).safeTransfer(
+                    protocolFeeRecipient,
+                    protocolFeeAmount
+                );
                 finalSellerAmount -= protocolFeeAmount;
             }
         }
 
         // 2. Royalty fee
         {
-            (address royaltyFeeRecipient, uint256 royaltyFeeAmount) = royaltyFeeManager
-                .calculateRoyaltyFeeAndGetRecipient(collection, tokenId, amount);
+            (
+                address royaltyFeeRecipient,
+                uint256 royaltyFeeAmount
+            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
+                    collection,
+                    tokenId,
+                    amount
+                );
 
             // Check if there is a royalty fee and that it is different to 0
-            if ((royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)) {
-                IERC20(WETH).safeTransfer(royaltyFeeRecipient, royaltyFeeAmount);
+            if (
+                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
+            ) {
+                IERC20(WETH).safeTransfer(
+                    royaltyFeeRecipient,
+                    royaltyFeeAmount
+                );
                 finalSellerAmount -= royaltyFeeAmount;
 
-                emit RoyaltyPayment(collection, tokenId, royaltyFeeRecipient, address(WETH), royaltyFeeAmount);
+                emit RoyaltyPayment(
+                    collection,
+                    tokenId,
+                    royaltyFeeRecipient,
+                    address(WETH),
+                    royaltyFeeAmount
+                );
             }
         }
 
-        require((finalSellerAmount * 10000) >= (minPercentageToAsk * amount), "Fees: Higher than expected");
+        require(
+            (finalSellerAmount * 10000) >= (minPercentageToAsk * amount),
+            "Fees: Higher than expected"
+        );
 
         // 3. Transfer final amount (post-fees) to seller
         {
@@ -535,13 +693,23 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         uint256 amount
     ) internal {
         // Retrieve the transfer manager address
-        address transferManager = transferSelectorNFT.checkTransferManagerForToken(collection);
+        address transferManager = transferSelectorNFT
+            .checkTransferManagerForToken(collection);
 
         // If no transfer manager found, it returns address(0)
-        require(transferManager != address(0), "Transfer: No NFT transfer manager available");
+        require(
+            transferManager != address(0),
+            "Transfer: No NFT transfer manager available"
+        );
 
         // If one is found, transfer the token
-        ITransferManagerNFT(transferManager).transferNonFungibleToken(collection, from, to, tokenId, amount);
+        ITransferManagerNFT(transferManager).transferNonFungibleToken(
+            collection,
+            from,
+            to,
+            tokenId,
+            amount
+        );
     }
 
     /**
@@ -549,8 +717,13 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param executionStrategy strategy
      * @param amount amount to transfer
      */
-    function _calculateProtocolFee(address executionStrategy, uint256 amount) internal view returns (uint256) {
-        uint256 protocolFee = IExecutionStrategy(executionStrategy).viewProtocolFee();
+    function _calculateProtocolFee(address executionStrategy, uint256 amount)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 protocolFee = IExecutionStrategy(executionStrategy)
+            .viewProtocolFee();
         return (protocolFee * amount) / 10000;
     }
 
@@ -559,11 +732,17 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param makerOrder maker order
      * @param orderHash computed hash for the order
      */
-    function _validateOrder(OrderTypes.MakerOrder calldata makerOrder, bytes32 orderHash) internal view {
+    function _validateOrder(
+        OrderTypes.MakerOrder calldata makerOrder,
+        bytes32 orderHash
+    ) internal view {
         // Verify whether order nonce has expired
         require(
-            (!_isUserOrderNonceExecutedOrCancelled[makerOrder.signer][makerOrder.nonce]) &&
-                (makerOrder.nonce >= userMinOrderNonce[makerOrder.signer]),
+            (
+                !_isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
+                    makerOrder.nonce
+                ]
+            ) && (makerOrder.nonce >= userMinOrderNonce[makerOrder.signer]),
             "Order: Matching order expired"
         );
 
@@ -587,9 +766,15 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         );
 
         // Verify whether the currency is whitelisted
-        require(currencyManager.isCurrencyWhitelisted(makerOrder.currency), "Currency: Not whitelisted");
+        require(
+            currencyManager.isCurrencyWhitelisted(makerOrder.currency),
+            "Currency: Not whitelisted"
+        );
 
         // Verify whether strategy can be executed
-        require(executionManager.isStrategyWhitelisted(makerOrder.strategy), "Strategy: Not whitelisted");
+        require(
+            executionManager.isStrategyWhitelisted(makerOrder.strategy),
+            "Strategy: Not whitelisted"
+        );
     }
 }

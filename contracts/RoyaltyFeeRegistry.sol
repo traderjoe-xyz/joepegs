@@ -22,7 +22,12 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
     mapping(address => FeeInfo) private _royaltyFeeInfoCollection;
 
     event NewRoyaltyFeeLimit(uint256 royaltyFeeLimit);
-    event RoyaltyFeeUpdate(address indexed collection, address indexed setter, address indexed receiver, uint256 fee);
+    event RoyaltyFeeUpdate(
+        address indexed collection,
+        address indexed setter,
+        address indexed receiver,
+        uint256 fee
+    );
 
     /**
      * @notice Constructor
@@ -37,7 +42,11 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
      * @notice Update royalty info for collection
      * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
      */
-    function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit) external override onlyOwner {
+    function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit)
+        external
+        override
+        onlyOwner
+    {
         require(_royaltyFeeLimit <= 9500, "Owner: Royalty fee limit too high");
         royaltyFeeLimit = _royaltyFeeLimit;
 
@@ -58,7 +67,11 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
         uint256 fee
     ) external override onlyOwner {
         require(fee <= royaltyFeeLimit, "Registry: Royalty fee too high");
-        _royaltyFeeInfoCollection[collection] = FeeInfo({setter: setter, receiver: receiver, fee: fee});
+        _royaltyFeeInfoCollection[collection] = FeeInfo({
+            setter: setter,
+            receiver: receiver,
+            fee: fee
+        });
 
         emit RoyaltyFeeUpdate(collection, setter, receiver, fee);
     }
@@ -69,7 +82,12 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
      * @param amount amount
      * @return receiver address and amount received by royalty recipient
      */
-    function royaltyInfo(address collection, uint256 amount) external view override returns (address, uint256) {
+    function royaltyInfo(address collection, uint256 amount)
+        external
+        view
+        override
+        returns (address, uint256)
+    {
         return (
             _royaltyFeeInfoCollection[collection].receiver,
             (amount * _royaltyFeeInfoCollection[collection].fee) / 10000

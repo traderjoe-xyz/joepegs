@@ -6,9 +6,15 @@ interface IExecutionManager {
 
     function removeStrategy(address strategy) external;
 
-    function isStrategyWhitelisted(address strategy) external view returns (bool);
+    function isStrategyWhitelisted(address strategy)
+        external
+        view
+        returns (bool);
 
-    function viewWhitelistedStrategies(uint256 cursor, uint256 size) external view returns (address[] memory, uint256);
+    function viewWhitelistedStrategies(uint256 cursor, uint256 size)
+        external
+        view
+        returns (address[] memory, uint256);
 
     function viewCountWhitelistedStrategies() external view returns (uint256);
 }

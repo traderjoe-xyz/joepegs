@@ -23,7 +23,10 @@ contract ExecutionManager is IExecutionManager, Ownable {
      * @param strategy address of the strategy to add
      */
     function addStrategy(address strategy) external override onlyOwner {
-        require(!_whitelistedStrategies.contains(strategy), "Strategy: Already whitelisted");
+        require(
+            !_whitelistedStrategies.contains(strategy),
+            "Strategy: Already whitelisted"
+        );
         _whitelistedStrategies.add(strategy);
 
         emit StrategyWhitelisted(strategy);
@@ -34,7 +37,10 @@ contract ExecutionManager is IExecutionManager, Ownable {
      * @param strategy address of the strategy to remove
      */
     function removeStrategy(address strategy) external override onlyOwner {
-        require(_whitelistedStrategies.contains(strategy), "Strategy: Not whitelisted");
+        require(
+            _whitelistedStrategies.contains(strategy),
+            "Strategy: Not whitelisted"
+        );
         _whitelistedStrategies.remove(strategy);
 
         emit StrategyRemoved(strategy);
@@ -44,14 +50,24 @@ contract ExecutionManager is IExecutionManager, Ownable {
      * @notice Returns if an execution strategy is in the system
      * @param strategy address of the strategy
      */
-    function isStrategyWhitelisted(address strategy) external view override returns (bool) {
+    function isStrategyWhitelisted(address strategy)
+        external
+        view
+        override
+        returns (bool)
+    {
         return _whitelistedStrategies.contains(strategy);
     }
 
     /**
      * @notice View number of whitelisted strategies
      */
-    function viewCountWhitelistedStrategies() external view override returns (uint256) {
+    function viewCountWhitelistedStrategies()
+        external
+        view
+        override
+        returns (uint256)
+    {
         return _whitelistedStrategies.length();
     }
 

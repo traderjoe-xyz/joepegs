@@ -45,10 +45,21 @@ contract RoyaltyFeeSetter is Ownable {
         address receiver,
         uint256 fee
     ) external {
-        require(!IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981), "Admin: Must not be ERC2981");
-        require(msg.sender == IOwnable(collection).admin(), "Admin: Not the admin");
+        require(
+            !IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981),
+            "Admin: Must not be ERC2981"
+        );
+        require(
+            msg.sender == IOwnable(collection).admin(),
+            "Admin: Not the admin"
+        );
 
-        _updateRoyaltyInfoForCollectionIfOwnerOrAdmin(collection, setter, receiver, fee);
+        _updateRoyaltyInfoForCollectionIfOwnerOrAdmin(
+            collection,
+            setter,
+            receiver,
+            fee
+        );
     }
 
     /**
@@ -65,10 +76,21 @@ contract RoyaltyFeeSetter is Ownable {
         address receiver,
         uint256 fee
     ) external {
-        require(!IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981), "Owner: Must not be ERC2981");
-        require(msg.sender == IOwnable(collection).owner(), "Owner: Not the owner");
+        require(
+            !IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981),
+            "Owner: Must not be ERC2981"
+        );
+        require(
+            msg.sender == IOwnable(collection).owner(),
+            "Owner: Not the owner"
+        );
 
-        _updateRoyaltyInfoForCollectionIfOwnerOrAdmin(collection, setter, receiver, fee);
+        _updateRoyaltyInfoForCollectionIfOwnerOrAdmin(
+            collection,
+            setter,
+            receiver,
+            fee
+        );
     }
 
     /**
@@ -85,10 +107,16 @@ contract RoyaltyFeeSetter is Ownable {
         address receiver,
         uint256 fee
     ) external {
-        (address currentSetter, , ) = IRoyaltyFeeRegistry(royaltyFeeRegistry).royaltyFeeInfoCollection(collection);
+        (address currentSetter, , ) = IRoyaltyFeeRegistry(royaltyFeeRegistry)
+            .royaltyFeeInfoCollection(collection);
         require(msg.sender == currentSetter, "Setter: Not the setter");
 
-        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyInfoForCollection(collection, setter, receiver, fee);
+        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyInfoForCollection(
+            collection,
+            setter,
+            receiver,
+            fee
+        );
     }
 
     /**
@@ -105,7 +133,12 @@ contract RoyaltyFeeSetter is Ownable {
         address receiver,
         uint256 fee
     ) external onlyOwner {
-        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyInfoForCollection(collection, setter, receiver, fee);
+        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyInfoForCollection(
+            collection,
+            setter,
+            receiver,
+            fee
+        );
     }
 
     /**
@@ -113,7 +146,10 @@ contract RoyaltyFeeSetter is Ownable {
      * @dev Can be used for migration of this royalty fee setter contract
      * @param _owner new owner address
      */
-    function updateOwnerOfRoyaltyFeeRegistry(address _owner) external onlyOwner {
+    function updateOwnerOfRoyaltyFeeRegistry(address _owner)
+        external
+        onlyOwner
+    {
         IOwnable(royaltyFeeRegistry).transferOwnership(_owner);
     }
 
@@ -121,8 +157,13 @@ contract RoyaltyFeeSetter is Ownable {
      * @notice Update royalty info for collection
      * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
      */
-    function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit) external onlyOwner {
-        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyFeeLimit(_royaltyFeeLimit);
+    function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit)
+        external
+        onlyOwner
+    {
+        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyFeeLimit(
+            _royaltyFeeLimit
+        );
     }
 
     /**
@@ -136,14 +177,21 @@ contract RoyaltyFeeSetter is Ownable {
      * 3: setter can be set using admin()
      * 4: setter cannot be set, nor support for ERC2981
      */
-    function checkForCollectionSetter(address collection) external view returns (address, uint8) {
-        (address currentSetter, , ) = IRoyaltyFeeRegistry(royaltyFeeRegistry).royaltyFeeInfoCollection(collection);
+    function checkForCollectionSetter(address collection)
+        external
+        view
+        returns (address, uint8)
+    {
+        (address currentSetter, , ) = IRoyaltyFeeRegistry(royaltyFeeRegistry)
+            .royaltyFeeInfoCollection(collection);
 
         if (currentSetter != address(0)) {
             return (currentSetter, 0);
         }
 
-        try IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981) returns (bool interfaceSupport) {
+        try
+            IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981)
+        returns (bool interfaceSupport) {
             if (interfaceSupport) {
                 return (address(0), 1);
             }
@@ -173,7 +221,8 @@ contract RoyaltyFeeSetter is Ownable {
         address receiver,
         uint256 fee
     ) internal {
-        (address currentSetter, , ) = IRoyaltyFeeRegistry(royaltyFeeRegistry).royaltyFeeInfoCollection(collection);
+        (address currentSetter, , ) = IRoyaltyFeeRegistry(royaltyFeeRegistry)
+            .royaltyFeeInfoCollection(collection);
         require(currentSetter == address(0), "Setter: Already set");
 
         require(
@@ -182,6 +231,11 @@ contract RoyaltyFeeSetter is Ownable {
             "Setter: Not ERC721/ERC1155"
         );
 
-        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyInfoForCollection(collection, setter, receiver, fee);
+        IRoyaltyFeeRegistry(royaltyFeeRegistry).updateRoyaltyInfoForCollection(
+            collection,
+            setter,
+            receiver,
+            fee
+        );
     }
 }
