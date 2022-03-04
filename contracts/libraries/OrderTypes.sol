@@ -24,6 +24,9 @@ library OrderTypes {
         uint256 endTime; // endTime in timestamp
         uint256 minPercentageToAsk; // slippage protection (9000 --> 90% of the final price must return to ask)
         bytes params; // additional parameters
+        uint8 v; // v: parameter (27 or 28)
+        bytes32 r; // r: parameter
+        bytes32 s; // s: parameter
     }
 
     struct TakerOrder {
