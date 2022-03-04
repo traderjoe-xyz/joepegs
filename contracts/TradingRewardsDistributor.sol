@@ -37,9 +37,14 @@ contract TradingRewardsDistributor is Pausable, ReentrancyGuard, Ownable {
     mapping(bytes32 => bool) public merkleRootUsed;
 
     // Keeps track on whether user has claimed at a given reward round
-    mapping(uint256 => mapping(address => bool)) public hasUserClaimedForRewardRound;
+    mapping(uint256 => mapping(address => bool))
+        public hasUserClaimedForRewardRound;
 
-    event RewardsClaim(address indexed user, uint256 indexed rewardRound, uint256 amount);
+    event RewardsClaim(
+        address indexed user,
+        uint256 indexed rewardRound,
+        uint256 amount
+    );
     event UpdateTradingRewards(uint256 indexed rewardRound);
     event TokenWithdrawnOwner(uint256 amount);
 
@@ -57,14 +62,28 @@ contract TradingRewardsDistributor is Pausable, ReentrancyGuard, Ownable {
      * @param amount amount to claim
      * @param merkleProof array containing the merkle proof
      */
-    function claim(uint256 amount, bytes32[] calldata merkleProof) external whenNotPaused nonReentrant {
+    function claim(uint256 amount, bytes32[] calldata merkleProof)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         // Verify the reward round is not claimed already
-        require(!hasUserClaimedForRewardRound[currentRewardRound][msg.sender], "Rewards: Already claimed");
+        require(
+            !hasUserClaimedForRewardRound[currentRewardRound][msg.sender],
+            "Rewards: Already claimed"
+        );
 
-        (bool claimStatus, uint256 adjustedAmount) = _canClaim(msg.sender, amount, merkleProof);
+        (bool claimStatus, uint256 adjustedAmount) = _canClaim(
+            msg.sender,
+            amount,
+            merkleProof
+        );
 
         require(claimStatus, "Rewards: Invalid proof");
-        require(maximumAmountPerUserInCurrentTree >= amount, "Rewards: Amount higher than max");
+        require(
+            maximumAmountPerUserInCurrentTree >= amount,
+            "Rewards: Amount higher than max"
+        );
 
         // Set mapping for user and round as true
         hasUserClaimedForRewardRound[currentRewardRound][msg.sender] = true;
@@ -83,7 +102,10 @@ contract TradingRewardsDistributor is Pausable, ReentrancyGuard, Ownable {
      * @dev It automatically increments the currentRewardRound
      * @param merkleRoot root of the computed merkle tree
      */
-    function updateTradingRewards(bytes32 merkleRoot, uint256 newMaximumAmountPerUser) external onlyOwner {
+    function updateTradingRewards(
+        bytes32 merkleRoot,
+        uint256 newMaximumAmountPerUser
+    ) external onlyOwner {
         require(!merkleRootUsed[merkleRoot], "Owner: Merkle root already used");
 
         currentRewardRound++;
@@ -114,8 +136,15 @@ contract TradingRewardsDistributor is Pausable, ReentrancyGuard, Ownable {
      * @dev It is for emergency purposes
      * @param amount amount to withdraw
      */
-    function withdrawTokenRewards(uint256 amount) external onlyOwner whenPaused {
-        require(block.timestamp > (lastPausedTimestamp + BUFFER_ADMIN_WITHDRAW), "Owner: Too early to withdraw");
+    function withdrawTokenRewards(uint256 amount)
+        external
+        onlyOwner
+        whenPaused
+    {
+        require(
+            block.timestamp > (lastPausedTimestamp + BUFFER_ADMIN_WITHDRAW),
+            "Owner: Too early to withdraw"
+        );
         looksRareToken.safeTransfer(msg.sender, amount);
 
         emit TokenWithdrawnOwner(amount);
@@ -148,9 +177,16 @@ contract TradingRewardsDistributor is Pausable, ReentrancyGuard, Ownable {
     ) internal view returns (bool, uint256) {
         // Compute the node and verify the merkle proof
         bytes32 node = keccak256(abi.encodePacked(user, amount));
-        bool canUserClaim = MerkleProof.verify(merkleProof, merkleRootOfRewardRound[currentRewardRound], node);
+        bool canUserClaim = MerkleProof.verify(
+            merkleProof,
+            merkleRootOfRewardRound[currentRewardRound],
+            node
+        );
 
-        if ((!canUserClaim) || (hasUserClaimedForRewardRound[currentRewardRound][user])) {
+        if (
+            (!canUserClaim) ||
+            (hasUserClaimedForRewardRound[currentRewardRound][user])
+        ) {
             return (false, 0);
         } else {
             return (true, amount - amountClaimedByUser[user]);

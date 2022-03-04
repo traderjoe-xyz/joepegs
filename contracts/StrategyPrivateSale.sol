@@ -24,7 +24,10 @@ contract StrategyPrivateSale is IExecutionStrategy {
      * @notice Check whether a taker ask order can be executed against a maker bid
      * @return (whether strategy can be executed, tokenId to execute, amount of tokens to execute)
      */
-    function canExecuteTakerAsk(OrderTypes.TakerOrder calldata, OrderTypes.MakerOrder calldata)
+    function canExecuteTakerAsk(
+        OrderTypes.TakerOrder calldata,
+        OrderTypes.MakerOrder calldata
+    )
         external
         pure
         override
@@ -43,7 +46,10 @@ contract StrategyPrivateSale is IExecutionStrategy {
      * @param makerAsk maker ask order
      * @return (whether strategy can be executed, tokenId to execute, amount of tokens to execute)
      */
-    function canExecuteTakerBid(OrderTypes.TakerOrder calldata takerBid, OrderTypes.MakerOrder calldata makerAsk)
+    function canExecuteTakerBid(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    )
         external
         view
         override

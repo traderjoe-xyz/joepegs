@@ -37,12 +37,16 @@ contract RoyaltyFeeManager is IRoyaltyFeeManager, Ownable {
         uint256 amount
     ) external view override returns (address, uint256) {
         // 1. Check if there is a royalty info in the system
-        (address receiver, uint256 royaltyAmount) = royaltyFeeRegistry.royaltyInfo(collection, amount);
+        (address receiver, uint256 royaltyAmount) = royaltyFeeRegistry
+            .royaltyInfo(collection, amount);
 
         // 2. If the receiver is address(0), fee is null, check if it supports the ERC2981 interface
         if ((receiver == address(0)) || (royaltyAmount == 0)) {
             if (IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981)) {
-                (receiver, royaltyAmount) = IERC2981(collection).royaltyInfo(tokenId, amount);
+                (receiver, royaltyAmount) = IERC2981(collection).royaltyInfo(
+                    tokenId,
+                    amount
+                );
             }
         }
         return (receiver, royaltyAmount);

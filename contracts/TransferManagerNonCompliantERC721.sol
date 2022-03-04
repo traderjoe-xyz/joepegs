@@ -33,7 +33,10 @@ contract TransferManagerNonCompliantERC721 is ITransferManagerNFT {
         uint256 tokenId,
         uint256
     ) external override {
-        require(msg.sender == LOOKS_RARE_EXCHANGE, "Transfer: Only LooksRare Exchange");
+        require(
+            msg.sender == LOOKS_RARE_EXCHANGE,
+            "Transfer: Only LooksRare Exchange"
+        );
         IERC721(collection).transferFrom(from, to, tokenId);
     }
 }

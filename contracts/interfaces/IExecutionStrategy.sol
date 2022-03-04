@@ -4,7 +4,10 @@ pragma solidity ^0.8.0;
 import {OrderTypes} from "../libraries/OrderTypes.sol";
 
 interface IExecutionStrategy {
-    function canExecuteTakerAsk(OrderTypes.TakerOrder calldata takerAsk, OrderTypes.MakerOrder calldata makerBid)
+    function canExecuteTakerAsk(
+        OrderTypes.TakerOrder calldata takerAsk,
+        OrderTypes.MakerOrder calldata makerBid
+    )
         external
         view
         returns (
@@ -13,7 +16,10 @@ interface IExecutionStrategy {
             uint256
         );
 
-    function canExecuteTakerBid(OrderTypes.TakerOrder calldata takerBid, OrderTypes.MakerOrder calldata makerAsk)
+    function canExecuteTakerBid(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    )
         external
         view
         returns (
