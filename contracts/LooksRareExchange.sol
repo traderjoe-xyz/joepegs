@@ -752,6 +752,19 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         // Verify the amount is not 0
         require(makerOrder.amount > 0, "Order: Amount cannot be 0");
 
+        // Verify the validity of the signature
+        require(
+            SignatureChecker.verify(
+                orderHash,
+                makerOrder.signer,
+                makerOrder.v,
+                makerOrder.r,
+                makerOrder.s,
+                DOMAIN_SEPARATOR
+            ),
+            "Signature: Invalid"
+        );
+
         // Verify whether the currency is whitelisted
         require(
             currencyManager.isCurrencyWhitelisted(makerOrder.currency),
