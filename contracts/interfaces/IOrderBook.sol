@@ -4,10 +4,12 @@ pragma solidity ^0.8.0;
 import {OrderTypes} from "../libraries/OrderTypes.sol";
 
 interface IOrderBook {
-    function getMakerOrders(address collection, uint256 tokenId)
-        external
-        view
-        returns (OrderTypes.MakerOrder[] memory);
+    function getMakerOrders(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _offset,
+        uint256 _limit
+    ) external view returns (OrderTypes.MakerOrder[] memory);
 
     function createMakerOrder(OrderTypes.MakerOrder calldata makerOrder)
         external;
