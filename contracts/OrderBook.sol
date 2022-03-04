@@ -37,8 +37,7 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
     mapping(address => mapping(uint256 => bool))
         private _isUserOrderNonceExecutedOrCancelled;
 
-    /// @notice Mapping from user to latest order nonce
-    mapping(address => uint256) public userLatestOrderNonce;
+    uint256 latestOrderNonce;
 
     /// @notice Mapping from NFT contract address => NFT token ID => maker orders
     mapping(address => mapping(uint256 => OrderTypes.MakerOrder[]))
@@ -66,7 +65,7 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
         return makerOrders[collection][tokenId];
     }
 
-    function createMakerOrder(OrderTypes.MakerOrder calldata makerOrder)
+    function createMakerOrder(OrderTypes.MakerOrder memory makerOrder)
         external
         override
     {
@@ -74,14 +73,13 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
             makerOrder.signer == msg.sender,
             "Expected maker order signer to be msg.sender"
         );
-        require(
-            makerOrder.nonce == userLatestOrderNonce[msg.sender] + 1,
-            "Expected maker order nonce to be one greater than latest user order nonce"
-        );
+
+        uint256 newOrderNonce = latestOrderNonce + 1;
+        makerOrder.nonce = newOrderNonce;
 
         validateOrder(makerOrder, makerOrder.hash());
 
-        userLatestOrderNonce[msg.sender] += 1;
+        latestOrderNonce = newOrderNonce;
 
         address collection = makerOrder.collection;
         uint256 tokenId = makerOrder.tokenId;
@@ -156,7 +154,7 @@ contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
      * @param orderHash computed hash for the order
      */
     function validateOrder(
-        OrderTypes.MakerOrder calldata makerOrder,
+        OrderTypes.MakerOrder memory makerOrder,
         bytes32 orderHash
     ) public view override {
         require(
