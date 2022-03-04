@@ -15,6 +15,7 @@ import {ILooksRareExchange} from "./interfaces/ILooksRareExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
+import {IOrderBook} from "./interfaces/IOrderBook.sol";
 
 // LooksRare libraries
 import {OrderTypes} from "./libraries/OrderTypes.sol";
@@ -72,13 +73,8 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     IExecutionManager public executionManager;
     IRoyaltyFeeManager public royaltyFeeManager;
     ITransferSelectorNFT public transferSelectorNFT;
+    IOrderBook public orderBook;
 
-    mapping(address => uint256) public userMinOrderNonce;
-    mapping(address => mapping(uint256 => bool))
-        private _isUserOrderNonceExecutedOrCancelled;
-
-    event CancelAllOrders(address indexed user, uint256 newMinNonce);
-    event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
     event NewCurrencyManager(address indexed currencyManager);
     event NewExecutionManager(address indexed executionManager);
     event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
@@ -126,13 +122,15 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param _royaltyFeeManager royalty fee manager address
      * @param _WETH wrapped ether address (for other chains, use wrapped native asset)
      * @param _protocolFeeRecipient protocol fee recipient
+     * @param _orderBook order book
      */
     constructor(
         address _currencyManager,
         address _executionManager,
         address _royaltyFeeManager,
         address _WETH,
-        address _protocolFeeRecipient
+        address _protocolFeeRecipient,
+        address _orderBook
     ) {
         // Calculate the domain separator
         DOMAIN_SEPARATOR = keccak256(
@@ -150,46 +148,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
         WETH = _WETH;
         protocolFeeRecipient = _protocolFeeRecipient;
-    }
-
-    /**
-     * @notice Cancel all pending orders for a sender
-     * @param minNonce minimum user nonce
-     */
-    function cancelAllOrdersForSender(uint256 minNonce) external {
-        require(
-            minNonce > userMinOrderNonce[msg.sender],
-            "Cancel: Order nonce lower than current"
-        );
-        require(
-            minNonce < userMinOrderNonce[msg.sender] + 500000,
-            "Cancel: Cannot cancel more orders"
-        );
-        userMinOrderNonce[msg.sender] = minNonce;
-
-        emit CancelAllOrders(msg.sender, minNonce);
-    }
-
-    /**
-     * @notice Cancel maker orders
-     * @param orderNonces array of order nonces
-     */
-    function cancelMultipleMakerOrders(uint256[] calldata orderNonces)
-        external
-    {
-        require(orderNonces.length > 0, "Cancel: Cannot be empty");
-
-        for (uint256 i = 0; i < orderNonces.length; i++) {
-            require(
-                orderNonces[i] >= userMinOrderNonce[msg.sender],
-                "Cancel: Order nonce lower than current"
-            );
-            _isUserOrderNonceExecutedOrCancelled[msg.sender][
-                orderNonces[i]
-            ] = true;
-        }
-
-        emit CancelMultipleOrders(msg.sender, orderNonces);
+        orderBook = IOrderBook(_orderBook);
     }
 
     /**
@@ -227,7 +186,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
 
         // Check the maker ask order
         bytes32 askHash = makerAsk.hash();
-        _validateOrder(makerAsk, askHash);
+        orderBook.validateOrder(makerAsk, askHash);
 
         // Retrieve execution parameters
         (
@@ -242,9 +201,10 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         require(isExecutionValid, "Strategy: Execution invalid");
 
         // Update maker ask order status to true (prevents replay)
-        _isUserOrderNonceExecutedOrCancelled[makerAsk.signer][
+        orderBook.markMakerOrderAsExecutedOrCancelled(
+            makerAsk.signer,
             makerAsk.nonce
-        ] = true;
+        );
 
         // Execution part 1/2
         _transferFeesAndFundsWithWETH(
@@ -299,7 +259,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
 
         // Check the maker ask order
         bytes32 askHash = makerAsk.hash();
-        _validateOrder(makerAsk, askHash);
+        orderBook.validateOrder(makerAsk, askHash);
 
         (
             bool isExecutionValid,
@@ -313,9 +273,10 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         require(isExecutionValid, "Strategy: Execution invalid");
 
         // Update maker ask order status to true (prevents replay)
-        _isUserOrderNonceExecutedOrCancelled[makerAsk.signer][
+        orderBook.markMakerOrderAsExecutedOrCancelled(
+            makerAsk.signer,
             makerAsk.nonce
-        ] = true;
+        );
 
         // Execution part 1/2
         _transferFeesAndFunds(
@@ -372,7 +333,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
 
         // Check the maker bid order
         bytes32 bidHash = makerBid.hash();
-        _validateOrder(makerBid, bidHash);
+        orderBook.validateOrder(makerBid, bidHash);
 
         (
             bool isExecutionValid,
@@ -386,9 +347,10 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         require(isExecutionValid, "Strategy: Execution invalid");
 
         // Update maker bid order status to true (prevents replay)
-        _isUserOrderNonceExecutedOrCancelled[makerBid.signer][
+        orderBook.markMakerOrderAsExecutedOrCancelled(
+            makerBid.signer,
             makerBid.nonce
-        ] = true;
+        );
 
         // Execution part 1/2
         _transferNonFungibleToken(
@@ -500,18 +462,6 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         transferSelectorNFT = ITransferSelectorNFT(_transferSelectorNFT);
 
         emit NewTransferSelectorNFT(_transferSelectorNFT);
-    }
-
-    /**
-     * @notice Check whether user order nonce is executed or cancelled
-     * @param user address of user
-     * @param orderNonce nonce of the order
-     */
-    function isUserOrderNonceExecutedOrCancelled(
-        address user,
-        uint256 orderNonce
-    ) external view returns (bool) {
-        return _isUserOrderNonceExecutedOrCancelled[user][orderNonce];
     }
 
     /**
@@ -725,56 +675,5 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         uint256 protocolFee = IExecutionStrategy(executionStrategy)
             .viewProtocolFee();
         return (protocolFee * amount) / 10000;
-    }
-
-    /**
-     * @notice Verify the validity of the maker order
-     * @param makerOrder maker order
-     * @param orderHash computed hash for the order
-     */
-    function _validateOrder(
-        OrderTypes.MakerOrder calldata makerOrder,
-        bytes32 orderHash
-    ) internal view {
-        // Verify whether order nonce has expired
-        require(
-            (
-                !_isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
-                    makerOrder.nonce
-                ]
-            ) && (makerOrder.nonce >= userMinOrderNonce[makerOrder.signer]),
-            "Order: Matching order expired"
-        );
-
-        // Verify the signer is not address(0)
-        require(makerOrder.signer != address(0), "Order: Invalid signer");
-
-        // Verify the amount is not 0
-        require(makerOrder.amount > 0, "Order: Amount cannot be 0");
-
-        // Verify the validity of the signature
-        require(
-            SignatureChecker.verify(
-                orderHash,
-                makerOrder.signer,
-                makerOrder.v,
-                makerOrder.r,
-                makerOrder.s,
-                DOMAIN_SEPARATOR
-            ),
-            "Signature: Invalid"
-        );
-
-        // Verify whether the currency is whitelisted
-        require(
-            currencyManager.isCurrencyWhitelisted(makerOrder.currency),
-            "Currency: Not whitelisted"
-        );
-
-        // Verify whether strategy can be executed
-        require(
-            executionManager.isStrategyWhitelisted(makerOrder.strategy),
-            "Strategy: Not whitelisted"
-        );
     }
 }
