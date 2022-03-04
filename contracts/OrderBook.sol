@@ -47,13 +47,32 @@ contract OrderBook is IOrderBook, Ownable {
         emit NewExchange(msg.sender, _exchange);
     }
 
-    function getMakerOrders(address collection, uint256 tokenId)
-        external
-        view
-        override
-        returns (OrderTypes.MakerOrder[] memory)
-    {
-        return makerOrders[collection][tokenId];
+    function getMakerOrders(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _offset,
+        uint256 _limit
+    ) external view override returns (OrderTypes.MakerOrder[] memory) {
+        OrderTypes.MakerOrder[] memory paginatedMakerOrders;
+
+        OrderTypes.MakerOrder[] memory nftMakerOrders = makerOrders[
+            _collection
+        ][_tokenId];
+        uint256 numNftMakerOrders = nftMakerOrders.length;
+
+        if (_offset >= numNftMakerOrders || _limit == 0) {
+            return paginatedMakerOrders;
+        }
+
+        uint256 end = _offset + _limit > numNftMakerOrders
+            ? numNftMakerOrders
+            : _offset + _limit;
+        paginatedMakerOrders = new OrderTypes.MakerOrder[](end - _offset);
+
+        for (uint256 i = _offset; i < end; i++) {
+            paginatedMakerOrders[i - _offset] = nftMakerOrders[i];
+        }
+        return paginatedMakerOrders;
     }
 
     function createMakerOrder(OrderTypes.MakerOrder memory makerOrder)
