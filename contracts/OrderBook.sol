@@ -3,18 +3,11 @@ pragma solidity ^0.8.0;
 
 // OpenZeppelin contracts
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // LooksRare interfaces
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
-import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
-import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {ILooksRareExchange} from "./interfaces/ILooksRareExchange.sol";
-import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
-import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
 import {IOrderBook} from "./interfaces/IOrderBook.sol";
 
 // LooksRare libraries
@@ -25,9 +18,7 @@ import {SignatureChecker} from "./libraries/SignatureChecker.sol";
  * @title OrderBook
  * @notice Manages and performs validation of orders placed on the exchange
  */
-contract OrderBook is IOrderBook, ReentrancyGuard, Ownable {
-    using SafeERC20 for IERC20;
-
+contract OrderBook is IOrderBook, Ownable {
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
 
