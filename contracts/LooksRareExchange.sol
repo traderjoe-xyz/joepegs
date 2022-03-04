@@ -65,12 +65,12 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     using OrderTypes for OrderTypes.TakerOrder;
 
     address public immutable WETH;
-    bytes32 public immutable DOMAIN_SEPARATOR;
+    bytes32 public immutable override DOMAIN_SEPARATOR;
 
     address public protocolFeeRecipient;
 
-    ICurrencyManager public currencyManager;
-    IExecutionManager public executionManager;
+    ICurrencyManager public override currencyManager;
+    IExecutionManager public override executionManager;
     IRoyaltyFeeManager public royaltyFeeManager;
     ITransferSelectorNFT public transferSelectorNFT;
     IOrderBook public orderBook;
@@ -122,7 +122,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param _royaltyFeeManager royalty fee manager address
      * @param _WETH wrapped ether address (for other chains, use wrapped native asset)
      * @param _protocolFeeRecipient protocol fee recipient
-     * @param _orderBook order book
+     * @param _orderBook order book address
      */
     constructor(
         address _currencyManager,
