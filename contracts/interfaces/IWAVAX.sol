@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU
 pragma solidity >=0.5.0;
 
-interface IWETH {
+interface IWAVAX {
     function deposit() external payable;
 
     function transfer(address to, uint256 value) external returns (bool);

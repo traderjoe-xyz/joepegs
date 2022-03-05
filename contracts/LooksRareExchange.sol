@@ -14,7 +14,7 @@ import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {ILooksRareExchange} from "./interfaces/ILooksRareExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
+import {IWAVAX} from "./interfaces/IWAVAX.sol";
 import {IOrderBook} from "./interfaces/IOrderBook.sol";
 
 // LooksRare libraries
@@ -64,7 +64,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
 
-    address public immutable WETH;
+    address public immutable WAVAX;
     bytes32 public immutable override DOMAIN_SEPARATOR;
 
     address public protocolFeeRecipient;
@@ -120,7 +120,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param _currencyManager currency manager address
      * @param _executionManager execution manager address
      * @param _royaltyFeeManager royalty fee manager address
-     * @param _WETH wrapped ether address (for other chains, use wrapped native asset)
+     * @param _WAVAX wrapped ether address (for other chains, use wrapped native asset)
      * @param _protocolFeeRecipient protocol fee recipient
      * @param _orderBook order book address
      */
@@ -128,7 +128,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         address _currencyManager,
         address _executionManager,
         address _royaltyFeeManager,
-        address _WETH,
+        address _WAVAX,
         address _protocolFeeRecipient,
         address _orderBook
     ) {
@@ -146,7 +146,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         currencyManager = ICurrencyManager(_currencyManager);
         executionManager = IExecutionManager(_executionManager);
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
-        WETH = _WETH;
+        WAVAX = _WAVAX;
         protocolFeeRecipient = _protocolFeeRecipient;
         orderBook = IOrderBook(_orderBook);
     }
@@ -164,15 +164,15 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
             "Order: Wrong sides"
         );
-        require(makerAsk.currency == WETH, "Order: Currency must be WETH");
+        require(makerAsk.currency == WAVAX, "Order: Currency must be WAVAX");
         require(
             msg.sender == takerBid.taker,
             "Order: Taker must be the sender"
         );
 
-        // If not enough ETH to cover the price, use WETH
+        // If not enough ETH to cover the price, use WAVAX
         if (takerBid.price > msg.value) {
-            IERC20(WETH).safeTransferFrom(
+            IERC20(WAVAX).safeTransferFrom(
                 msg.sender,
                 address(this),
                 (takerBid.price - msg.value)
@@ -182,7 +182,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         }
 
         // Wrap ETH sent to this contract
-        IWETH(WETH).deposit{value: msg.value}();
+        IWAVAX(WAVAX).deposit{value: msg.value}();
 
         // Check the maker ask order
         bytes32 askHash = makerAsk.hash();
@@ -207,7 +207,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         );
 
         // Execution part 1/2
-        _transferFeesAndFundsWithWETH(
+        _transferFeesAndFundsWithWAVAX(
             makerAsk.strategy,
             makerAsk.collection,
             tokenId,
@@ -469,7 +469,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param strategy address of the execution strategy
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
-     * @param currency currency being used for the purchase (e.g., WETH/USDC)
+     * @param currency currency being used for the purchase (e.g., WAVAX/USDC)
      * @param from sender of the funds
      * @param to seller's recipient
      * @param amount amount being transferred (in currency)
@@ -557,7 +557,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param amount amount being transferred (in currency)
      * @param minPercentageToAsk minimum percentage of the gross amount that goes to ask
      */
-    function _transferFeesAndFundsWithWETH(
+    function _transferFeesAndFundsWithWAVAX(
         address strategy,
         address collection,
         uint256 tokenId,
@@ -576,7 +576,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             if (
                 (protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)
             ) {
-                IERC20(WETH).safeTransfer(
+                IERC20(WAVAX).safeTransfer(
                     protocolFeeRecipient,
                     protocolFeeAmount
                 );
@@ -599,7 +599,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             if (
                 (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
             ) {
-                IERC20(WETH).safeTransfer(
+                IERC20(WAVAX).safeTransfer(
                     royaltyFeeRecipient,
                     royaltyFeeAmount
                 );
@@ -609,7 +609,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
                     collection,
                     tokenId,
                     royaltyFeeRecipient,
-                    address(WETH),
+                    address(WAVAX),
                     royaltyFeeAmount
                 );
             }
@@ -622,7 +622,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
 
         // 3. Transfer final amount (post-fees) to seller
         {
-            IERC20(WETH).safeTransfer(to, finalSellerAmount);
+            IERC20(WAVAX).safeTransfer(to, finalSellerAmount);
         }
     }
 
