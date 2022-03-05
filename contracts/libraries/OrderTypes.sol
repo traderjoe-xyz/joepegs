@@ -18,7 +18,7 @@ library OrderTypes {
         uint256 tokenId; // id of the token
         uint256 amount; // amount of tokens to sell/purchase (must be 1 for ERC721, 1+ for ERC1155)
         address strategy; // strategy for trade execution (e.g., DutchAuction, StandardSaleForFixedPrice)
-        address currency; // currency (e.g., WETH)
+        address currency; // currency (e.g., WAVAX)
         uint256 nonce; // order nonce (must be unique unless new maker order is meant to override existing one e.g., lower ask price)
         uint256 startTime; // startTime in timestamp
         uint256 endTime; // endTime in timestamp
