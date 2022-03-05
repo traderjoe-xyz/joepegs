@@ -156,7 +156,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param takerBid taker bid order
      * @param makerAsk maker ask order
      */
-    function matchAskWithTakerBidUsingETHAndWETH(
+    function matchAskWithTakerBidUsingAVAXAndWAVAX(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
     ) external payable override nonReentrant {
