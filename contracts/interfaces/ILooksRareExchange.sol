@@ -7,7 +7,7 @@ import {IExecutionManager} from "./IExecutionManager.sol";
 import {OrderTypes} from "../libraries/OrderTypes.sol";
 
 interface ILooksRareExchange {
-    function matchAskWithTakerBidUsingETHAndWETH(
+    function matchAskWithTakerBidUsingAVAXAndWAVAX(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
     ) external payable;
