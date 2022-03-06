@@ -102,6 +102,9 @@ describe("Exchange", function () {
     );
     await this.orderBook.setExchange(this.exchange.address);
     await this.orderBook.transferOwnership(this.exchange.address);
+    await this.exchange.updateTransferSelectorNFT(
+      this.transferSelectorNFT.address
+    );
 
     // Mint
     await this.erc721Token.mint(this.alice.address);
@@ -172,12 +175,22 @@ describe("Exchange", function () {
     });
 
     it("can perform fixed price sale", async function () {
-      // 1. Create maker ask order
+      // Check that alice indeed owns the NFT
+      const tokenId = 1;
+      expect(await this.erc721Token.ownerOf(tokenId)).to.be.equal(
+        this.alice.address
+      );
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.transferManagerERC721.address, tokenId);
+
+      // Create maker ask order
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
       const startTime = parseInt(Date.now() / 1000) - 1000;
       console.log(`START TIME:`, startTime);
       const price = 100;
-      const tokenId = 1;
       const minPercentageToAsk = 9000;
       const makerAskOrder = {
         isOrderAsk: true,
@@ -207,7 +220,7 @@ describe("Exchange", function () {
 
       await this.orderBook.connect(this.alice).createMakerOrder(makerAskOrder);
 
-      // 2. Create taker bid order
+      // Create taker bid order
       const takerBidOrder = {
         isOrderAsk: false,
         taker: this.bob.address,
@@ -217,16 +230,21 @@ describe("Exchange", function () {
         params: ethers.utils.formatBytes32String(""),
       };
 
-      // 3. Approve exchange to transfer WAVAX
+      // Approve exchange to transfer WAVAX
       await this.wavax
         .connect(this.bob)
         .deposit({ value: ethers.utils.parseEther("1") });
       await this.wavax.connect(this.bob).approve(this.exchange.address, price);
 
-      // 4. Match taker bid order with maker ask order
+      // Match taker bid order with maker ask order
       await this.exchange
         .connect(this.bob)
         .matchAskWithTakerBid(takerBidOrder, makerAskOrder);
+
+      // Check that bob now owns the NFT!
+      expect(await this.erc721Token.ownerOf(tokenId)).to.be.equal(
+        this.bob.address
+      );
     });
   });
 
