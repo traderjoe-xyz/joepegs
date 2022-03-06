@@ -77,37 +77,36 @@ describe("Exchange", function () {
       this.transferManagerERC721.address,
       this.transferManagerERC1155.address
     );
+
+    this.DOMAIN = {
+      name: "LooksRareExchange",
+      version: "1",
+      chainId: 43114, // Avalanche mainnet
+      verifyingContract: this.exchange.address,
+    };
+    this.MAKER_ORDER_TYPE = [
+      { name: "isOrderAsk", type: "bool" },
+      { name: "signer", type: "address" },
+      { name: "collection", type: "address" },
+      { name: "price", type: "uint256" },
+      { name: "tokenId", type: "uint256" },
+      { name: "amount", type: "uint256" },
+      { name: "strategy", type: "address" },
+      { name: "currency", type: "address" },
+      { name: "nonce", type: "uint256" },
+      { name: "startTime", type: "uint256" },
+      { name: "endTime", type: "uint256" },
+      { name: "minPercentageToAsk", type: "uint256" },
+      { name: "params", type: "bytes" },
+    ];
+    this.TYPES = {
+      MakerOrder: this.MAKER_ORDER_TYPE,
+    };
   });
 
   describe("test", function () {
     it("can sign EIP-712 message", async function () {
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
-      const domain = {
-        name: "LooksRareExchange",
-        version: "1",
-        chainId: 43114, // Avalanche mainnet
-        verifyingContract: this.exchange.address,
-      };
-
-      const makerOrderType = [
-        { name: "isOrderAsk", type: "bool" },
-        { name: "signer", type: "address" },
-        { name: "collection", type: "address" },
-        { name: "price", type: "uint256" },
-        { name: "tokenId", type: "uint256" },
-        { name: "amount", type: "uint256" },
-        { name: "strategy", type: "address" },
-        { name: "currency", type: "address" },
-        { name: "nonce", type: "uint256" },
-        { name: "startTime", type: "uint256" },
-        { name: "endTime", type: "uint256" },
-        { name: "minPercentageToAsk", type: "uint256" },
-        { name: "params", type: "bytes" },
-      ];
-      const types = {
-        MakerOrder: makerOrderType,
-      };
-
       const startTime = Date.now();
       const makerOrder = {
         isOrderAsk: true,
@@ -125,15 +124,15 @@ describe("Exchange", function () {
         params: ethers.utils.formatBytes32String(""),
       };
       const signedMessage = await this.alice._signTypedData(
-        domain,
-        types,
+        this.DOMAIN,
+        this.TYPES,
         makerOrder
       );
 
       const expectedSignerAddress = this.alice.address;
       const recoveredAddress = ethers.utils.verifyTypedData(
-        domain,
-        types,
+        this.DOMAIN,
+        this.TYPES,
         makerOrder,
         signedMessage
       );
