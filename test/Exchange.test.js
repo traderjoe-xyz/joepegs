@@ -104,7 +104,7 @@ describe("Exchange", function () {
     };
   });
 
-  describe("test", function () {
+  describe("Exchange", function () {
     it("can sign EIP-712 message", async function () {
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
       const startTime = Date.now();
@@ -137,6 +137,40 @@ describe("Exchange", function () {
         signedMessage
       );
       expect(expectedSignerAddress).to.be.equal(recoveredAddress);
+    });
+
+    it("can place maker order", async function () {
+      // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
+      const startTime = Date.now();
+      const makerOrder = {
+        isOrderAsk: true,
+        signer: this.alice.address,
+        collection: this.erc721Token.address,
+        price: 100,
+        tokenId: 1,
+        amount: 1,
+        strategy: this.strategyStandardSaleForFixedPrice.address,
+        currency: this.WAVAX,
+        nonce: 1,
+        startTime,
+        endTime: startTime + 100000,
+        minPercentageToAsk: 9000,
+        params: ethers.utils.formatBytes32String(""),
+      };
+      const signedMessage = await this.alice._signTypedData(
+        this.DOMAIN,
+        this.TYPES,
+        makerOrder
+      );
+
+      console.log(`SIGNED MESSAGE:`, signedMessage, signedMessage.length);
+      const { r, s, v } = ethers.utils.splitSignature(signedMessage);
+      console.log(`RSV:`, r, s, v);
+      makerOrder.r = r;
+      makerOrder.s = s;
+      makerOrder.v = v;
+
+      await this.orderBook.connect(this.alice).createMakerOrder(makerOrder);
     });
   });
 
