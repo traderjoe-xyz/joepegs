@@ -1,6 +1,7 @@
 const { ethers, network, upgrades } = require("hardhat");
 const { expect } = require("chai");
 const { advanceTimeAndBlock, duration } = require("./utils/time");
+const { signTypedData } = require("@metamask/eth-sig-util");
 
 describe("Exchange", function () {
   before(async function () {
@@ -78,12 +79,67 @@ describe("Exchange", function () {
       this.transferManagerERC1155.address
     );
 
+    // Following https://medium.com/metamask/eip712-is-coming-what-to-expect-and-how-to-use-it-bb92fd1a7a26
+    // const domain = [
+    //   { name: "name", type: "string" },
+    //   { name: "version", type: "string" },
+    //   { name: "chainId", type: "uint256" },
+    //   { name: "verifyingContract", type: "address" },
+    // ];
+    // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
+    const makerOrderType = [
+      { name: "isOrderAsk", type: "bool" },
+      { name: "signer", type: "address" },
+      { name: "collection", type: "address" },
+      { name: "price", type: "uint256" },
+      { name: "tokenId", type: "uint256" },
+      { name: "amount", type: "uint256" },
+      { name: "strategy", type: "address" },
+      { name: "currency", type: "address" },
+      { name: "nonce", type: "uint256" },
+      { name: "startTime", type: "uint256" },
+      { name: "endTime", type: "uint256" },
+      { name: "minPercentageToAsk", type: "uint256" },
+      { name: "params", type: "bytes" },
+    ];
+    const types = {
+      MakerOrder: makerOrderType,
+    };
+    // const makerOrder = [
+    //   { name: "isOrderAsk", type: "bool", value: true },
+    //   { name: "signer", type: "address", value: this.alice.address },
+    //   { name: "collection", type: "address", value: this.erc721Token.address },
+    //   { name: "price", type: "uint256", value: 1e18 },
+    //   { name: "tokenId", type: "uint256", value: 1 },
+    //   { name: "amount", type: "uint256", value: 1 },
+    //   {
+    //     name: "strategy",
+    //     type: "address",
+    //     value: this.strategyStandardSaleForFixedPrice.address,
+    //   },
+    //   { name: "currency", type: "address", value: this.WAVAX },
+    //   { name: "nonce", type: "uint256", value: 1 },
+    //   { name: "startTime", type: "uint256", value: startTime },
+    //   { name: "endTime", type: "uint256", value: startTime + 100000 },
+    //   { name: "minPercentageToAsk", type: "uint256", value: 9000 },
+    //   { name: "params", type: "bytes", value: "" },
+    // ];
+
+    const domain = {
+      name: "LooksRareExchange",
+      version: "1",
+      chainId: 43114, // Avalanche mainnet
+      verifyingContract: this.exchange.address,
+    };
+
+    // console.log(`SIGNER:`, ethers.provider.getSigner());
+
     const startTime = Date.now();
     const makerOrder = {
       isOrderAsk: true,
       signer: this.alice.address,
       collection: this.erc721Token.address,
-      price: 1e18,
+      price: 100,
       tokenId: 1,
       amount: 1,
       strategy: this.strategyStandardSaleForFixedPrice.address,
@@ -92,8 +148,74 @@ describe("Exchange", function () {
       startTime,
       endTime: startTime + 100000,
       minPercentageToAsk: 9000,
-      params: "",
+      params: ethers.utils.formatBytes32String(""),
     };
+    const signedMessage = await this.alice._signTypedData(
+      domain,
+      types,
+      makerOrder
+    );
+
+    const expectedSignerAddress = this.alice.address;
+    const recoveredAddress = ethers.utils.verifyTypedData(
+      domain,
+      types,
+      makerOrder,
+      signedMessage
+    );
+    console.log(
+      `ADDRESSES:`,
+      expectedSignerAddress,
+      recoveredAddress,
+      expectedSignerAddress === recoveredAddress
+    );
+    // const data = JSON.stringify({
+    //   types: {
+    //     EIP712Domain: domain,
+    //     MakerOrder: makerOrder,
+    //   },
+    //   domain: domainData,
+    //   primaryType: "MakerOrder",
+    //   message: message,
+    // });
+
+    // const signedMessage = await ethers.provider.send("eth_signTypedData_v3", [
+    //   this.alice.address,
+    //   data,
+    // ]);
+    console.log(`SIGNED MESSAGE:`, signedMessage);
+    // const signature = signedMessage.result.substring(2);
+    // const r = "0x" + signature.substring(0, 64);
+    // const s = "0x" + signature.substring(64, 128);
+    // const v = parseInt(signature.substring(128, 130), 16);
+
+    // const makerOrder = [
+    //   { name: "isOrderAsk", type: "bool", value: true },
+    //   { name: "signer", type: "address", value: this.alice.address },
+    //   { name: "collection", type: "address", value: this.erc721Token.address },
+    //   { name: "price", type: "uint256", value: 1e18 },
+    //   { name: "tokenId", type: "uint256", value: 1 },
+    //   { name: "amount", type: "uint256", value: 1 },
+    //   {
+    //     name: "strategy",
+    //     type: "address",
+    //     value: this.strategyStandardSaleForFixedPrice.address,
+    //   },
+    //   { name: "currency", type: "address", value: this.WAVAX },
+    //   { name: "nonce", type: "uint256", value: 1 },
+    //   { name: "startTime", type: "uint256", value: startTime },
+    //   { name: "endTime", type: "uint256", value: startTime + 100000 },
+    //   { name: "minPercentageToAsk", type: "uint256", value: 9000 },
+    //   { name: "params", type: "bytes", value: "" },
+    // ];
+
+    // // https://metamask.github.io/eth-sig-util/modules.html#signTypedData
+    // const signedMessage = signTypedData({
+    //   privateKey: Buffer.from(this.alice.privateKey, "hex"),
+    //   data: makerOrder,
+    //   version: "V4",
+    // });
+    // console.log(`SIGNED MESSAGE:`, signedMessage);
   });
 
   describe("test", function () {
