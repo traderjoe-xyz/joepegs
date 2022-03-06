@@ -78,11 +78,21 @@ describe("Exchange", function () {
       this.transferManagerERC1155.address
     );
 
+    const startTime = Date.now();
     const makerOrder = {
       isOrderAsk: true,
       signer: this.alice.address,
       collection: this.erc721Token.address,
       price: 1e18,
+      tokenId: 1,
+      amount: 1,
+      strategy: this.strategyStandardSaleForFixedPrice.address,
+      currency: this.WAVAX,
+      nonce: 1,
+      startTime,
+      endTime: startTime + 100000,
+      minPercentageToAsk: 9000,
+      params: "",
     };
   });
 
