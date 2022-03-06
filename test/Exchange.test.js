@@ -78,7 +78,12 @@ describe("Exchange", function () {
       this.transferManagerERC1155.address
     );
 
-    await this.orderBook.connect(this.dev).setExchange(this.exchange.address);
+    // Initialization
+    await this.currencyManager.addCurrency(this.WAVAX);
+    await this.executionManager.addStrategy(
+      this.strategyStandardSaleForFixedPrice.address
+    );
+    await this.orderBook.setExchange(this.exchange.address);
 
     const { chainId } = await ethers.provider.getNetwork();
     this.DOMAIN = {
@@ -87,7 +92,6 @@ describe("Exchange", function () {
       chainId,
       verifyingContract: this.exchange.address,
     };
-    console.log(`DOMAIN:`, this.DOMAIN);
     this.MAKER_ORDER_TYPE = [
       { name: "isOrderAsk", type: "bool" },
       { name: "signer", type: "address" },
@@ -167,9 +171,7 @@ describe("Exchange", function () {
         makerOrder
       );
 
-      console.log(`SIGNED MESSAGE:`, signedMessage, signedMessage.length);
       const { r, s, v } = ethers.utils.splitSignature(signedMessage);
-      console.log(`RSV:`, r, s, v);
       makerOrder.r = r;
       makerOrder.s = s;
       makerOrder.v = v;
