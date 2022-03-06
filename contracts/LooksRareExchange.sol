@@ -21,6 +21,8 @@ import {IOrderBook} from "./interfaces/IOrderBook.sol";
 import {OrderTypes} from "./libraries/OrderTypes.sol";
 import {SignatureChecker} from "./libraries/SignatureChecker.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title LooksRareExchange
  * @notice It is the core contract of the LooksRare exchange.
@@ -142,6 +144,8 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
                 address(this)
             )
         );
+        console.log("Exchange ChainID: %d", block.chainid);
+        console.logAddress(address(this));
 
         currencyManager = ICurrencyManager(_currencyManager);
         executionManager = IExecutionManager(_executionManager);

@@ -78,12 +78,16 @@ describe("Exchange", function () {
       this.transferManagerERC1155.address
     );
 
+    await this.orderBook.connect(this.dev).setExchange(this.exchange.address);
+
+    const { chainId } = await ethers.provider.getNetwork();
     this.DOMAIN = {
       name: "LooksRareExchange",
       version: "1",
-      chainId: 43114, // Avalanche mainnet
+      chainId,
       verifyingContract: this.exchange.address,
     };
+    console.log(`DOMAIN:`, this.DOMAIN);
     this.MAKER_ORDER_TYPE = [
       { name: "isOrderAsk", type: "bool" },
       { name: "signer", type: "address" },
