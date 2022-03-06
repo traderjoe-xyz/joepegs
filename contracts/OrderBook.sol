@@ -28,7 +28,7 @@ contract OrderBook is IOrderBook, Ownable {
     mapping(address => mapping(uint256 => bool))
         private _isUserOrderNonceExecutedOrCancelled;
 
-    uint256 latestOrderNonce;
+    mapping(address => uint256) public userLatestOrderNonce;
 
     /// @notice Mapping from NFT contract address => NFT token ID => maker orders
     mapping(address => mapping(uint256 => OrderTypes.MakerOrder[]))
@@ -84,12 +84,16 @@ contract OrderBook is IOrderBook, Ownable {
             "Expected maker order signer to be msg.sender"
         );
 
+        uint256 latestOrderNonce = userLatestOrderNonce[msg.sender];
         uint256 newOrderNonce = latestOrderNonce + 1;
-        makerOrder.nonce = newOrderNonce;
+        require(
+            makerOrder.nonce == newOrderNonce,
+            "Expected maker order nonce to be one greater than latest"
+        );
 
         validateOrder(makerOrder, makerOrder.hash());
 
-        latestOrderNonce = newOrderNonce;
+        userLatestOrderNonce[msg.sender] += 1;
 
         address collection = makerOrder.collection;
         uint256 tokenId = makerOrder.tokenId;

@@ -77,6 +77,13 @@ describe("Exchange", function () {
       this.transferManagerERC721.address,
       this.transferManagerERC1155.address
     );
+
+    const makerOrder = {
+      isOrderAsk: true,
+      signer: this.alice.address,
+      collection: this.erc721Token.address,
+      price: 1e18,
+    };
   });
 
   describe("test", function () {
