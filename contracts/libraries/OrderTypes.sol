@@ -47,9 +47,11 @@ library OrderTypes {
             keccak256(
                 abi.encode(
                     MAKER_ORDER_HASH,
+                    makerOrder.isOrderAsk,
                     makerOrder.signer,
                     makerOrder.collection,
                     makerOrder.price,
+                    makerOrder.tokenId,
                     makerOrder.amount,
                     makerOrder.strategy,
                     makerOrder.currency,
