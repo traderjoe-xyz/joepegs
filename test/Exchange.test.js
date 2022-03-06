@@ -231,9 +231,10 @@ describe("Exchange", function () {
       };
 
       // Approve exchange to transfer WAVAX
+      const bobWavaxBalanceBefore = ethers.utils.parseEther("1");
       await this.wavax
         .connect(this.bob)
-        .deposit({ value: ethers.utils.parseEther("1") });
+        .deposit({ value: bobWavaxBalanceBefore });
       await this.wavax.connect(this.bob).approve(this.exchange.address, price);
 
       // Match taker bid order with maker ask order
@@ -241,7 +242,10 @@ describe("Exchange", function () {
         .connect(this.bob)
         .matchAskWithTakerBid(takerBidOrder, makerAskOrder);
 
-      // Check that bob now owns the NFT!
+      // Check that bob paid price and now owns the NFT!
+      expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
+        bobWavaxBalanceBefore.sub(price)
+      );
       expect(await this.erc721Token.ownerOf(tokenId)).to.be.equal(
         this.bob.address
       );
