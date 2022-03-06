@@ -250,7 +250,6 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
     ) external override nonReentrant {
-        console.log("Block timestamp: %d", block.timestamp);
         require(
             (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
             "Order: Wrong sides"
