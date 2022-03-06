@@ -189,7 +189,6 @@ describe("Exchange", function () {
       // Create maker ask order
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
       const startTime = parseInt(Date.now() / 1000) - 1000;
-      console.log(`START TIME:`, startTime);
       const price = 100;
       const minPercentageToAsk = 9000;
       const makerAskOrder = {
