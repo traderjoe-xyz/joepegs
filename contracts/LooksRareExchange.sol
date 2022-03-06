@@ -144,8 +144,6 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
                 address(this)
             )
         );
-        console.log("Exchange ChainID: %d", block.chainid);
-        console.logAddress(address(this));
 
         currencyManager = ICurrencyManager(_currencyManager);
         executionManager = IExecutionManager(_executionManager);
