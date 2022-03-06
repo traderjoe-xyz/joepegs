@@ -1,6 +1,9 @@
 const { ethers, network, upgrades } = require("hardhat");
 const { expect } = require("chai");
 const { advanceTimeAndBlock, duration } = require("./utils/time");
+const { start } = require("repl");
+
+const WAVAX = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
 describe("Exchange", function () {
   before(async function () {
@@ -38,9 +41,24 @@ describe("Exchange", function () {
     this.alice = this.signers[1];
     this.bob = this.signers[2];
     this.carol = this.signers[3];
+
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: "https://api.avax.network/ext/bc/C/rpc",
+          },
+          live: false,
+          saveDeployments: true,
+          tags: ["test", "local"],
+        },
+      ],
+    });
   });
 
   beforeEach(async function () {
+    this.wavax = await ethers.getContractAt("IWAVAX", WAVAX);
     this.erc721Token = await this.ERC721TokenCF.deploy();
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     this.executionManager = await this.ExecutionManagerCF.deploy();
@@ -58,12 +76,11 @@ describe("Exchange", function () {
     this.protocolFee = 100; // 100 = 1%
     this.strategyStandardSaleForFixedPrice =
       await this.StrategyStandardSaleForFixedPriceCF.deploy(this.protocolFee);
-    this.WAVAX = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
     this.exchange = await this.ExchangeCF.deploy(
       this.currencyManager.address,
       this.executionManager.address,
       this.royaltyFeeManager.address,
-      this.WAVAX,
+      WAVAX,
       this.dev.address, // protocolFeeRecipient
       this.orderBook.address
     );
@@ -79,11 +96,15 @@ describe("Exchange", function () {
     );
 
     // Initialization
-    await this.currencyManager.addCurrency(this.WAVAX);
+    await this.currencyManager.addCurrency(WAVAX);
     await this.executionManager.addStrategy(
       this.strategyStandardSaleForFixedPrice.address
     );
     await this.orderBook.setExchange(this.exchange.address);
+    await this.orderBook.transferOwnership(this.exchange.address);
+
+    // Mint
+    await this.erc721Token.mint(this.alice.address);
 
     const { chainId } = await ethers.provider.getNetwork();
     this.DOMAIN = {
@@ -115,68 +136,97 @@ describe("Exchange", function () {
   describe("Exchange", function () {
     it("can sign EIP-712 message", async function () {
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
-      const startTime = Date.now();
-      const makerOrder = {
+      const startTime = parseInt(Date.now() / 1000) - 1000;
+      const price = 100;
+      const tokenId = 1;
+      const minPercentageToAsk = 9000;
+      const makerAskOrder = {
         isOrderAsk: true,
         signer: this.alice.address,
         collection: this.erc721Token.address,
-        price: 100,
-        tokenId: 1,
+        price,
+        tokenId,
         amount: 1,
         strategy: this.strategyStandardSaleForFixedPrice.address,
-        currency: this.WAVAX,
+        currency: WAVAX,
         nonce: 1,
         startTime,
-        endTime: startTime + 100000,
-        minPercentageToAsk: 9000,
+        endTime: startTime + 1000,
+        minPercentageToAsk,
         params: ethers.utils.formatBytes32String(""),
       };
       const signedMessage = await this.alice._signTypedData(
         this.DOMAIN,
         this.TYPES,
-        makerOrder
+        makerAskOrder
       );
 
       const expectedSignerAddress = this.alice.address;
       const recoveredAddress = ethers.utils.verifyTypedData(
         this.DOMAIN,
         this.TYPES,
-        makerOrder,
+        makerAskOrder,
         signedMessage
       );
       expect(expectedSignerAddress).to.be.equal(recoveredAddress);
     });
 
-    it("can place maker order", async function () {
+    it("can perform fixed price sale", async function () {
+      // 1. Create maker ask order
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
-      const startTime = Date.now();
-      const makerOrder = {
+      const startTime = parseInt(Date.now() / 1000) - 1000;
+      console.log(`START TIME:`, startTime);
+      const price = 100;
+      const tokenId = 1;
+      const minPercentageToAsk = 9000;
+      const makerAskOrder = {
         isOrderAsk: true,
         signer: this.alice.address,
         collection: this.erc721Token.address,
-        price: 100,
-        tokenId: 1,
+        price,
+        tokenId,
         amount: 1,
         strategy: this.strategyStandardSaleForFixedPrice.address,
-        currency: this.WAVAX,
+        currency: WAVAX,
         nonce: 1,
         startTime,
-        endTime: startTime + 100000,
-        minPercentageToAsk: 9000,
+        endTime: startTime + 1000,
+        minPercentageToAsk,
         params: ethers.utils.formatBytes32String(""),
       };
       const signedMessage = await this.alice._signTypedData(
         this.DOMAIN,
         this.TYPES,
-        makerOrder
+        makerAskOrder
       );
 
       const { r, s, v } = ethers.utils.splitSignature(signedMessage);
-      makerOrder.r = r;
-      makerOrder.s = s;
-      makerOrder.v = v;
+      makerAskOrder.r = r;
+      makerAskOrder.s = s;
+      makerAskOrder.v = v;
 
-      await this.orderBook.connect(this.alice).createMakerOrder(makerOrder);
+      await this.orderBook.connect(this.alice).createMakerOrder(makerAskOrder);
+
+      // 2. Create taker bid order
+      const takerBidOrder = {
+        isOrderAsk: false,
+        taker: this.bob.address,
+        price,
+        tokenId,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // 3. Approve exchange to transfer WAVAX
+      await this.wavax
+        .connect(this.bob)
+        .deposit({ value: ethers.utils.parseEther("1") });
+      await this.wavax.connect(this.bob).approve(this.exchange.address, price);
+
+      // 4. Match taker bid order with maker ask order
+      await this.exchange
+        .connect(this.bob)
+        .matchAskWithTakerBid(takerBidOrder, makerAskOrder);
     });
   });
 
