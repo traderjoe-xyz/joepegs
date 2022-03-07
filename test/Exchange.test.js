@@ -12,7 +12,6 @@ describe("Exchange", function () {
     this.ExecutionManagerCF = await ethers.getContractFactory(
       "ExecutionManager"
     );
-    this.OrderBookCF = await ethers.getContractFactory("OrderBook");
     this.RoyaltyFeeRegistryCF = await ethers.getContractFactory(
       "RoyaltyFeeRegistry"
     );
@@ -62,7 +61,6 @@ describe("Exchange", function () {
     this.erc721Token = await this.ERC721TokenCF.deploy();
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     this.executionManager = await this.ExecutionManagerCF.deploy();
-    this.orderBook = await this.OrderBookCF.deploy();
     this.royaltyFeeLimit = 1000; // 1000 = 10%
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy(
       this.royaltyFeeLimit
@@ -81,8 +79,7 @@ describe("Exchange", function () {
       this.executionManager.address,
       this.royaltyFeeManager.address,
       WAVAX,
-      this.dev.address, // protocolFeeRecipient
-      this.orderBook.address
+      this.dev.address // protocolFeeRecipient
     );
     this.transferManagerERC721 = await this.TransferManagerERC721CF.deploy(
       this.exchange.address
@@ -100,8 +97,6 @@ describe("Exchange", function () {
     await this.executionManager.addStrategy(
       this.strategyStandardSaleForFixedPrice.address
     );
-    await this.orderBook.setExchange(this.exchange.address);
-    await this.orderBook.transferOwnership(this.exchange.address);
     await this.exchange.updateTransferSelectorNFT(
       this.transferSelectorNFT.address
     );
@@ -217,7 +212,7 @@ describe("Exchange", function () {
       makerAskOrder.s = s;
       makerAskOrder.v = v;
 
-      await this.orderBook.connect(this.alice).createMakerOrder(makerAskOrder);
+      await this.exchange.connect(this.alice).createMakerOrder(makerAskOrder);
 
       // Create taker bid order
       const takerBidOrder = {
