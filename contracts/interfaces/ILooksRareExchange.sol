@@ -30,10 +30,4 @@ interface ILooksRareExchange {
     ) external view returns (OrderTypes.MakerOrder[] memory);
 
     function createMakerOrder(OrderTypes.MakerOrder memory makerOrder) external;
-
-    function DOMAIN_SEPARATOR() external view returns (bytes32);
-
-    function currencyManager() external view returns (ICurrencyManager);
-
-    function executionManager() external view returns (IExecutionManager);
 }
