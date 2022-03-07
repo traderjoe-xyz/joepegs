@@ -66,12 +66,12 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     using OrderTypes for OrderTypes.TakerOrder;
 
     address public immutable WAVAX;
-    bytes32 public immutable override DOMAIN_SEPARATOR;
+    bytes32 public immutable DOMAIN_SEPARATOR;
 
     address public protocolFeeRecipient;
 
-    ICurrencyManager public override currencyManager;
-    IExecutionManager public override executionManager;
+    ICurrencyManager public currencyManager;
+    IExecutionManager public executionManager;
     IRoyaltyFeeManager public royaltyFeeManager;
     ITransferSelectorNFT public transferSelectorNFT;
 
