@@ -71,15 +71,18 @@ describe("Exchange", function () {
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy(
       this.royaltyFeeRegistry.address
     );
-    this.protocolFee = 100; // 100 = 1%
+    this.protocolFeeRecipient = this.dev.address;
+    this.protocolFeePct = 100; // 100 = 1%
     this.strategyStandardSaleForFixedPrice =
-      await this.StrategyStandardSaleForFixedPriceCF.deploy(this.protocolFee);
+      await this.StrategyStandardSaleForFixedPriceCF.deploy(
+        this.protocolFeePct
+      );
     this.exchange = await this.ExchangeCF.deploy(
       this.currencyManager.address,
       this.executionManager.address,
       this.royaltyFeeManager.address,
       WAVAX,
-      this.dev.address // protocolFeeRecipient
+      this.protocolFeeRecipient
     );
     this.transferManagerERC721 = await this.TransferManagerERC721CF.deploy(
       this.exchange.address
@@ -184,7 +187,7 @@ describe("Exchange", function () {
       // Create maker ask order
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
       const startTime = parseInt(Date.now() / 1000) - 1000;
-      const price = 100;
+      const price = ethers.utils.parseEther("1");
       const minPercentageToAsk = 9000;
       const makerAskOrder = {
         isOrderAsk: true,
@@ -233,6 +236,9 @@ describe("Exchange", function () {
       const bobWavaxBalanceBefore = await this.wavax.balanceOf(
         this.bob.address
       );
+      const protocolRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
 
       // Get maker ask order from the contract
       const makerAskOrderFromContract = (
@@ -249,12 +255,21 @@ describe("Exchange", function () {
         .connect(this.bob)
         .matchAskWithTakerBid(takerBidOrder, makerAskOrderFromContract);
 
-      // Check that bob paid price and now owns the NFT!
+      // Check that bob paid `price` and now owns the NFT!
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
         bobWavaxBalanceBefore.sub(price)
       );
       expect(await this.erc721Token.ownerOf(tokenId)).to.be.equal(
         this.bob.address
+      );
+
+      // Check that protocol received protocol fees
+      const protocolRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      expect(protocolRecipientWavaxBalanceAfter).to.be.equal(
+        protocolRecipientWavaxBalanceBefore +
+          price.mul(this.protocolFeePct).div(10000)
       );
     });
   });
