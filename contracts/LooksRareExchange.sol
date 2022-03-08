@@ -20,8 +20,6 @@ import {IWAVAX} from "./interfaces/IWAVAX.sol";
 import {OrderTypes} from "./libraries/OrderTypes.sol";
 import {SignatureChecker} from "./libraries/SignatureChecker.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title LooksRareExchange
  * @notice It is the core contract of the LooksRare exchange.
