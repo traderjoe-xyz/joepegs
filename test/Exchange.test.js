@@ -37,9 +37,10 @@ describe("Exchange", function () {
 
     this.signers = await ethers.getSigners();
     this.dev = this.signers[0];
-    this.alice = this.signers[1];
-    this.bob = this.signers[2];
-    this.carol = this.signers[3];
+    this.royaltyFeeRecipient = this.signers[1].address;
+    this.alice = this.signers[2];
+    this.bob = this.signers[3];
+    this.carol = this.signers[4];
 
     await network.provider.request({
       method: "hardhat_reset",
@@ -95,6 +96,9 @@ describe("Exchange", function () {
       this.transferManagerERC1155.address
     );
 
+    // Mint
+    await this.erc721Token.mint(this.alice.address);
+
     // Initialization
     await this.currencyManager.addCurrency(WAVAX);
     await this.executionManager.addStrategy(
@@ -103,9 +107,7 @@ describe("Exchange", function () {
     await this.exchange.updateTransferSelectorNFT(
       this.transferSelectorNFT.address
     );
-
-    // Mint
-    await this.erc721Token.mint(this.alice.address);
+    await this.erc721Token.transferOwnership(this.royaltyFeeRecipient);
 
     const { chainId } = await ethers.provider.getNetwork();
     this.DOMAIN = {
@@ -172,7 +174,7 @@ describe("Exchange", function () {
       expect(expectedSignerAddress).to.be.equal(recoveredAddress);
     });
 
-    it("can perform fixed price sale", async function () {
+    it("can perform fixed price sale with maker ask and taker bid", async function () {
       // Check that alice indeed owns the NFT
       const tokenId = 1;
       expect(await this.erc721Token.ownerOf(tokenId)).to.be.equal(
@@ -239,6 +241,9 @@ describe("Exchange", function () {
       const protocolRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
         this.protocolFeeRecipient
       );
+      const royaltyFeeRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
 
       // Get maker ask order from the contract
       const makerAskOrderFromContract = (
@@ -268,8 +273,21 @@ describe("Exchange", function () {
         this.protocolFeeRecipient
       );
       expect(protocolRecipientWavaxBalanceAfter).to.be.equal(
-        protocolRecipientWavaxBalanceBefore +
+        protocolRecipientWavaxBalanceBefore.add(
           price.mul(this.protocolFeePct).div(10000)
+        )
+      );
+
+      // Check that royalty recipient received royalty fees
+      const [_, royaltyAmount] = await this.erc721Token.royaltyInfo(
+        tokenId,
+        price
+      );
+      const royaltyFeeRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      expect(royaltyFeeRecipientWavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipientWavaxBalanceBefore.add(royaltyAmount)
       );
     });
   });
