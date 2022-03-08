@@ -136,7 +136,7 @@ describe("Exchange", function () {
     };
   });
 
-  describe("Exchange", function () {
+  describe("can execute sales", function () {
     it("can sign EIP-712 message", async function () {
       // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
       const startTime = parseInt(Date.now() / 1000) - 1000;
@@ -206,12 +206,13 @@ describe("Exchange", function () {
         minPercentageToAsk,
         params: ethers.utils.formatBytes32String(""),
       };
+
+      // Sign maker ask order
       const signedMessage = await this.alice._signTypedData(
         this.DOMAIN,
         this.TYPES,
         makerAskOrder
       );
-
       const { r, s, v } = ethers.utils.splitSignature(signedMessage);
       makerAskOrder.r = r;
       makerAskOrder.s = s;
@@ -235,6 +236,9 @@ describe("Exchange", function () {
         .deposit({ value: ethers.utils.parseEther("1") });
       await this.wavax.connect(this.bob).approve(this.exchange.address, price);
 
+      const aliceWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.alice.address
+      );
       const bobWavaxBalanceBefore = await this.wavax.balanceOf(
         this.bob.address
       );
@@ -259,6 +263,131 @@ describe("Exchange", function () {
       await this.exchange
         .connect(this.bob)
         .matchAskWithTakerBid(takerBidOrder, makerAskOrderFromContract);
+
+      // Check that bob paid `price` and now owns the NFT!
+      expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
+        bobWavaxBalanceBefore.sub(price)
+      );
+      expect(await this.erc721Token.ownerOf(tokenId)).to.be.equal(
+        this.bob.address
+      );
+
+      // Check that protocol received protocol fees
+      const protocolRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const protocolFee = price.mul(this.protocolFeePct).div(10000);
+      expect(protocolRecipientWavaxBalanceAfter).to.be.equal(
+        protocolRecipientWavaxBalanceBefore.add(protocolFee)
+      );
+
+      // Check that royalty recipient received royalty fees
+      const [_, royaltyFee] = await this.erc721Token.royaltyInfo(
+        tokenId,
+        price
+      );
+      const royaltyFeeRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      expect(royaltyFeeRecipientWavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipientWavaxBalanceBefore.add(royaltyFee)
+      );
+
+      // Check that seller received `price - protocolFee - royaltyFee`
+      const aliceWavaxBalanceAfter = await this.wavax.balanceOf(
+        this.alice.address
+      );
+      expect(aliceWavaxBalanceAfter).to.be.equal(
+        aliceWavaxBalanceBefore.add(price.sub(protocolFee).sub(royaltyFee))
+      );
+    });
+
+    it("can perform fixed price sale with maker bid and taker ask", async function () {
+      // Check that alice indeed owns the NFT
+      const tokenId = 1;
+      expect(await this.erc721Token.ownerOf(tokenId)).to.be.equal(
+        this.alice.address
+      );
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.transferManagerERC721.address, tokenId);
+
+      // Create maker bid order
+      // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
+      const startTime = parseInt(Date.now() / 1000) - 1000;
+      const price = ethers.utils.parseEther("1");
+      const minPercentageToAsk = 9000;
+      const makerBidOrder = {
+        isOrderAsk: false,
+        signer: this.bob.address,
+        collection: this.erc721Token.address,
+        price,
+        tokenId,
+        amount: 1,
+        strategy: this.strategyStandardSaleForFixedPrice.address,
+        currency: WAVAX,
+        nonce: 1,
+        startTime,
+        endTime: startTime + 1000,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // Sign maker bid order
+      const signedMessage = await this.bob._signTypedData(
+        this.DOMAIN,
+        this.TYPES,
+        makerBidOrder
+      );
+      const { r, s, v } = ethers.utils.splitSignature(signedMessage);
+      makerBidOrder.r = r;
+      makerBidOrder.s = s;
+      makerBidOrder.v = v;
+
+      await this.exchange.connect(this.bob).createMakerOrder(makerBidOrder);
+
+      // Create taker ask order
+      const takerAskOrder = {
+        isOrderAsk: true,
+        taker: this.alice.address,
+        price,
+        tokenId,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // Approve exchange to transfer WAVAX
+      await this.wavax
+        .connect(this.bob)
+        .deposit({ value: ethers.utils.parseEther("1") });
+      await this.wavax.connect(this.bob).approve(this.exchange.address, price);
+
+      const bobWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.bob.address
+      );
+      const protocolRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const royaltyFeeRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+
+      // Get maker bid order from the contract
+      const makerBidOrderFromContract = (
+        await this.exchange.getMakerOrders(
+          this.erc721Token.address, // collection
+          tokenId, // tokenId
+          0, // offset
+          1 // limit
+        )
+      )[0];
+
+      // Match taker ask order with maker bid order
+      await this.exchange
+        .connect(this.alice)
+        .matchBidWithTakerAsk(takerAskOrder, makerBidOrderFromContract);
 
       // Check that bob paid `price` and now owns the NFT!
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
