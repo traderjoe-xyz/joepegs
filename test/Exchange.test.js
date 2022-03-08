@@ -364,6 +364,9 @@ describe("Exchange", function () {
         .deposit({ value: ethers.utils.parseEther("1") });
       await this.wavax.connect(this.bob).approve(this.exchange.address, price);
 
+      const aliceWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.alice.address
+      );
       const bobWavaxBalanceBefore = await this.wavax.balanceOf(
         this.bob.address
       );
@@ -401,14 +404,13 @@ describe("Exchange", function () {
       const protocolRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
         this.protocolFeeRecipient
       );
+      const protocolFee = price.mul(this.protocolFeePct).div(10000);
       expect(protocolRecipientWavaxBalanceAfter).to.be.equal(
-        protocolRecipientWavaxBalanceBefore.add(
-          price.mul(this.protocolFeePct).div(10000)
-        )
+        protocolRecipientWavaxBalanceBefore.add(protocolFee)
       );
 
       // Check that royalty recipient received royalty fees
-      const [_, royaltyAmount] = await this.erc721Token.royaltyInfo(
+      const [_, royaltyFee] = await this.erc721Token.royaltyInfo(
         tokenId,
         price
       );
@@ -416,7 +418,15 @@ describe("Exchange", function () {
         this.royaltyFeeRecipient
       );
       expect(royaltyFeeRecipientWavaxBalanceAfter).to.be.equal(
-        royaltyFeeRecipientWavaxBalanceBefore.add(royaltyAmount)
+        royaltyFeeRecipientWavaxBalanceBefore.add(royaltyFee)
+      );
+
+      // Check that seller received `price - protocolFee - royaltyFee`
+      const aliceWavaxBalanceAfter = await this.wavax.balanceOf(
+        this.alice.address
+      );
+      expect(aliceWavaxBalanceAfter).to.be.equal(
+        aliceWavaxBalanceBefore.add(price.sub(protocolFee).sub(royaltyFee))
       );
     });
   });
