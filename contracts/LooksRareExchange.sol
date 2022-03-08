@@ -79,6 +79,8 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     mapping(address => mapping(uint256 => bool))
         private _isUserOrderNonceExecutedOrCancelled;
 
+    /// @notice Mapping from user address to their latest maker order nonce
+    /// New maker orders are expected to have a nonce one greater than their latest
     mapping(address => uint256) public userLatestOrderNonce;
 
     /// @notice Mapping from NFT contract address => NFT token ID => maker orders
@@ -160,6 +162,14 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         protocolFeeRecipient = _protocolFeeRecipient;
     }
 
+    /**
+     * @notice View method for frontend to fetch paginated maker orders for a NFT
+     * @param _collection Address of NFT collection
+     * @param _tokenId NFT tokenId
+     * @param _offset Index to start looking up maker orders
+     * @param _limit Maximum number of maker orders to return
+     * @return Array of paginated maker orders for given NFT
+     */
     function getMakerOrders(
         address _collection,
         uint256 _tokenId,
@@ -188,29 +198,34 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         return paginatedMakerOrders;
     }
 
-    function createMakerOrder(OrderTypes.MakerOrder calldata makerOrder)
+    /**
+     * @notice Stores a EIP-712 signed maker order on chain for a given NFT
+     * @param _makerOrder Signed maker order for a NFT
+     */
+    function createMakerOrder(OrderTypes.MakerOrder calldata _makerOrder)
         external
         override
     {
         require(
-            makerOrder.signer == msg.sender,
+            _makerOrder.signer == msg.sender,
             "Expected maker order signer to be msg.sender"
         );
 
+        // Make sure order nonce is one greater than latest user order nonce
         uint256 latestOrderNonce = userLatestOrderNonce[msg.sender];
         uint256 newOrderNonce = latestOrderNonce + 1;
         require(
-            makerOrder.nonce == newOrderNonce,
+            _makerOrder.nonce == newOrderNonce,
             "Expected maker order nonce to be one greater than latest"
         );
 
-        _validateOrder(makerOrder, makerOrder.hash());
+        _validateOrder(_makerOrder, _makerOrder.hash());
 
         userLatestOrderNonce[msg.sender] += 1;
 
-        address collection = makerOrder.collection;
-        uint256 tokenId = makerOrder.tokenId;
-        makerOrders[collection][tokenId].push(makerOrder);
+        address collection = _makerOrder.collection;
+        uint256 tokenId = _makerOrder.tokenId;
+        makerOrders[collection][tokenId].push(_makerOrder);
     }
 
     /**
