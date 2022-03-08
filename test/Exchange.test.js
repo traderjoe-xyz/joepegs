@@ -234,10 +234,20 @@ describe("Exchange", function () {
         this.bob.address
       );
 
+      // Get maker ask order from the contract
+      const makerAskOrderFromContract = (
+        await this.exchange.getMakerOrders(
+          this.erc721Token.address, // collection
+          tokenId, // tokenId
+          0, // offset
+          1 // limit
+        )
+      )[0];
+
       // Match taker bid order with maker ask order
       await this.exchange
         .connect(this.bob)
-        .matchAskWithTakerBid(takerBidOrder, makerAskOrder);
+        .matchAskWithTakerBid(takerBidOrder, makerAskOrderFromContract);
 
       // Check that bob paid price and now owns the NFT!
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
