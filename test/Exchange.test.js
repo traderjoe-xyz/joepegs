@@ -1,4 +1,4 @@
-const { ethers, network, upgrades } = require("hardhat");
+const { config, ethers, network, upgrades } = require("hardhat");
 const { expect } = require("chai");
 const { advanceTimeAndBlock, duration } = require("./utils/time");
 const { start } = require("repl");
@@ -46,7 +46,7 @@ describe("Exchange", function () {
       params: [
         {
           forking: {
-            jsonRpcUrl: "https://api.avax.network/ext/bc/C/rpc",
+            jsonRpcUrl: config.networks.avalanche.url,
           },
           live: false,
           saveDeployments: true,
@@ -225,11 +225,14 @@ describe("Exchange", function () {
       };
 
       // Approve exchange to transfer WAVAX
-      const bobWavaxBalanceBefore = ethers.utils.parseEther("1");
       await this.wavax
         .connect(this.bob)
-        .deposit({ value: bobWavaxBalanceBefore });
+        .deposit({ value: ethers.utils.parseEther("1") });
       await this.wavax.connect(this.bob).approve(this.exchange.address, price);
+
+      const bobWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.bob.address
+      );
 
       // Match taker bid order with maker ask order
       await this.exchange
