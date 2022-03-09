@@ -428,7 +428,6 @@ describe("Exchange", function () {
       expect(aliceWavaxBalanceAfter).to.be.equal(
         aliceWavaxBalanceBefore.add(price.sub(protocolFee).sub(royaltyFee))
       );
-      // tests
     });
   });
 
