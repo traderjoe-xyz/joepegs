@@ -13,7 +13,7 @@ import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
 contract ExecutionManager is IExecutionManager, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    address public collectionBidStrategy;
+    address public override collectionBidStrategy;
 
     EnumerableSet.AddressSet private _whitelistedStrategies;
 
