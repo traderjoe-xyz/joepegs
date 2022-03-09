@@ -29,5 +29,11 @@ interface IJoepegExchange {
         uint256 _limit
     ) external view returns (OrderTypes.MakerOrder[] memory);
 
+    function getCollectionMakerBidOrders(
+        address _collection,
+        uint256 _offset,
+        uint256 _limit
+    ) external view returns (OrderTypes.MakerOrder[] memory);
+
     function createMakerOrder(OrderTypes.MakerOrder memory makerOrder) external;
 }

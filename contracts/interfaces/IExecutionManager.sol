@@ -6,6 +6,8 @@ interface IExecutionManager {
 
     function removeStrategy(address strategy) external;
 
+    function setCollectionBidStrategy(address strategy) external;
+
     function isStrategyWhitelisted(address strategy)
         external
         view
@@ -17,4 +19,6 @@ interface IExecutionManager {
         returns (address[] memory, uint256);
 
     function viewCountWhitelistedStrategies() external view returns (uint256);
+
+    function collectionBidStrategy() external view returns (address);
 }
