@@ -181,25 +181,25 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
         uint256 _offset,
         uint256 _limit
     ) external view override returns (OrderTypes.MakerOrder[] memory) {
-        OrderTypes.MakerOrder[] memory paginatedMakerOrders;
+        OrderTypes.MakerOrder[] memory paginatedMakerBidOrders;
 
         OrderTypes.MakerOrder[]
             memory makerBidOrders = collectionMakerBidOrders[_collection];
         uint256 numMakerBidOrders = makerBidOrders.length;
 
         if (_offset >= numMakerBidOrders || _limit == 0) {
-            return paginatedMakerOrders;
+            return paginatedMakerBidOrders;
         }
 
         uint256 end = _offset + _limit > numMakerBidOrders
             ? numMakerBidOrders
             : _offset + _limit;
-        paginatedMakerOrders = new OrderTypes.MakerOrder[](end - _offset);
+        paginatedMakerBidOrders = new OrderTypes.MakerOrder[](end - _offset);
 
         for (uint256 i = _offset; i < end; i++) {
-            paginatedMakerOrders[i - _offset] = makerBidOrders[i];
+            paginatedMakerBidOrders[i - _offset] = makerBidOrders[i];
         }
-        return paginatedMakerOrders;
+        return paginatedMakerBidOrders;
     }
 
     /**
@@ -229,7 +229,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         address collection = _makerOrder.collection;
         if (_makerOrder.strategy == executionManager.collectionBidStrategy()) {
-            // If this is a collection bid, we store it separately from regular
+            // If this is a collection maker bid, we store it separately from other
             // maker orders since there isn't be an associated tokenId
             collectionMakerBidOrders[collection].push(_makerOrder);
         } else {
