@@ -10,7 +10,19 @@ require("hardhat-deploy-ethers");
 require("solidity-coverage");
 
 module.exports = {
-  solidity: "0.8.6",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.6",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
+  },
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
@@ -32,12 +44,6 @@ module.exports = {
       accounts: process.env.DEPLOY_PRIVATE_KEY
         ? [process.env.DEPLOY_PRIVATE_KEY]
         : [],
-    },
-  },
-  settings: {
-    optimizer: {
-      enabled: true,
-      runs: 1000,
     },
   },
   contractSizer: {
