@@ -30,6 +30,8 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
 
+    uint256 public immutable PERCENTAGE_PRECISION = 10000;
+
     address public immutable WAVAX;
     bytes32 public immutable DOMAIN_SEPARATOR;
 
@@ -499,7 +501,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Update protocol fee and recipient
+     * @notice Update protocol fee recipient
      * @param _protocolFeeRecipient new recipient for protocol fees
      */
     function updateProtocolFeeRecipient(address _protocolFeeRecipient)
@@ -560,7 +562,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
      * @param strategy address of the execution strategy
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
-     * @param currency currency being used for the purchase (e.g., WAVAX/USDC)
+     * @param currency address of token being used for the purchase (e.g., WAVAX/USDC)
      * @param from sender of the funds
      * @param to seller's recipient
      * @param amount amount being transferred (in currency)
@@ -629,7 +631,8 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
         }
 
         require(
-            (finalSellerAmount * 10000) >= (minPercentageToAsk * amount),
+            (finalSellerAmount * PERCENTAGE_PRECISION) >=
+                (minPercentageToAsk * amount),
             "Fees: Higher than expected"
         );
 
@@ -707,7 +710,8 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
         }
 
         require(
-            (finalSellerAmount * 10000) >= (minPercentageToAsk * amount),
+            (finalSellerAmount * PERCENTAGE_PRECISION) >=
+                (minPercentageToAsk * amount),
             "Fees: Higher than expected"
         );
 
@@ -765,7 +769,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     {
         uint256 protocolFee = IExecutionStrategy(executionStrategy)
             .viewProtocolFee();
-        return (protocolFee * amount) / 10000;
+        return (protocolFee * amount) / PERCENTAGE_PRECISION;
     }
 
     /**
