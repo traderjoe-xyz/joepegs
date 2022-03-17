@@ -24,7 +24,7 @@ describe("Exchange", function () {
     this.StrategyStandardSaleForFixedPriceCF = await ethers.getContractFactory(
       "StrategyStandardSaleForFixedPrice"
     );
-    this.ExchangeCF = await ethers.getContractFactory("LooksRareExchange");
+    this.ExchangeCF = await ethers.getContractFactory("JoepegExchange");
     this.TransferManagerERC721CF = await ethers.getContractFactory(
       "TransferManagerERC721"
     );
@@ -111,7 +111,7 @@ describe("Exchange", function () {
 
     const { chainId } = await ethers.provider.getNetwork();
     this.DOMAIN = {
-      name: "LooksRareExchange",
+      name: "JoepegExchange",
       version: "1",
       chainId,
       verifyingContract: this.exchange.address,

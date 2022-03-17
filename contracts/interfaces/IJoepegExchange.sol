@@ -6,7 +6,7 @@ import {IExecutionManager} from "./IExecutionManager.sol";
 
 import {OrderTypes} from "../libraries/OrderTypes.sol";
 
-interface ILooksRareExchange {
+interface IJoepegExchange {
     function matchAskWithTakerBidUsingAVAXAndWAVAX(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
