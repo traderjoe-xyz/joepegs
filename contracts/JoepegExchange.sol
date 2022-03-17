@@ -129,11 +129,11 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
     /**
      * @notice View method for frontend to fetch paginated maker orders for a NFT
-     * @param _collection Address of NFT collection
+     * @param _collection address of NFT collection
      * @param _tokenId NFT tokenId
-     * @param _offset Index to start looking up maker orders
-     * @param _limit Maximum number of maker orders to return
-     * @return Array of paginated maker orders for given NFT
+     * @param _offset index to start looking up maker orders
+     * @param _limit maximum number of maker orders to return
+     * @return array of paginated maker orders for given NFT
      */
     function getMakerOrders(
         address _collection,
