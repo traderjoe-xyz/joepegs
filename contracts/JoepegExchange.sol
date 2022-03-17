@@ -236,7 +236,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Match ask with a taker bid order using ETH
+     * @notice Match ask with a taker bid order using AVAX
      * @param takerBid taker bid order
      * @param makerAsk maker ask order
      */
@@ -258,7 +258,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
         bytes32 askHash = makerAsk.hash();
         _validateOrder(makerAsk, askHash);
 
-        // If not enough ETH to cover the price, use WAVAX
+        // If not enough AVAX to cover the price, use WAVAX
         if (takerBid.price > msg.value) {
             IERC20(WAVAX).safeTransferFrom(
                 msg.sender,
@@ -269,7 +269,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
             require(takerBid.price == msg.value, "Order: Msg.value too high");
         }
 
-        // Wrap ETH sent to this contract
+        // Wrap AVAX sent to this contract
         IWAVAX(WAVAX).deposit{value: msg.value}();
 
         // Retrieve execution parameters
