@@ -31,7 +31,7 @@ contract TransferManagerNonCompliantERC721 is ITransferManagerNFT {
         address from,
         address to,
         uint256 tokenId,
-        uint256
+        uint256 amount
     ) external override {
         require(msg.sender == JOEPEG_EXCHANGE, "Transfer: Only JoepegExchange");
         IERC721(collection).transferFrom(from, to, tokenId);

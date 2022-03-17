@@ -53,11 +53,11 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
     ) external onlyOwner {
         require(
             collection != address(0),
-            "Owner: Collection cannot be null address"
+            "TransferSelectorNFT: Collection cannot be null address"
         );
         require(
             transferManager != address(0),
-            "Owner: TransferManager cannot be null address"
+            "TransferSelectorNFT: TransferManager cannot be null address"
         );
 
         transferManagerSelectorForCollection[collection] = transferManager;
@@ -75,7 +75,7 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
     {
         require(
             transferManagerSelectorForCollection[collection] != address(0),
-            "Owner: Collection has no transfer manager"
+            "TransferSelectorNFT: Collection has no transfer manager"
         );
 
         // Set it to the address(0)
@@ -86,8 +86,9 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
 
     /**
      * @notice Check the transfer manager for a token
-     * @param collection collection address
      * @dev Support for ERC165 interface is checked AFTER custom implementation
+     * @param collection collection address
+     * @return transferManager address of transfer manager to use
      */
     function checkTransferManagerForToken(address collection)
         external
@@ -105,6 +106,10 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
                 IERC165(collection).supportsInterface(INTERFACE_ID_ERC1155)
             ) {
                 transferManager = TRANSFER_MANAGER_ERC1155;
+            } else {
+                revert(
+                    "TransferSelectorNFT: No NFT transfer manager available"
+                );
             }
         }
 
