@@ -13,10 +13,10 @@ contract TransferManagerNonCompliantERC721 is ITransferManagerNFT {
 
     /**
      * @notice Constructor
-     * @param _looksRareExchange address of the LooksRare exchange
+     * @param _joepegExchange address of the Joepeg exchange
      */
-    constructor(address _looksRareExchange) {
-        LOOKS_RARE_EXCHANGE = _looksRareExchange;
+    constructor(address _joepegExchange) {
+        LOOKS_RARE_EXCHANGE = _joepegExchange;
     }
 
     /**
