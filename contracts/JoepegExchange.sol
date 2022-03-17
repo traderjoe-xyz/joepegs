@@ -252,6 +252,10 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
             "Order: Taker must be the sender"
         );
 
+        // Check the maker ask order
+        bytes32 askHash = makerAsk.hash();
+        _validateOrder(makerAsk, askHash);
+
         // If not enough ETH to cover the price, use WAVAX
         if (takerBid.price > msg.value) {
             IERC20(WAVAX).safeTransferFrom(
@@ -265,10 +269,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         // Wrap ETH sent to this contract
         IWAVAX(WAVAX).deposit{value: msg.value}();
-
-        // Check the maker ask order
-        bytes32 askHash = makerAsk.hash();
-        _validateOrder(makerAsk, askHash);
 
         // Retrieve execution parameters
         (
