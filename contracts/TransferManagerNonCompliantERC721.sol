@@ -9,14 +9,14 @@ import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
  * @notice It allows the transfer of ERC721 tokens without safeTransferFrom.
  */
 contract TransferManagerNonCompliantERC721 is ITransferManagerNFT {
-    address public immutable LOOKS_RARE_EXCHANGE;
+    address public immutable JOEPEG_EXCHANGE;
 
     /**
      * @notice Constructor
      * @param _joepegExchange address of the Joepeg exchange
      */
     constructor(address _joepegExchange) {
-        LOOKS_RARE_EXCHANGE = _joepegExchange;
+        JOEPEG_EXCHANGE = _joepegExchange;
     }
 
     /**
@@ -33,10 +33,7 @@ contract TransferManagerNonCompliantERC721 is ITransferManagerNFT {
         uint256 tokenId,
         uint256
     ) external override {
-        require(
-            msg.sender == LOOKS_RARE_EXCHANGE,
-            "Transfer: Only LooksRare Exchange"
-        );
+        require(msg.sender == JOEPEG_EXCHANGE, "Transfer: Only JoepegExchange");
         IERC721(collection).transferFrom(from, to, tokenId);
     }
 }
