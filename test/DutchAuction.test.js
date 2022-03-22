@@ -41,13 +41,20 @@ describe.only("DutchAuction", function () {
     this.discountAmount = ethers.utils.parseUnits("0.005", 18);
     this.discountPace = 20 * 60;
     this.nftIds = [0, 1, 2, 3, 4, 5];
+    this.whitelistedAddresses = [this.alice.address];
     this.dutchAuction = await this.DutchAuctionCF.deploy(
       this.startPrice,
       this.discountAmount,
       this.discountPace,
       this.erc721Token.address,
-      this.nftIds
+      this.nftIds,
+      this.whitelistedAddresses
     );
+
+    await Promise.all(
+      this.nftIds.map(() => this.erc721Token.mint(this.dev.address))
+    );
+    await this.erc721Token.setApprovalForAll(this.dutchAuction.address, true);
   });
 
   it("NFT price decreases at correct pace", async function () {
@@ -81,6 +88,35 @@ describe.only("DutchAuction", function () {
     await expect(this.dutchAuction.buy(1)).to.be.revertedWith(
       "auction expired"
     );
+  });
+
+  it("NFT are transfered to sender when he is on the whitelist and have enough AVAX", async function () {
+    const buySize = 5;
+    const totalPrice = this.startPrice.mul(buySize);
+    await this.dev.sendTransaction({
+      to: this.alice.address,
+      value: totalPrice,
+    });
+
+    expect(await this.erc721Token.balanceOf(this.alice.address)).to.equal(0);
+    await this.dutchAuction
+      .connect(this.alice)
+      .buy(buySize, { value: totalPrice });
+    expect(await this.erc721Token.balanceOf(this.alice.address)).to.equal(
+      buySize
+    );
+  });
+
+  it("Buy transaction reverts when the caller is not on whitelist", async function () {
+    await expect(this.dutchAuction.connect(this.bob).buy(2)).to.be.revertedWith(
+      "msg sender not on whitelist"
+    );
+  });
+
+  it("Buy transaction reverts when the caller didn't send enough AVAX", async function () {
+    await expect(
+      this.dutchAuction.connect(this.alice).buy(1)
+    ).to.be.revertedWith("AVAX < total amount");
   });
 
   after(async function () {

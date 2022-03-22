@@ -6,7 +6,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract DutchAuction {
     uint256 private constant DURATION = 7 days;
-    uint256 private constant BUY_SIZE = 5;
+    uint256 private constant MAX_BUY_SIZE = 5;
 
     mapping(address => bool) public whitelistedAddresses;
 
@@ -25,7 +25,8 @@ contract DutchAuction {
         uint256 _discountAmount,
         uint256 _discountPace,
         address _nft,
-        uint256[] memory _nftIds
+        uint256[] memory _nftIds,
+        address[] memory _whitelistedAddresses
     ) {
         seller = payable(msg.sender);
         startingPrice = _startingPrice;
@@ -41,6 +42,10 @@ contract DutchAuction {
 
         nft = IERC721(_nft);
         nftIds = _nftIds;
+
+        for (uint i = 0; i < _whitelistedAddresses.length; i++) {
+            whitelistedAddresses[_whitelistedAddresses[i]] = true;
+        }
     }
 
     function getDiscount() public view returns (uint256) {
@@ -56,7 +61,7 @@ contract DutchAuction {
     function buy(uint256 desiredNftCount) external payable {
         require(block.timestamp < expiresAt, "auction expired");
         require(nftIds.length > 0, "no nfts left to buy");
-        require(desiredNftCount < BUY_SIZE, "can't buy more than BUY_SIZE");
+        require(desiredNftCount <= MAX_BUY_SIZE, "can't buy more than MAX_BUY_SIZE");
         require(desiredNftCount > 0, "can't buy zero NFT");
 
         bool isWhitelisted = isAddressWhitelisted(msg.sender);
