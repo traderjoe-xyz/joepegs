@@ -72,6 +72,7 @@ contract DutchAuction {
         uint256 totalAmount = price * nftCount;
         require(msg.value >= totalAmount, "AVAX < total amount");
 
+        // TODO: randomize NFT ids?
         do {
             nft.transferFrom(seller, msg.sender, nftIds[nftIds.length - 1]);
             nftIds.pop();
