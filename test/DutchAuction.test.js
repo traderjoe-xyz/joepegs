@@ -107,6 +107,29 @@ describe.only("DutchAuction", function () {
     );
   });
 
+  it("Contract refunds caller when he sents too much AVAX", async function () {
+    const buySize = 2;
+    const totalPrice = this.startPrice.mul(buySize + 1);
+    const aliceInitialBalance = await ethers.provider.getBalance(
+      this.alice.address
+    );
+    await this.dev.sendTransaction({
+      to: this.alice.address,
+      value: totalPrice,
+    });
+
+    await this.dutchAuction
+      .connect(this.alice)
+      .buy(buySize, { value: totalPrice });
+    expect(await this.erc721Token.balanceOf(this.alice.address)).to.equal(
+      buySize
+    );
+    expect(await ethers.provider.getBalance(this.alice.address)).to.be.closeTo(
+      aliceInitialBalance.add(this.startPrice),
+      ethers.utils.parseUnits("0.001", 18)
+    );
+  });
+
   it("Buy transaction reverts when the caller is not on whitelist", async function () {
     await expect(this.dutchAuction.connect(this.bob).buy(2)).to.be.revertedWith(
       "msg sender not on whitelist"
