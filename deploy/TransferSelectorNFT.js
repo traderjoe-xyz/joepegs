@@ -16,7 +16,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   });
 };
 
-module.exports.tags = ["TransferManagerERC721"];
+module.exports.tags = ["TransferSelectorNFT"];
 module.exports.dependencies = [
   "TransferManagerERC721",
   "TransferManagerERC1155",
