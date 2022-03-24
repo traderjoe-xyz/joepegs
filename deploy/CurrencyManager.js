@@ -1,5 +1,4 @@
 const { WAVAX } = require("@traderjoe-xyz/sdk");
-const { ethers } = require("hardhat");
 
 module.exports = async function ({
   deployments,
@@ -7,7 +6,6 @@ module.exports = async function ({
   getNamedAccounts,
 }) {
   const { deploy } = deployments;
-
   const { deployer } = await getNamedAccounts();
 
   const chainId = await getChainId();

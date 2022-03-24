@@ -6,7 +6,6 @@ module.exports = async function ({
   getNamedAccounts,
 }) {
   const { deploy } = deployments;
-
   const { deployer } = await getNamedAccounts();
 
   const chainId = await getChainId();

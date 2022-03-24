@@ -1,6 +1,5 @@
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
-
   const { deployer } = await getNamedAccounts();
 
   const transferManagerERC721 = await deployments.get("TransferManagerERC721");

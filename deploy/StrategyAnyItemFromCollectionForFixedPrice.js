@@ -1,6 +1,5 @@
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
-
   const { deployer } = await getNamedAccounts();
 
   const protocolFee = 100; // 100 = 1%
