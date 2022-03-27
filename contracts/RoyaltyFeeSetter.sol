@@ -9,7 +9,7 @@ import {IOwnable} from "./interfaces/IOwnable.sol";
 
 /**
  * @title RoyaltyFeeSetter
- * @notice It is used to allow creators to set royalty parameters in the RoyaltyFeeRegistry.
+ * @notice Used to allow creators to set royalty parameters in the RoyaltyFeeRegistry.
  */
 contract RoyaltyFeeSetter is Ownable {
     // ERC721 interfaceID

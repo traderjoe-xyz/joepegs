@@ -9,7 +9,7 @@ import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
 
 /**
  * @title RoyaltyFeeManager
- * @notice It handles the logic to check and transfer royalty fees (if any).
+ * @notice Handles the logic to check and transfer royalty fees (if any).
  */
 contract RoyaltyFeeManager is IRoyaltyFeeManager, Ownable {
     // https://eips.ethereum.org/EIPS/eip-2981

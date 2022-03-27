@@ -6,64 +6,33 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// LooksRare interfaces
+// Joepeg interfaces
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
 import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
-import {ILooksRareExchange} from "./interfaces/ILooksRareExchange.sol";
+import {IJoepegExchange} from "./interfaces/IJoepegExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
+import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
-// LooksRare libraries
+// Joepeg libraries
 import {OrderTypes} from "./libraries/OrderTypes.sol";
 import {SignatureChecker} from "./libraries/SignatureChecker.sol";
 
 /**
- * @title LooksRareExchange
- * @notice It is the core contract of the LooksRare exchange.
-LOOKSRARELOOKSRARELOOKSRLOOKSRARELOOKSRARELOOKSRARELOOKSRARELOOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRAR'''''''''''''''''''''''''''''''''''OOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKS:.                                        .;OOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOO,.                                            .,KSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRAREL'                ..',;:LOOKS::;,'..                'RARELOOKSRARELOOKSR
-LOOKSRARELOOKSRAR.              .,:LOOKSRARELOOKSRARELO:,.              .RELOOKSRARELOOKSR
-LOOKSRARELOOKS:.             .;RARELOOKSRARELOOKSRARELOOKSl;.             .:OOKSRARELOOKSR
-LOOKSRARELOO;.            .'OKSRARELOOKSRARELOOKSRARELOOKSRARE'.            .;KSRARELOOKSR
-LOOKSRAREL,.            .,LOOKSRARELOOK:;;:"""":;;;lELOOKSRARELO,.            .,RARELOOKSR
-LOOKSRAR.             .;okLOOKSRAREx:.              .;OOKSRARELOOK;.             .RELOOKSR
-LOOKS:.             .:dOOOLOOKSRARE'      .''''..     .OKSRARELOOKSR:.             .LOOKSR
-LOx;.             .cKSRARELOOKSRAR'     'LOOKSRAR'     .KSRARELOOKSRARc..            .OKSR
-L;.             .cxOKSRARELOOKSRAR.    .LOOKS.RARE'     ;kRARELOOKSRARExc.             .;R
-LO'             .;oOKSRARELOOKSRAl.    .LOOKS.RARE.     :kRARELOOKSRAREo;.             'SR
-LOOK;.            .,KSRARELOOKSRAx,     .;LOOKSR;.     .oSRARELOOKSRAo,.            .;OKSR
-LOOKSk:.            .'RARELOOKSRARd;.      ....       'oOOOOOOOOOOxc'.            .:LOOKSR
-LOOKSRARc.             .:dLOOKSRAREko;.            .,lxOOOOOOOOOd:.             .ARELOOKSR
-LOOKSRARELo'             .;oOKSRARELOOxoc;,....,;:ldkOOOOOOOOkd;.             'SRARELOOKSR
-LOOKSRARELOOd,.            .,lSRARELOOKSRARELOOKSRARELOOKSRkl,.            .,OKSRARELOOKSR
-LOOKSRARELOOKSx;.            ..;oxELOOKSRARELOOKSRARELOkxl:..            .:LOOKSRARELOOKSR
-LOOKSRARELOOKSRARc.              .':cOKSRARELOOKSRALOc;'.              .ARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELl'                 ...'',,,,''...                 'SRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOo,.                                          .,OKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSx;.                                      .;xOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLO:.                                  .:SRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKl.                              .lOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKSRo'.                        .'oLOOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKSRARd;.                    .;xRELOOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKSRARELO:.                .:kRARELOOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKSRARELOOKl.            .cOKSRARELOOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKSRARELOOKSRo'        'oLOOKSRARELOOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKSRARELOOKSRARE,.  .,dRELOOKSRARELOOKSRLOOKSRARELOOKSRARELOOKSR
-LOOKSRARELOOKSRARELOOKSRLOOKSRARELOOKSRARELOOKSRARELOOKSRARELOOKSRLOOKSRARELOOKSRARELOOKSR
+ * @title JoepegExchange
+ * @notice Fork of the LooksRareExchange contract with some minor additions.
  */
-contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
+contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
 
-    address public immutable WETH;
+    uint256 public immutable PERCENTAGE_PRECISION = 10000;
+
+    address public immutable WAVAX;
     bytes32 public immutable DOMAIN_SEPARATOR;
 
     address public protocolFeeRecipient;
@@ -76,6 +45,14 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     mapping(address => uint256) public userMinOrderNonce;
     mapping(address => mapping(uint256 => bool))
         private _isUserOrderNonceExecutedOrCancelled;
+
+    /// @notice Mapping from user address to their latest maker order nonce
+    /// New maker orders are expected to have a nonce one greater than their latest
+    mapping(address => uint256) public userLatestOrderNonce;
+
+    /// @notice Mapping from NFT contract address => NFT token ID => maker orders
+    mapping(address => mapping(uint256 => OrderTypes.MakerOrder[]))
+        private makerOrders;
 
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
@@ -124,21 +101,21 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param _currencyManager currency manager address
      * @param _executionManager execution manager address
      * @param _royaltyFeeManager royalty fee manager address
-     * @param _WETH wrapped ether address (for other chains, use wrapped native asset)
+     * @param _WAVAX wrapped ether address (for other chains, use wrapped native asset)
      * @param _protocolFeeRecipient protocol fee recipient
      */
     constructor(
         address _currencyManager,
         address _executionManager,
         address _royaltyFeeManager,
-        address _WETH,
+        address _WAVAX,
         address _protocolFeeRecipient
     ) {
         // Calculate the domain separator
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f, // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-                0xda9101ba92939daf4bb2e18cd5f942363b9297fbc3232c9dd964abb1fb70ed71, // keccak256("LooksRareExchange")
+                0x09c73de1316dde4c80e91bee77727ccdf2cbf7435c9e4c7db6c37af85fa4afcb, // keccak256("JoepegExchange")
                 0xc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6, // keccak256(bytes("1")) for versionId = 1
                 block.chainid,
                 address(this)
@@ -148,8 +125,74 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         currencyManager = ICurrencyManager(_currencyManager);
         executionManager = IExecutionManager(_executionManager);
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
-        WETH = _WETH;
+        WAVAX = _WAVAX;
         protocolFeeRecipient = _protocolFeeRecipient;
+    }
+
+    /**
+     * @notice View method for frontend to fetch paginated maker orders for a NFT
+     * @param _collection address of NFT collection
+     * @param _tokenId NFT tokenId
+     * @param _offset index to start looking up maker orders
+     * @param _limit maximum number of maker orders to return
+     * @return array of paginated maker orders for given NFT
+     */
+    function getMakerOrders(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _offset,
+        uint256 _limit
+    ) external view override returns (OrderTypes.MakerOrder[] memory) {
+        OrderTypes.MakerOrder[] memory paginatedMakerOrders;
+
+        OrderTypes.MakerOrder[] memory nftMakerOrders = makerOrders[
+            _collection
+        ][_tokenId];
+        uint256 numNftMakerOrders = nftMakerOrders.length;
+
+        if (_offset >= numNftMakerOrders || _limit == 0) {
+            return paginatedMakerOrders;
+        }
+
+        uint256 end = _offset + _limit > numNftMakerOrders
+            ? numNftMakerOrders
+            : _offset + _limit;
+        paginatedMakerOrders = new OrderTypes.MakerOrder[](end - _offset);
+
+        for (uint256 i = _offset; i < end; i++) {
+            paginatedMakerOrders[i - _offset] = nftMakerOrders[i];
+        }
+        return paginatedMakerOrders;
+    }
+
+    /**
+     * @notice Stores a EIP-712 signed maker order on chain for a given NFT
+     * @param _makerOrder Signed maker order for a NFT
+     */
+    function createMakerOrder(OrderTypes.MakerOrder calldata _makerOrder)
+        external
+        override
+    {
+        require(
+            _makerOrder.signer == msg.sender,
+            "Expected maker order signer to be msg.sender"
+        );
+
+        // Make sure order nonce is one greater than latest user order nonce
+        uint256 latestOrderNonce = userLatestOrderNonce[msg.sender];
+        uint256 newOrderNonce = latestOrderNonce + 1;
+        require(
+            _makerOrder.nonce == newOrderNonce,
+            "Expected maker order nonce to be one greater than latest"
+        );
+
+        _validateOrder(_makerOrder, _makerOrder.hash());
+
+        userLatestOrderNonce[msg.sender] += 1;
+
+        address collection = _makerOrder.collection;
+        uint256 tokenId = _makerOrder.tokenId;
+        makerOrders[collection][tokenId].push(_makerOrder);
     }
 
     /**
@@ -193,11 +236,11 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Match ask with a taker bid order using ETH
+     * @notice Match ask with a taker bid order using AVAX
      * @param takerBid taker bid order
      * @param makerAsk maker ask order
      */
-    function matchAskWithTakerBidUsingETHAndWETH(
+    function matchAskWithTakerBidUsingAVAXAndWAVAX(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
     ) external payable override nonReentrant {
@@ -205,15 +248,19 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
             "Order: Wrong sides"
         );
-        require(makerAsk.currency == WETH, "Order: Currency must be WETH");
+        require(makerAsk.currency == WAVAX, "Order: Currency must be WAVAX");
         require(
             msg.sender == takerBid.taker,
             "Order: Taker must be the sender"
         );
 
-        // If not enough ETH to cover the price, use WETH
+        // Check the maker ask order
+        bytes32 askHash = makerAsk.hash();
+        _validateOrder(makerAsk, askHash);
+
+        // If not enough AVAX to cover the price, use WAVAX
         if (takerBid.price > msg.value) {
-            IERC20(WETH).safeTransferFrom(
+            IERC20(WAVAX).safeTransferFrom(
                 msg.sender,
                 address(this),
                 (takerBid.price - msg.value)
@@ -222,12 +269,8 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             require(takerBid.price == msg.value, "Order: Msg.value too high");
         }
 
-        // Wrap ETH sent to this contract
-        IWETH(WETH).deposit{value: msg.value}();
-
-        // Check the maker ask order
-        bytes32 askHash = makerAsk.hash();
-        _validateOrder(makerAsk, askHash);
+        // Wrap AVAX sent to this contract
+        IWAVAX(WAVAX).deposit{value: msg.value}();
 
         // Retrieve execution parameters
         (
@@ -247,7 +290,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         ] = true;
 
         // Execution part 1/2
-        _transferFeesAndFundsWithWETH(
+        _transferFeesAndFundsWithWAVAX(
             makerAsk.strategy,
             makerAsk.collection,
             tokenId,
@@ -458,7 +501,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Update protocol fee and recipient
+     * @notice Update protocol fee recipient
      * @param _protocolFeeRecipient new recipient for protocol fees
      */
     function updateProtocolFeeRecipient(address _protocolFeeRecipient)
@@ -519,7 +562,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param strategy address of the execution strategy
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
-     * @param currency currency being used for the purchase (e.g., WETH/USDC)
+     * @param currency address of token being used for the purchase (e.g., WAVAX/USDC)
      * @param from sender of the funds
      * @param to seller's recipient
      * @param amount amount being transferred (in currency)
@@ -588,7 +631,8 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
         }
 
         require(
-            (finalSellerAmount * 10000) >= (minPercentageToAsk * amount),
+            (finalSellerAmount * PERCENTAGE_PRECISION) >=
+                (minPercentageToAsk * amount),
             "Fees: Higher than expected"
         );
 
@@ -607,7 +651,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
      * @param amount amount being transferred (in currency)
      * @param minPercentageToAsk minimum percentage of the gross amount that goes to ask
      */
-    function _transferFeesAndFundsWithWETH(
+    function _transferFeesAndFundsWithWAVAX(
         address strategy,
         address collection,
         uint256 tokenId,
@@ -626,7 +670,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             if (
                 (protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)
             ) {
-                IERC20(WETH).safeTransfer(
+                IERC20(WAVAX).safeTransfer(
                     protocolFeeRecipient,
                     protocolFeeAmount
                 );
@@ -649,7 +693,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
             if (
                 (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
             ) {
-                IERC20(WETH).safeTransfer(
+                IERC20(WAVAX).safeTransfer(
                     royaltyFeeRecipient,
                     royaltyFeeAmount
                 );
@@ -659,20 +703,21 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
                     collection,
                     tokenId,
                     royaltyFeeRecipient,
-                    address(WETH),
+                    address(WAVAX),
                     royaltyFeeAmount
                 );
             }
         }
 
         require(
-            (finalSellerAmount * 10000) >= (minPercentageToAsk * amount),
+            (finalSellerAmount * PERCENTAGE_PRECISION) >=
+                (minPercentageToAsk * amount),
             "Fees: Higher than expected"
         );
 
         // 3. Transfer final amount (post-fees) to seller
         {
-            IERC20(WETH).safeTransfer(to, finalSellerAmount);
+            IERC20(WAVAX).safeTransfer(to, finalSellerAmount);
         }
     }
 
@@ -724,7 +769,7 @@ contract LooksRareExchange is ILooksRareExchange, ReentrancyGuard, Ownable {
     {
         uint256 protocolFee = IExecutionStrategy(executionStrategy)
             .viewProtocolFee();
-        return (protocolFee * amount) / 10000;
+        return (protocolFee * amount) / PERCENTAGE_PRECISION;
     }
 
     /**
