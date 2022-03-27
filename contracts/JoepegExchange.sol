@@ -54,6 +54,10 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     mapping(address => mapping(uint256 => OrderTypes.MakerOrder[]))
         private makerOrders;
 
+    /// @notice Mapping from NFT contract address => collection maker bid orders
+    mapping(address => OrderTypes.MakerOrder[])
+        private collectionMakerBidOrders;
+
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
     event NewCurrencyManager(address indexed currencyManager);
@@ -130,7 +134,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice View method for frontend to fetch paginated maker orders for a NFT
+     * @notice View function for frontend to fetch paginated maker orders for a NFT
      * @param _collection address of NFT collection
      * @param _tokenId NFT tokenId
      * @param _offset index to start looking up maker orders
@@ -166,7 +170,40 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Stores a EIP-712 signed maker order on chain for a given NFT
+     * @notice View function for frontend to fetch paginated collection maker bid orders
+     * @param _collection Address of NFT collection
+     * @param _offset Index to start looking up maker bid orders
+     * @param _limit Maximum number of maker bid orders to return
+     * @return Array of paginated collection maker bid orders
+     */
+    function getCollectionMakerBidOrders(
+        address _collection,
+        uint256 _offset,
+        uint256 _limit
+    ) external view override returns (OrderTypes.MakerOrder[] memory) {
+        OrderTypes.MakerOrder[] memory paginatedMakerBidOrders;
+
+        OrderTypes.MakerOrder[]
+            memory makerBidOrders = collectionMakerBidOrders[_collection];
+        uint256 numMakerBidOrders = makerBidOrders.length;
+
+        if (_offset >= numMakerBidOrders || _limit == 0) {
+            return paginatedMakerBidOrders;
+        }
+
+        uint256 end = _offset + _limit > numMakerBidOrders
+            ? numMakerBidOrders
+            : _offset + _limit;
+        paginatedMakerBidOrders = new OrderTypes.MakerOrder[](end - _offset);
+
+        for (uint256 i = _offset; i < end; i++) {
+            paginatedMakerBidOrders[i - _offset] = makerBidOrders[i];
+        }
+        return paginatedMakerBidOrders;
+    }
+
+    /**
+     * @notice Stores an EIP-712 signed maker order on chain for a given NFT
      * @param _makerOrder Signed maker order for a NFT
      */
     function createMakerOrder(OrderTypes.MakerOrder calldata _makerOrder)
@@ -191,8 +228,14 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
         userLatestOrderNonce[msg.sender] += 1;
 
         address collection = _makerOrder.collection;
-        uint256 tokenId = _makerOrder.tokenId;
-        makerOrders[collection][tokenId].push(_makerOrder);
+        if (_makerOrder.strategy == executionManager.collectionBidStrategy()) {
+            // If this is a collection maker bid, we store it separately from other
+            // maker orders since there isn't an associated tokenId
+            collectionMakerBidOrders[collection].push(_makerOrder);
+        } else {
+            uint256 tokenId = _makerOrder.tokenId;
+            makerOrders[collection][tokenId].push(_makerOrder);
+        }
     }
 
     /**

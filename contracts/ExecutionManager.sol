@@ -13,8 +13,11 @@ import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
 contract ExecutionManager is IExecutionManager, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    address public override collectionBidStrategy;
+
     EnumerableSet.AddressSet private _whitelistedStrategies;
 
+    event NewCollectionBidStrategy(address indexed strategy);
     event StrategyRemoved(address indexed strategy);
     event StrategyWhitelisted(address indexed strategy);
 
@@ -44,6 +47,20 @@ contract ExecutionManager is IExecutionManager, Ownable {
         _whitelistedStrategies.remove(strategy);
 
         emit StrategyRemoved(strategy);
+    }
+
+    /**
+     * @notice Stores the address of `StrategyAnyItemFromCollectionForFixedPrice`
+     * @param _strategy address of the collection bid strategy
+     */
+    function setCollectionBidStrategy(address _strategy)
+        external
+        override
+        onlyOwner
+    {
+        collectionBidStrategy = _strategy;
+
+        emit NewCollectionBidStrategy(_strategy);
     }
 
     /**
