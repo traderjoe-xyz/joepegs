@@ -12,12 +12,17 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   );
 
   const args = [];
-  const executionManager = await deploy("ExecutionManager", {
+  const { address } = await deploy("ExecutionManager", {
     from: deployer,
     args,
     log: true,
     deterministicDeployment: false,
   });
+
+  const executionManager = await ethers.getContract(
+    "ExecutionManager",
+    deployer
+  );
 
   await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
   await executionManager.addStrategy(
@@ -25,7 +30,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   );
 
   await run("verify:verify", {
-    address: executionManager.address,
+    address,
     constructorArguments: args,
   });
 };

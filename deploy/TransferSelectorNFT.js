@@ -10,7 +10,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   );
 
   const args = [transferManagerERC721.address, transferManagerERC1155.address];
-  const transferSelectorNFT = await deploy("TransferSelectorNFT", {
+  const { address } = await deploy("TransferSelectorNFT", {
     from: deployer,
     args,
     log: true,
@@ -18,7 +18,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   });
 
   await run("verify:verify", {
-    address: transferSelectorNFT.address,
+    address,
     constructorArguments: args,
   });
 };

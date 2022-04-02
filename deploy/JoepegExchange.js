@@ -45,7 +45,7 @@ module.exports = async function ({
   // NOTE: We need to remember to call `updateTransferSelectorNFT` after deploy.
   // We cannot simply do that in this deploy script to avoid circular dependency
   // issue with `TransferSelectorNFT`
-  const joepegExchange = await deploy("JoepegExchange", {
+  const { address } = await deploy("JoepegExchange", {
     from: deployer,
     args,
     log: true,
@@ -53,7 +53,7 @@ module.exports = async function ({
   });
 
   await run("verify:verify", {
-    address: joepegExchange.address,
+    address,
     constructorArguments: args,
   });
 };

@@ -7,7 +7,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const joepegExchange = await deployments.get("JoepegExchange");
 
   const args = [joepegExchange.address];
-  const transferManagerERC721 = await deploy("TransferManagerERC721", {
+  const { address } = await deploy("TransferManagerERC721", {
     from: deployer,
     args,
     log: true,
@@ -15,7 +15,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   });
 
   await run("verify:verify", {
-    address: transferManagerERC721.address,
+    address,
     constructorArguments: args,
   });
 };

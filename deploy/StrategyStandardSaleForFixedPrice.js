@@ -7,18 +7,15 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const protocolFee = 100; // 100 = 1%
 
   const args = [protocolFee];
-  const strategyStandardSaleForFixedPrice = await deploy(
-    "StrategyStandardSaleForFixedPrice",
-    {
-      from: deployer,
-      args,
-      log: true,
-      deterministicDeployment: false,
-    }
-  );
+  const { address } = await deploy("StrategyStandardSaleForFixedPrice", {
+    from: deployer,
+    args,
+    log: true,
+    deterministicDeployment: false,
+  });
 
   await run("verify:verify", {
-    address: strategyStandardSaleForFixedPrice.address,
+    address,
     constructorArguments: args,
   });
 };

@@ -7,7 +7,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const protocolFee = 100; // 100 = 1%
 
   const args = [protocolFee];
-  const strategyAnyItemFromCollectionForFixedPrice = await deploy(
+  const { address } = await deploy(
     "StrategyAnyItemFromCollectionForFixedPrice",
     {
       from: deployer,
@@ -18,7 +18,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   );
 
   await run("verify:verify", {
-    address: strategyAnyItemFromCollectionForFixedPrice.address,
+    address,
     constructorArguments: args,
   });
 };

@@ -7,7 +7,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const royaltyFeeRegistry = await deployments.get("RoyaltyFeeRegistry");
 
   const args = [royaltyFeeRegistry.address];
-  const royaltyFeeSetter = await deploy("RoyaltyFeeSetter", {
+  const { address } = await deploy("RoyaltyFeeSetter", {
     from: deployer,
     args,
     log: true,
@@ -15,7 +15,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   });
 
   await run("verify:verify", {
-    address: royaltyFeeSetter.address,
+    address,
     constructorArguments: args,
   });
 };

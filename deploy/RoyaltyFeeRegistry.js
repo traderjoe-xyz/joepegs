@@ -7,7 +7,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const royaltyFeeLimit = 1000; // 1000 = 10%
 
   const args = [royaltyFeeLimit];
-  const royaltyFeeRegistry = await deploy("RoyaltyFeeRegistry", {
+  const { address } = await deploy("RoyaltyFeeRegistry", {
     from: deployer,
     args,
     log: true,
@@ -15,7 +15,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   });
 
   await run("verify:verify", {
-    address: royaltyFeeRegistry.address,
+    address,
     constructorArguments: args,
   });
 };
