@@ -1,3 +1,5 @@
+const { run, ethers } = require("hardhat");
+
 module.exports = async function ({
   deployments,
   getChainId,
@@ -20,18 +22,31 @@ module.exports = async function ({
     wavaxAddress = ethers.utils.getAddress(
       "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
     );
+  } else if (chainId == 43113) {
+    // fuji contract addresses
+    wavaxAddress = ethers.utils.getAddress(
+      "0x1D308089a2D1Ced3f1Ce36B1FcaF815b07217be3"
+    );
   } else {
     throw new Error("Failed to find WAVAX address");
   }
 
-  const currencyManager = await deploy("CurrencyManager", {
+  const args = [];
+  const { address } = await deploy("CurrencyManager", {
     from: deployer,
-    args: [],
+    args,
     log: true,
     deterministicDeployment: false,
   });
 
+  const currencyManager = await ethers.getContract("CurrencyManager", deployer);
+
   await currencyManager.addCurrency(wavaxAddress);
+
+  await run("verify:verify", {
+    address,
+    constructorArguments: args,
+  });
 };
 
 module.exports.tags = ["CurrencyManager"];

@@ -1,3 +1,5 @@
+const { run } = require("hardhat");
+
 module.exports = async function ({
   deployments,
   getChainId,
@@ -20,6 +22,11 @@ module.exports = async function ({
     wavaxAddress = ethers.utils.getAddress(
       "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
     );
+  } else if (chainId == 43113) {
+    // fuji contract addresses
+    wavaxAddress = ethers.utils.getAddress(
+      "0x1D308089a2D1Ced3f1Ce36B1FcaF815b07217be3"
+    );
   } else {
     throw new Error("Failed to find WAVAX address");
   }
@@ -27,22 +34,28 @@ module.exports = async function ({
   const currencyManager = await deployments.get("CurrencyManager");
   const executionManager = await deployments.get("ExecutionManager");
   const royaltyFeeManager = await deployments.get("RoyaltyFeeManager");
-  const transferSelectorNft = await deployments.get("TransferSelectorNFT");
 
+  const args = [
+    currencyManager.address,
+    executionManager.address,
+    royaltyFeeManager.address,
+    wavaxAddress,
+    deployer,
+  ];
+  // NOTE: We need to remember to call `updateTransferSelectorNFT` after deploy.
+  // We cannot simply do that in this deploy script to avoid circular dependency
+  // issue with `TransferSelectorNFT`
   const joepegExchange = await deploy("JoepegExchange", {
     from: deployer,
-    args: [
-      currencyManager.address,
-      executionManager.address,
-      royaltyFeeManager.address,
-      wavaxAddress,
-      deployer,
-    ],
+    args,
     log: true,
     deterministicDeployment: false,
   });
 
-  await joepegExchange.updateTransferSelectorNFT(transferSelectorNft.address);
+  await run("verify:verify", {
+    address: joepegExchange.address,
+    constructorArguments: args,
+  });
 };
 
 module.exports.tags = ["JoepegExchange"];
@@ -50,5 +63,4 @@ module.exports.dependencies = [
   "CurrencyManager",
   "ExecutionManager",
   "RoyaltyFeeManager",
-  "TransferSelectorNFT",
 ];

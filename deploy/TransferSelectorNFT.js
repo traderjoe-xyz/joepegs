@@ -1,3 +1,5 @@
+const { run } = require("hardhat");
+
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -7,11 +9,17 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     "TransferManagerERC1155"
   );
 
-  await deploy("TransferSelectorNFT", {
+  const args = [transferManagerERC721.address, transferManagerERC1155.address];
+  const transferSelectorNFT = await deploy("TransferSelectorNFT", {
     from: deployer,
-    args: [transferManagerERC721.address, transferManagerERC1155.address],
+    args,
     log: true,
     deterministicDeployment: false,
+  });
+
+  await run("verify:verify", {
+    address: transferSelectorNFT.address,
+    constructorArguments: args,
   });
 };
 

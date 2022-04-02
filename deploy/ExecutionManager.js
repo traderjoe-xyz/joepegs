@@ -1,3 +1,5 @@
+const { run } = require("hardhat");
+
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -9,9 +11,10 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     "StrategyAnyItemFromCollectionForFixedPrice"
   );
 
+  const args = [];
   const executionManager = await deploy("ExecutionManager", {
     from: deployer,
-    args: [],
+    args,
     log: true,
     deterministicDeployment: false,
   });
@@ -20,6 +23,11 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   await executionManager.addStrategy(
     strategyAnyItemFromCollectionForFixedPrice.address
   );
+
+  await run("verify:verify", {
+    address: executionManager.address,
+    constructorArguments: args,
+  });
 };
 
 module.exports.tags = ["ExecutionManager"];
