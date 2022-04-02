@@ -20,9 +20,6 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   await executionManager.addStrategy(
     strategyAnyItemFromCollectionForFixedPrice.address
   );
-  await executionManager.setCollectionBidStrategy(
-    strategyAnyItemFromCollectionForFixedPrice.address
-  );
 };
 
 module.exports.tags = ["ExecutionManager"];
