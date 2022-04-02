@@ -62,6 +62,10 @@ module.exports = {
     dev: 1,
   },
   etherscan: {
-    apiKey: process.env.SNOWTRACE_API_KEY,
+    apiKey: {
+      // See https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
+      avalanche: process.env.SNOWTRACE_API_KEY,
+      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
+    },
   },
 };
