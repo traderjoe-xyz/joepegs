@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "compile": "hardhat compile",
+    "deploy": "hardhat deploy",
     "prettier": "prettier --write 'contracts/**/*.sol'",
     "test": "hardhat test"
   },

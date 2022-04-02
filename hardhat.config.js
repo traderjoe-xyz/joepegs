@@ -26,21 +26,18 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
-    rinkeby: {
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${
-        process.env.ALCHEMY_PROJECT_ID || ""
-      }`,
-      accounts: process.env.DEPLOY_PRIVATE_KEY
-        ? [process.env.DEPLOY_PRIVATE_KEY]
-        : [],
-      gas: 2100000,
-      gasPrice: 8000000000,
-      saveDeployments: true,
-    },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
       gasPrice: 26000000000,
       chainId: 43114,
+      accounts: process.env.DEPLOY_PRIVATE_KEY
+        ? [process.env.DEPLOY_PRIVATE_KEY]
+        : [],
+    },
+    fuji: {
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
+      gasPrice: 225000000000,
+      chainId: 43113,
       accounts: process.env.DEPLOY_PRIVATE_KEY
         ? [process.env.DEPLOY_PRIVATE_KEY]
         : [],
@@ -54,6 +51,10 @@ module.exports = {
     dev: 1,
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: {
+      // See https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
+      avalanche: process.env.SNOWTRACE_API_KEY,
+      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
+    },
   },
 };
