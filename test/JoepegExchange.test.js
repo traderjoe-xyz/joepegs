@@ -115,9 +115,6 @@ describe("Exchange", function () {
     await this.executionManager.addStrategy(
       this.strategyAnyItemFromCollectionForFixedPrice.address
     );
-    await this.executionManager.setCollectionBidStrategy(
-      this.strategyAnyItemFromCollectionForFixedPrice.address
-    );
     await this.exchange.updateTransferSelectorNFT(
       this.transferSelectorNFT.address
     );
@@ -232,8 +229,6 @@ describe("Exchange", function () {
       makerAskOrder.s = s;
       makerAskOrder.v = v;
 
-      await this.exchange.connect(this.alice).createMakerOrder(makerAskOrder);
-
       // Create taker bid order
       const takerBidOrder = {
         isOrderAsk: false,
@@ -263,20 +258,10 @@ describe("Exchange", function () {
         this.royaltyFeeRecipient
       );
 
-      // Get maker ask order from the contract
-      const makerAskOrderFromContract = (
-        await this.exchange.getMakerOrders(
-          this.erc721Token.address, // collection
-          tokenId, // tokenId
-          0, // offset
-          1 // limit
-        )
-      )[0];
-
       // Match taker bid order with maker ask order
       await this.exchange
         .connect(this.bob)
-        .matchAskWithTakerBid(takerBidOrder, makerAskOrderFromContract);
+        .matchAskWithTakerBid(takerBidOrder, makerAskOrder);
 
       // Check that bob paid `price` and now owns the NFT!
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
@@ -358,8 +343,6 @@ describe("Exchange", function () {
       makerBidOrder.s = s;
       makerBidOrder.v = v;
 
-      await this.exchange.connect(this.bob).createMakerOrder(makerBidOrder);
-
       // Create taker ask order
       const takerAskOrder = {
         isOrderAsk: true,
@@ -389,20 +372,10 @@ describe("Exchange", function () {
         this.royaltyFeeRecipient
       );
 
-      // Get maker bid order from the contract
-      const makerBidOrderFromContract = (
-        await this.exchange.getMakerOrders(
-          this.erc721Token.address, // collection
-          tokenId, // tokenId
-          0, // offset
-          1 // limit
-        )
-      )[0];
-
       // Match taker ask order with maker bid order
       await this.exchange
         .connect(this.alice)
-        .matchBidWithTakerAsk(takerAskOrder, makerBidOrderFromContract);
+        .matchBidWithTakerAsk(takerAskOrder, makerBidOrder);
 
       // Check that bob paid `price` and now owns the NFT!
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
@@ -485,10 +458,6 @@ describe("Exchange", function () {
       collectionMakerBidOrder.s = s;
       collectionMakerBidOrder.v = v;
 
-      await this.exchange
-        .connect(this.bob)
-        .createMakerOrder(collectionMakerBidOrder);
-
       // Create taker ask order
       const takerAskOrder = {
         isOrderAsk: true,
@@ -518,22 +487,10 @@ describe("Exchange", function () {
         this.royaltyFeeRecipient
       );
 
-      // Get collection maker bid order from the contract
-      const collectionMakerBidOrderFromContract = (
-        await this.exchange.getCollectionMakerBidOrders(
-          this.erc721Token.address, // collection
-          0, // offset
-          1 // limit
-        )
-      )[0];
-
       // Match taker ask order with collection maker bid order
       await this.exchange
         .connect(this.alice)
-        .matchBidWithTakerAsk(
-          takerAskOrder,
-          collectionMakerBidOrderFromContract
-        );
+        .matchBidWithTakerAsk(takerAskOrder, collectionMakerBidOrder);
 
       // Check that bob paid `price` and now owns the NFT!
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
