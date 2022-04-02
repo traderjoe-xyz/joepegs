@@ -26,17 +26,6 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
-    rinkeby: {
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${
-        process.env.ALCHEMY_PROJECT_ID || ""
-      }`,
-      accounts: process.env.DEPLOY_PRIVATE_KEY
-        ? [process.env.DEPLOY_PRIVATE_KEY]
-        : [],
-      gas: 2100000,
-      gasPrice: 8000000000,
-      saveDeployments: true,
-    },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
       gasPrice: 26000000000,
