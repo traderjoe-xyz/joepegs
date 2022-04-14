@@ -12,6 +12,9 @@ describe("Exchange", function () {
     this.ExecutionManagerCF = await ethers.getContractFactory(
       "ExecutionManager"
     );
+    this.ProtocolFeeManagerCF = await ethers.getContractFactory(
+      "ProtocolFeeManager"
+    );
     this.RoyaltyFeeRegistryCF = await ethers.getContractFactory(
       "RoyaltyFeeRegistry"
     );
@@ -66,6 +69,10 @@ describe("Exchange", function () {
     this.erc721Token = await this.ERC721TokenCF.deploy();
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     this.executionManager = await this.ExecutionManagerCF.deploy();
+    this.protocolFeePct = 100; // 100 = 1%
+    this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy(
+      this.protocolFeePct
+    );
     this.royaltyFeeLimit = 1000; // 1000 = 10%
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy(
       this.royaltyFeeLimit
@@ -77,18 +84,14 @@ describe("Exchange", function () {
       this.royaltyFeeRegistry.address
     );
     this.protocolFeeRecipient = this.dev.address;
-    this.protocolFeePct = 100; // 100 = 1%
     this.strategyStandardSaleForFixedPrice =
-      await this.StrategyStandardSaleForFixedPriceCF.deploy(
-        this.protocolFeePct
-      );
+      await this.StrategyStandardSaleForFixedPriceCF.deploy();
     this.strategyAnyItemFromCollectionForFixedPrice =
-      await this.StrategyAnyItemFromCollectionForFixedPriceCF.deploy(
-        this.protocolFeePct
-      );
+      await this.StrategyAnyItemFromCollectionForFixedPriceCF.deploy();
     this.exchange = await this.ExchangeCF.deploy(
       this.currencyManager.address,
       this.executionManager.address,
+      this.protocolFeeManager.address,
       this.royaltyFeeManager.address,
       WAVAX,
       this.protocolFeeRecipient
