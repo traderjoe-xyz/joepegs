@@ -10,16 +10,6 @@ import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
  * a specific address.
  */
 contract StrategyPrivateSale is IExecutionStrategy {
-    uint256 public immutable PROTOCOL_FEE;
-
-    /**
-     * @notice Constructor
-     * @param _protocolFee: protocol fee (200 --> 2%, 400 --> 4%)
-     */
-    constructor(uint256 _protocolFee) {
-        PROTOCOL_FEE = _protocolFee;
-    }
-
     /**
      * @notice Check whether a taker ask order can be executed against a maker bid
      * @return (whether strategy can be executed, tokenId to execute, amount of tokens to execute)
@@ -71,13 +61,5 @@ contract StrategyPrivateSale is IExecutionStrategy {
             makerAsk.tokenId,
             makerAsk.amount
         );
-    }
-
-    /**
-     * @notice Return protocol fee for this strategy
-     * @return protocol fee
-     */
-    function viewProtocolFee() external view override returns (uint256) {
-        return PROTOCOL_FEE;
     }
 }

@@ -47,7 +47,7 @@ contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
 
     /**
      * @notice Constructor
-     * @param _defaultProtocolFee Default protocol fee
+     * @param _defaultProtocolFee default protocol fee
      */
     constructor(uint256 _defaultProtocolFee)
         isValidProtocolFee(_defaultProtocolFee)
@@ -57,7 +57,7 @@ contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
 
     /**
      * @notice Updates `defaultProtocolFee`
-     * @param _defaultProtocolFee New default protocol fee
+     * @param _defaultProtocolFee new default protocol fee
      */
     function setDefaultProtocolFee(uint256 _defaultProtocolFee)
         external
@@ -71,8 +71,8 @@ contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
 
     /**
      * @notice Sets custom protocol fee for `_collection`
-     * @param _collection Address of collection to set custom protocol fee for
-     * @param _protocolFee Custom protocol fee
+     * @param _collection address of collection to set custom protocol fee for
+     * @param _protocolFee custom protocol fee
      */
     function setProtocolFeeForCollection(
         address _collection,
@@ -87,7 +87,7 @@ contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
 
     /**
      * @notice Unsets custom protocol fee for `_collection`
-     * @param _collection Address of collection to unset custom protocol fee for
+     * @param _collection address of collection to unset custom protocol fee for
      */
     function unsetProtocolFeeForCollection(address _collection)
         external
@@ -104,8 +104,8 @@ contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
     /**
      * @notice Get protocol fee for a given `_collection`, falling back to
      * `defaultProtocolFee` if there is no custom protocol fee set
-     * @param _collection Address of collection to look up protocol fee for
-     * @return Protocol fee for `_collection`
+     * @param _collection address of collection to look up protocol fee for
+     * @return protocol fee for `_collection`
      */
     function protocolFeeForCollection(address _collection)
         external

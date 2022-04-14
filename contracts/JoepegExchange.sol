@@ -10,6 +10,7 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
 import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
+import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IJoepegExchange} from "./interfaces/IJoepegExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
@@ -39,6 +40,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
     ICurrencyManager public currencyManager;
     IExecutionManager public executionManager;
+    IProtocolFeeManager public protocolFeeManager;
     IRoyaltyFeeManager public royaltyFeeManager;
     ITransferSelectorNFT public transferSelectorNFT;
 
@@ -50,6 +52,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
     event NewCurrencyManager(address indexed currencyManager);
     event NewExecutionManager(address indexed executionManager);
+    event NewProtocolFeeManager(address indexed protocolFeeManager);
     event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
     event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
     event NewTransferSelectorNFT(address indexed transferSelectorNFT);
@@ -92,6 +95,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
      * @notice Constructor
      * @param _currencyManager currency manager address
      * @param _executionManager execution manager address
+     * @param _protocolFeeManager protocol fee manager address
      * @param _royaltyFeeManager royalty fee manager address
      * @param _WAVAX wrapped ether address (for other chains, use wrapped native asset)
      * @param _protocolFeeRecipient protocol fee recipient
@@ -99,6 +103,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     constructor(
         address _currencyManager,
         address _executionManager,
+        address _protocolFeeManager,
         address _royaltyFeeManager,
         address _WAVAX,
         address _protocolFeeRecipient
@@ -116,6 +121,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         currencyManager = ICurrencyManager(_currencyManager);
         executionManager = IExecutionManager(_executionManager);
+        protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
         WAVAX = _WAVAX;
         protocolFeeRecipient = _protocolFeeRecipient;
@@ -217,7 +223,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         // Execution part 1/2
         _transferFeesAndFundsWithWAVAX(
-            makerAsk.strategy,
             makerAsk.collection,
             tokenId,
             makerAsk.signer,
@@ -288,7 +293,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         // Execution part 1/2
         _transferFeesAndFunds(
-            makerAsk.strategy,
             makerAsk.collection,
             tokenId,
             makerAsk.currency,
@@ -370,7 +374,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         // Execution part 2/2
         _transferFeesAndFunds(
-            makerBid.strategy,
             makerBid.collection,
             tokenId,
             makerBid.currency,
@@ -424,6 +427,22 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
         );
         executionManager = IExecutionManager(_executionManager);
         emit NewExecutionManager(_executionManager);
+    }
+
+    /**
+     * @notice Update protocol fee manager
+     * @param _protocolFeeManager new protocol fee manager address
+     */
+    function updateProtocolFeeManager(address _protocolFeeManager)
+        external
+        onlyOwner
+    {
+        require(
+            _protocolFeeManager != address(0),
+            "Owner: Cannot be null address"
+        );
+        protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
+        emit NewProtocolFeeManager(_protocolFeeManager);
     }
 
     /**
@@ -485,7 +504,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
     /**
      * @notice Transfer fees and funds to royalty recipient, protocol, and seller
-     * @param strategy address of the execution strategy
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
      * @param currency address of token being used for the purchase (e.g., WAVAX/USDC)
@@ -495,7 +513,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
      * @param minPercentageToAsk minimum percentage of the gross amount that goes to ask
      */
     function _transferFeesAndFunds(
-        address strategy,
         address collection,
         uint256 tokenId,
         address currency,
@@ -509,7 +526,10 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         // 1. Protocol fee
         {
-            uint256 protocolFeeAmount = _calculateProtocolFee(strategy, amount);
+            uint256 protocolFeeAmount = _calculateProtocolFee(
+                collection,
+                amount
+            );
 
             // Check if the protocol fee is different than 0 for this strategy
             if (
@@ -570,7 +590,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
     /**
      * @notice Transfer fees and funds to royalty recipient, protocol, and seller
-     * @param strategy address of the execution strategy
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
      * @param to seller's recipient
@@ -578,7 +597,6 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
      * @param minPercentageToAsk minimum percentage of the gross amount that goes to ask
      */
     function _transferFeesAndFundsWithWAVAX(
-        address strategy,
         address collection,
         uint256 tokenId,
         address to,
@@ -590,7 +608,10 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
         // 1. Protocol fee
         {
-            uint256 protocolFeeAmount = _calculateProtocolFee(strategy, amount);
+            uint256 protocolFeeAmount = _calculateProtocolFee(
+                collection,
+                amount
+            );
 
             // Check if the protocol fee is different than 0 for this strategy
             if (
@@ -684,18 +705,19 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Calculate protocol fee for an execution strategy
-     * @param executionStrategy strategy
-     * @param amount amount to transfer
+     * @notice Calculate protocol fee for a given collection
+     * @param _collection address of collection
+     * @param _amount amount to transfer
      */
-    function _calculateProtocolFee(address executionStrategy, uint256 amount)
+    function _calculateProtocolFee(address _collection, uint256 _amount)
         internal
         view
         returns (uint256)
     {
-        uint256 protocolFee = IExecutionStrategy(executionStrategy)
-            .viewProtocolFee();
-        return (protocolFee * amount) / PERCENTAGE_PRECISION;
+        uint256 protocolFee = protocolFeeManager.protocolFeeForCollection(
+            _collection
+        );
+        return (protocolFee * _amount) / PERCENTAGE_PRECISION;
     }
 
     /**
