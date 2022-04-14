@@ -5,6 +5,7 @@ const { describe } = require("mocha");
 
 describe("ProtocolFeeManager", function () {
   before(async function () {
+    this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.ProtocolFeeManagerCF = await ethers.getContractFactory(
       "ProtocolFeeManager"
     );
@@ -17,6 +18,7 @@ describe("ProtocolFeeManager", function () {
   });
 
   beforeEach(async function () {
+    this.erc721Token = await this.ERC721TokenCF.deploy();
     this.protocolFeePct = 100; // 100 -> 1%
     this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy(
       this.protocolFeePct
@@ -43,6 +45,39 @@ describe("ProtocolFeeManager", function () {
       expect(await this.protocolFeeManager.defaultProtocolFee()).to.be.equal(
         newProtocolFeePct
       );
+    });
+  });
+
+  describe("setProtocolFeeForCollection", function () {
+    it("should not allow non-owner to setProtocolFeeForCollection", async function () {
+      await expect(
+        this.protocolFeeManager
+          .connect(this.alice)
+          .setProtocolFeeForCollection(this.erc721Token.address, 200)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("should not allow setting invalid protocol fee amount", async function () {
+      await expect(
+        this.protocolFeeManager.setProtocolFeeForCollection(
+          this.erc721Token.address,
+          10001
+        )
+      ).to.be.revertedWith("ProtocolFeeManager__InvalidProtocolFee()");
+    });
+
+    it("should allow setting valid protocol fee amount", async function () {
+      const newProtocolFeePct = this.protocolFeePct * 2;
+      await this.protocolFeeManager.setProtocolFeeForCollection(
+        this.erc721Token.address,
+        newProtocolFeePct
+      );
+
+      expect(
+        await this.protocolFeeManager.protocolFeeForCollection(
+          this.erc721Token.address
+        )
+      ).to.be.equal(newProtocolFeePct);
     });
   });
 
