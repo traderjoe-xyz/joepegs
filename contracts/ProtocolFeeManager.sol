@@ -18,7 +18,7 @@ contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
     }
 
     /// @notice Default protocol fee, with precision 100 (e.g. 200 -> 2%)
-    uint256 public defaultProtocolFee;
+    uint256 public override defaultProtocolFee;
 
     /// @notice Mapping of collections to custom protocol fee overrides
     mapping(address => ProtocolFeeOverride)

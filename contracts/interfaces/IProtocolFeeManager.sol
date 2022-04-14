@@ -15,4 +15,6 @@ interface IProtocolFeeManager {
         external
         view
         returns (uint256);
+
+    function defaultProtocolFee() external view returns (uint256);
 }
