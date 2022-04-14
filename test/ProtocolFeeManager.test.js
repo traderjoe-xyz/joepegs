@@ -81,6 +81,44 @@ describe("ProtocolFeeManager", function () {
     });
   });
 
+  describe("unsetProtocolFeeForCollection", function () {
+    it("should not allow non-owner to unsetProtocolFeeForCollection", async function () {
+      await expect(
+        this.protocolFeeManager
+          .connect(this.alice)
+          .unsetProtocolFeeForCollection(this.erc721Token.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("should allow owner to unsetProtocolFeeForCollection", async function () {
+      // Set custom protocol fee
+      const newProtocolFeePct = this.protocolFeePct * 2;
+      await this.protocolFeeManager.setProtocolFeeForCollection(
+        this.erc721Token.address,
+        newProtocolFeePct
+      );
+
+      // Check it was set properly
+      expect(
+        await this.protocolFeeManager.protocolFeeForCollection(
+          this.erc721Token.address
+        )
+      ).to.be.equal(newProtocolFeePct);
+
+      // Unset custom protocol fee
+      await this.protocolFeeManager.unsetProtocolFeeForCollection(
+        this.erc721Token.address
+      );
+
+      // Check we get default protocol fee again
+      expect(
+        await this.protocolFeeManager.protocolFeeForCollection(
+          this.erc721Token.address
+        )
+      ).to.be.equal(this.protocolFeePct);
+    });
+  });
+
   after(async function () {
     await network.provider.request({
       method: "hardhat_reset",
