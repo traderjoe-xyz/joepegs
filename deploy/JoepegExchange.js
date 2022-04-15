@@ -33,11 +33,13 @@ module.exports = async function ({
 
   const currencyManager = await deployments.get("CurrencyManager");
   const executionManager = await deployments.get("ExecutionManager");
+  const protocolFeeManager = await deployments.get("ProtocolFeeManager");
   const royaltyFeeManager = await deployments.get("RoyaltyFeeManager");
 
   const args = [
     currencyManager.address,
     executionManager.address,
+    protocolFeeManager.address,
     royaltyFeeManager.address,
     wavaxAddress,
     deployer,
@@ -62,5 +64,6 @@ module.exports.tags = ["JoepegExchange"];
 module.exports.dependencies = [
   "CurrencyManager",
   "ExecutionManager",
+  "ProtocolFeeManager",
   "RoyaltyFeeManager",
 ];

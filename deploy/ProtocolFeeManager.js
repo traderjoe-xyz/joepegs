@@ -4,8 +4,11 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const args = [];
-  const { address } = await deploy("StrategyStandardSaleForFixedPrice", {
+  // TODO: Update to finalized value
+  const defaultProtocolFeeAmount = 1500; // 1500 -> 15%
+
+  const args = [defaultProtocolFeeAmount];
+  const { address } = await deploy("ProtocolFeeManager", {
     from: deployer,
     args,
     log: true,
@@ -18,4 +21,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   });
 };
 
-module.exports.tags = ["StrategyStandardSaleForFixedPrice"];
+module.exports.tags = ["ProtocolFeeManager"];
