@@ -35,7 +35,7 @@ contract ERC721Token is ERC721("Sample NFT", "NFT"), Ownable, IERC2981 {
         returns (string memory)
     {
         return
-            "https://azuki-builder.s3.amazonaws.com/images/fcb92224-2223-4210-aaa8-50d5c3cc966a.png";
+            "https://ikzttp.mypinata.cloud/ipfs/QmQFkLSQysj94s5GvTHPyzTxrawwtjgiiYS2TBLgrvw8CW/5629";
     }
 
     /**
