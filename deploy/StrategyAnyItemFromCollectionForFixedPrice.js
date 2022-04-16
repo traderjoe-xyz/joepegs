@@ -9,7 +9,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     "StrategyAnyItemFromCollectionForFixedPrice",
     {
       from: deployer,
-      args: [protocolFee],
+      args,
       log: true,
       deterministicDeployment: false,
     }
