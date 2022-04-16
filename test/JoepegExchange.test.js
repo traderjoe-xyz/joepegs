@@ -1,7 +1,5 @@
-const { config, ethers, network, upgrades } = require("hardhat");
+const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
-const { advanceTimeAndBlock, duration } = require("./utils/time");
-const { start } = require("repl");
 
 const WAVAX = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 

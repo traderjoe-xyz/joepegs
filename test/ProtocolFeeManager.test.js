@@ -1,5 +1,5 @@
 // @ts-nocheck
-const { ethers, network, upgrades } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 const { describe } = require("mocha");
 
@@ -119,6 +119,16 @@ describe("ProtocolFeeManager", function () {
     });
   });
 
+  describe("protocolFeeForCollection", function () {
+    it("should return defaultProtocolFee for collection without override", async function () {
+      expect(
+        await this.protocolFeeManager.protocolFeeForCollection(
+          this.erc721Token.address
+        )
+      ).to.be.equal(this.protocolFeePct);
+    });
+  });
+
   after(async function () {
     await network.provider.request({
       method: "hardhat_reset",
@@ -126,8 +136,3 @@ describe("ProtocolFeeManager", function () {
     });
   });
 });
-
-const increase = (seconds) => {
-  ethers.provider.send("evm_increaseTime", [seconds]);
-  ethers.provider.send("evm_mine", []);
-};
