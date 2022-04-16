@@ -5,7 +5,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deployer } = await getNamedAccounts();
 
   // TODO: Update to finalized value
-  const defaultProtocolFeeAmount = 1500; // 1500 -> 15%
+  const defaultProtocolFeeAmount = 1000; // 1000 -> 10%
 
   const args = [defaultProtocolFeeAmount];
   const { address } = await deploy("ProtocolFeeManager", {
