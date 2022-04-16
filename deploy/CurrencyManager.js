@@ -1,4 +1,5 @@
-const { run, ethers } = require("hardhat");
+const { ethers } = require("hardhat");
+const { verify } = require("./utils");
 
 module.exports = async function ({
   deployments,
@@ -43,10 +44,7 @@ module.exports = async function ({
 
   await currencyManager.addCurrency(wavaxAddress);
 
-  await run("verify:verify", {
-    address,
-    constructorArguments: args,
-  });
+  await verify(address, args);
 };
 
 module.exports.tags = ["CurrencyManager"];
