@@ -17,8 +17,9 @@ contract ERC721Token is ERC721("Sample NFT", "NFT"), Ownable, IERC2981 {
 
     Counters.Counter private _tokenIds;
 
-    /// @dev Mint _amount to _to
+    /// @dev Mint a NFT to `_to`
     /// @param _to The address that will receive the mint
+    /// @return the `tokenId` of the newly minted NFT
     function mint(address _to) external returns (uint256) {
         _tokenIds.increment();
 
