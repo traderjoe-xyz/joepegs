@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 // OpenZeppelin contracts
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // Joepeg interfaces
@@ -25,7 +26,12 @@ import {SignatureChecker} from "./libraries/SignatureChecker.sol";
  * @title JoepegExchange
  * @notice Fork of the LooksRareExchange contract with some minor additions.
  */
-contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
+contract JoepegExchange is
+    IJoepegExchange,
+    Initializable,
+    ReentrancyGuardUpgradeable,
+    OwnableUpgradeable
+{
     using SafeERC20 for IERC20;
 
     using OrderTypes for OrderTypes.MakerOrder;
@@ -33,8 +39,8 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
 
     uint256 public immutable PERCENTAGE_PRECISION = 10000;
 
-    address public immutable WAVAX;
-    bytes32 public immutable DOMAIN_SEPARATOR;
+    address public WAVAX;
+    bytes32 public domainSeparator;
 
     address public protocolFeeRecipient;
 
@@ -100,16 +106,19 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
      * @param _WAVAX wrapped ether address (for other chains, use wrapped native asset)
      * @param _protocolFeeRecipient protocol fee recipient
      */
-    constructor(
+    function initialize(
         address _currencyManager,
         address _executionManager,
         address _protocolFeeManager,
         address _royaltyFeeManager,
         address _WAVAX,
         address _protocolFeeRecipient
-    ) {
+    ) public initializer {
+        __ReentrancyGuard_init();
+        __Ownable_init();
+
         // Calculate the domain separator
-        DOMAIN_SEPARATOR = keccak256(
+        domainSeparator = keccak256(
             abi.encode(
                 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f, // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
                 0x09c73de1316dde4c80e91bee77727ccdf2cbf7435c9e4c7db6c37af85fa4afcb, // keccak256("JoepegExchange")
@@ -753,7 +762,7 @@ contract JoepegExchange is IJoepegExchange, ReentrancyGuard, Ownable {
                 makerOrder.v,
                 makerOrder.r,
                 makerOrder.s,
-                DOMAIN_SEPARATOR
+                domainSeparator
             ),
             "Signature: Invalid"
         );
