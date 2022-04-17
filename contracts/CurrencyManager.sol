@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
@@ -10,13 +11,21 @@ import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
  * @title CurrencyManager
  * @notice It allows adding/removing currencies for trading on the Joepeg exchange.
  */
-contract CurrencyManager is ICurrencyManager, Ownable {
+contract CurrencyManager is
+    ICurrencyManager,
+    Initializable,
+    OwnableUpgradeable
+{
     using EnumerableSet for EnumerableSet.AddressSet;
 
     EnumerableSet.AddressSet private _whitelistedCurrencies;
 
     event CurrencyRemoved(address indexed currency);
     event CurrencyWhitelisted(address indexed currency);
+
+    function initialize() public initializer {
+        __Ownable_init();
+    }
 
     /**
      * @notice Add a currency in the system

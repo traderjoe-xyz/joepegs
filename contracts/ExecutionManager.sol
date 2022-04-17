@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
@@ -10,7 +11,11 @@ import {IExecutionManager} from "./interfaces/IExecutionManager.sol";
  * @title ExecutionManager
  * @notice It allows adding/removing execution strategies for trading on the Joepeg exchange.
  */
-contract ExecutionManager is IExecutionManager, Ownable {
+contract ExecutionManager is
+    IExecutionManager,
+    Initializable,
+    OwnableUpgradeable
+{
     using EnumerableSet for EnumerableSet.AddressSet;
 
     EnumerableSet.AddressSet private _whitelistedStrategies;
@@ -18,6 +23,10 @@ contract ExecutionManager is IExecutionManager, Ownable {
     event NewCollectionBidStrategy(address indexed strategy);
     event StrategyRemoved(address indexed strategy);
     event StrategyWhitelisted(address indexed strategy);
+
+    function initialize() public initializer {
+        __Ownable_init();
+    }
 
     /**
      * @notice Add an execution strategy in the system

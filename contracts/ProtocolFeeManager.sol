@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 
@@ -11,7 +12,11 @@ error ProtocolFeeManager__InvalidProtocolFee();
  * @title ProtocolFeeManager
  * @notice Tracks and manages protocol fees for collections in the Joepeg Exchange
  */
-contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
+contract ProtocolFeeManager is
+    IProtocolFeeManager,
+    Initializable,
+    OwnableUpgradeable
+{
     struct ProtocolFeeOverride {
         bool isOverridden;
         uint256 protocolFee;
@@ -46,12 +51,16 @@ contract ProtocolFeeManager is IProtocolFeeManager, Ownable {
     }
 
     /**
-     * @notice Constructor
+     * @notice Initializer
      * @param _defaultProtocolFee default protocol fee
      */
-    constructor(uint256 _defaultProtocolFee)
+    function initialize(uint256 _defaultProtocolFee)
+        public
+        initializer
         isValidProtocolFee(_defaultProtocolFee)
     {
+        __Ownable_init();
+
         defaultProtocolFee = _defaultProtocolFee;
     }
 
