@@ -10,16 +10,6 @@ import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
  * can be taken either by a bid or an ask.
  */
 contract StrategyStandardSaleForFixedPrice is IExecutionStrategy {
-    uint256 public immutable PROTOCOL_FEE;
-
-    /**
-     * @notice Constructor
-     * @param _protocolFee protocol fee (200 --> 2%, 400 --> 4%)
-     */
-    constructor(uint256 _protocolFee) {
-        PROTOCOL_FEE = _protocolFee;
-    }
-
     /**
      * @notice Check whether a taker ask order can be executed against a maker bid
      * @param takerAsk taker ask order
@@ -76,13 +66,5 @@ contract StrategyStandardSaleForFixedPrice is IExecutionStrategy {
             makerAsk.tokenId,
             makerAsk.amount
         );
-    }
-
-    /**
-     * @notice Return protocol fee for this strategy
-     * @return protocol fee
-     */
-    function viewProtocolFee() external view override returns (uint256) {
-        return PROTOCOL_FEE;
     }
 }

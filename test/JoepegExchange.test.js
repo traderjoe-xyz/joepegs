@@ -1,16 +1,17 @@
-const { config, ethers, network, upgrades } = require("hardhat");
+const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
-const { advanceTimeAndBlock, duration } = require("./utils/time");
-const { start } = require("repl");
 
 const WAVAX = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
-describe("Exchange", function () {
+describe("JoepegExchange", function () {
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.CurrencyManagerCF = await ethers.getContractFactory("CurrencyManager");
     this.ExecutionManagerCF = await ethers.getContractFactory(
       "ExecutionManager"
+    );
+    this.ProtocolFeeManagerCF = await ethers.getContractFactory(
+      "ProtocolFeeManager"
     );
     this.RoyaltyFeeRegistryCF = await ethers.getContractFactory(
       "RoyaltyFeeRegistry"
@@ -66,6 +67,10 @@ describe("Exchange", function () {
     this.erc721Token = await this.ERC721TokenCF.deploy();
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     this.executionManager = await this.ExecutionManagerCF.deploy();
+    this.protocolFeePct = 100; // 100 = 1%
+    this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy(
+      this.protocolFeePct
+    );
     this.royaltyFeeLimit = 1000; // 1000 = 10%
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy(
       this.royaltyFeeLimit
@@ -77,18 +82,14 @@ describe("Exchange", function () {
       this.royaltyFeeRegistry.address
     );
     this.protocolFeeRecipient = this.dev.address;
-    this.protocolFeePct = 100; // 100 = 1%
     this.strategyStandardSaleForFixedPrice =
-      await this.StrategyStandardSaleForFixedPriceCF.deploy(
-        this.protocolFeePct
-      );
+      await this.StrategyStandardSaleForFixedPriceCF.deploy();
     this.strategyAnyItemFromCollectionForFixedPrice =
-      await this.StrategyAnyItemFromCollectionForFixedPriceCF.deploy(
-        this.protocolFeePct
-      );
+      await this.StrategyAnyItemFromCollectionForFixedPriceCF.deploy();
     this.exchange = await this.ExchangeCF.deploy(
       this.currencyManager.address,
       this.executionManager.address,
+      this.protocolFeeManager.address,
       this.royaltyFeeManager.address,
       WAVAX,
       this.protocolFeeRecipient
@@ -527,6 +528,85 @@ describe("Exchange", function () {
       );
       expect(aliceWavaxBalanceAfter).to.be.equal(
         aliceWavaxBalanceBefore.add(price.sub(protocolFee).sub(royaltyFee))
+      );
+    });
+
+    it("protocol fee recipient receives correct custom protocol fee amount", async function () {
+      // Set custom protocol fee for this.erc721Token
+      const customProtocolFeePct = this.protocolFeePct * 2;
+      await this.protocolFeeManager.setProtocolFeeForCollection(
+        this.erc721Token.address,
+        customProtocolFeePct
+      );
+
+      // Approve transferManagerERC721 to transfer NFT
+      const tokenId = 1;
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.transferManagerERC721.address, tokenId);
+
+      // Create maker ask order
+      // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
+      const price = ethers.utils.parseEther("1");
+      const makerAskOrder = {
+        isOrderAsk: true,
+        signer: this.alice.address,
+        collection: this.erc721Token.address,
+        price,
+        tokenId,
+        amount: 1,
+        strategy: this.strategyStandardSaleForFixedPrice.address,
+        currency: WAVAX,
+        nonce: 1,
+        startTime,
+        endTime,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // Sign maker ask order
+      const signedMessage = await this.alice._signTypedData(
+        this.DOMAIN,
+        this.TYPES,
+        makerAskOrder
+      );
+      const { r, s, v } = ethers.utils.splitSignature(signedMessage);
+      makerAskOrder.r = r;
+      makerAskOrder.s = s;
+      makerAskOrder.v = v;
+
+      // Create taker bid order
+      const takerBidOrder = {
+        isOrderAsk: false,
+        taker: this.bob.address,
+        price,
+        tokenId,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // Approve exchange to transfer WAVAX
+      await this.wavax
+        .connect(this.bob)
+        .deposit({ value: ethers.utils.parseEther("1") });
+      await this.wavax.connect(this.bob).approve(this.exchange.address, price);
+
+      const protocolRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+
+      // Match taker bid order with maker ask order
+      await this.exchange
+        .connect(this.bob)
+        .matchAskWithTakerBid(takerBidOrder, makerAskOrder);
+
+      // Check that protocol received correct amount of protocol fees
+      const protocolRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const customProtocolFee = price.mul(customProtocolFeePct).div(10000);
+      expect(protocolRecipientWavaxBalanceAfter).to.be.equal(
+        protocolRecipientWavaxBalanceBefore.add(customProtocolFee)
       );
     });
   });

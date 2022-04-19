@@ -1,14 +1,15 @@
-const { run } = require("hardhat");
+const { verify } = require("./utils");
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const strategyStandardSaleForFixedPrice = await deployments.get(
-    "StrategyStandardSaleForFixedPrice"
-  );
   const strategyAnyItemFromCollectionForFixedPrice = await deployments.get(
     "StrategyAnyItemFromCollectionForFixedPrice"
+  );
+  const strategyPrivateSale = await deployments.get("StrategyPrivateSale");
+  const strategyStandardSaleForFixedPrice = await deployments.get(
+    "StrategyStandardSaleForFixedPrice"
   );
 
   const args = [];
@@ -24,19 +25,18 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     deployer
   );
 
-  await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
   await executionManager.addStrategy(
     strategyAnyItemFromCollectionForFixedPrice.address
   );
+  await executionManager.addStrategy(strategyPrivateSale.address);
+  await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
 
-  await run("verify:verify", {
-    address,
-    constructorArguments: args,
-  });
+  await verify(address, args);
 };
 
 module.exports.tags = ["ExecutionManager"];
 module.exports.dependencies = [
-  "StrategyStandardSaleForFixedPrice",
   "StrategyAnyItemFromCollectionForFixedPrice",
+  "StrategyPrivateSale",
+  "StrategyStandardSaleForFixedPrice",
 ];

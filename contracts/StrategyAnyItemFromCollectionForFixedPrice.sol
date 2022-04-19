@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {OrderTypes} from "./libraries/OrderTypes.sol";
 import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
+import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 
 /**
  * @title StrategyAnyItemFromCollectionForFixedPrice
@@ -10,16 +11,6 @@ import {IExecutionStrategy} from "./interfaces/IExecutionStrategy.sol";
  * matched by any tokenId for the collection.
  */
 contract StrategyAnyItemFromCollectionForFixedPrice is IExecutionStrategy {
-    uint256 public immutable PROTOCOL_FEE;
-
-    /**
-     * @notice Constructor
-     * @param _protocolFee protocol fee (200 --> 2%, 400 --> 4%)
-     */
-    constructor(uint256 _protocolFee) {
-        PROTOCOL_FEE = _protocolFee;
-    }
-
     /**
      * @notice Check whether a taker ask order can be executed against a maker bid
      * @param takerAsk taker ask order
@@ -67,13 +58,5 @@ contract StrategyAnyItemFromCollectionForFixedPrice is IExecutionStrategy {
         )
     {
         return (false, 0, 0);
-    }
-
-    /**
-     * @notice Return protocol fee for this strategy
-     * @return protocol fee
-     */
-    function viewProtocolFee() external view override returns (uint256) {
-        return PROTOCOL_FEE;
     }
 }

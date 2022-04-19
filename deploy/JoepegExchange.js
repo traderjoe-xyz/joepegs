@@ -1,4 +1,4 @@
-const { run } = require("hardhat");
+const { verify } = require("./utils");
 
 module.exports = async function ({
   deployments,
@@ -33,11 +33,13 @@ module.exports = async function ({
 
   const currencyManager = await deployments.get("CurrencyManager");
   const executionManager = await deployments.get("ExecutionManager");
+  const protocolFeeManager = await deployments.get("ProtocolFeeManager");
   const royaltyFeeManager = await deployments.get("RoyaltyFeeManager");
 
   const args = [
     currencyManager.address,
     executionManager.address,
+    protocolFeeManager.address,
     royaltyFeeManager.address,
     wavaxAddress,
     deployer,
@@ -52,15 +54,13 @@ module.exports = async function ({
     deterministicDeployment: false,
   });
 
-  await run("verify:verify", {
-    address,
-    constructorArguments: args,
-  });
+  await verify(address, args);
 };
 
 module.exports.tags = ["JoepegExchange"];
 module.exports.dependencies = [
   "CurrencyManager",
   "ExecutionManager",
+  "ProtocolFeeManager",
   "RoyaltyFeeManager",
 ];

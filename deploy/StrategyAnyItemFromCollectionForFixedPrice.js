@@ -1,26 +1,21 @@
-const { run } = require("hardhat");
+const { verify } = require("./utils");
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const protocolFee = 100; // 100 = 1%
-
-  const args = [protocolFee];
+  const args = [];
   const { address } = await deploy(
     "StrategyAnyItemFromCollectionForFixedPrice",
     {
       from: deployer,
-      args: [protocolFee],
+      args,
       log: true,
       deterministicDeployment: false,
     }
   );
 
-  await run("verify:verify", {
-    address,
-    constructorArguments: args,
-  });
+  await verify(address, args);
 };
 
 module.exports.tags = ["StrategyAnyItemFromCollectionForFixedPrice"];

@@ -4,10 +4,11 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const royaltyFeeRegistry = await deployments.get("RoyaltyFeeRegistry");
+  // TODO: Update to finalized value
+  const defaultProtocolFeeAmount = 1000; // 1000 -> 10%
 
-  const args = [royaltyFeeRegistry.address];
-  const { address } = await deploy("RoyaltyFeeManager", {
+  const args = [defaultProtocolFeeAmount];
+  const { address } = await deploy("ProtocolFeeManager", {
     from: deployer,
     args,
     log: true,
@@ -17,5 +18,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   await verify(address, args);
 };
 
-module.exports.tags = ["RoyaltyFeeManager"];
-module.exports.dependencies = ["RoyaltyFeeRegistry"];
+module.exports.tags = ["ProtocolFeeManager"];
