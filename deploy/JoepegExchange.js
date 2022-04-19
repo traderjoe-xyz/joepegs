@@ -1,4 +1,4 @@
-const { run } = require("hardhat");
+const { verify } = require("./utils");
 
 module.exports = async function ({
   deployments,
@@ -54,10 +54,7 @@ module.exports = async function ({
     deterministicDeployment: false,
   });
 
-  await run("verify:verify", {
-    address,
-    constructorArguments: args,
-  });
+  await verify(address, args);
 };
 
 module.exports.tags = ["JoepegExchange"];
