@@ -1,8 +1,10 @@
 const { verify } = require("./utils");
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
-  const { deploy } = deployments;
+  const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
+
+  let proxyContract;
 
   const transferManagerERC721 = await deployments.get("TransferManagerERC721");
   const transferManagerERC1155 = await deployments.get(
@@ -10,14 +12,26 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   );
 
   const args = [transferManagerERC721.address, transferManagerERC1155.address];
-  const { address } = await deploy("TransferSelectorNFT", {
-    from: deployer,
-    args,
-    log: true,
-    deterministicDeployment: false,
+  await catchUnknownSigner(async () => {
+    proxyAddress = await deploy("TransferSelectorNFT", {
+      from: deployer,
+      proxy: {
+        owner: deployer,
+        proxyContract: "OpenZeppelinTransparentProxy",
+        viaAdminContract: "DefaultProxyAdmin",
+        execute: {
+          init: {
+            methodName: "initialize",
+            args: args,
+          },
+        },
+      },
+      log: true,
+      deterministicDeployment: false,
+    });
   });
 
-  await verify(address, args);
+  await verify(proxyContract.address, args);
 };
 
 module.exports.tags = ["TransferSelectorNFT"];

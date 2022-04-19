@@ -1,8 +1,10 @@
 const { verify } = require("./utils");
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
-  const { deploy } = deployments;
+  const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
+
+  let proxyContract;
 
   const strategyAnyItemFromCollectionForFixedPrice = await deployments.get(
     "StrategyAnyItemFromCollectionForFixedPrice"
@@ -13,12 +15,24 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   );
 
   const args = [];
-  const { address } = await deploy("ExecutionManager", {
-    from: deployer,
-    args,
-    log: true,
-    deterministicDeployment: false,
-  });
+  await catchUnknownSigner(async () => {
+    proxyAddress = await deploy("ExecutionManager", {
+      from: deployer,
+      proxy: {
+        owner: deployer,
+        proxyContract: "OpenZeppelinTransparentProxy",
+        viaAdminContract: "DefaultProxyAdmin",
+        execute: {
+          init: {
+            methodName: "initialize",
+            args: args,
+          },
+        },
+      },
+      log: true,
+      deterministicDeployment: false,
+    });
+  })
 
   const executionManager = await ethers.getContract(
     "ExecutionManager",
@@ -31,7 +45,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   await executionManager.addStrategy(strategyPrivateSale.address);
   await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
 
-  await verify(address, args);
+  await verify(proxyContract.address, args);
 };
 
 module.exports.tags = ["ExecutionManager"];
