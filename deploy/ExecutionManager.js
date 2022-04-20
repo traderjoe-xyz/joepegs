@@ -4,7 +4,14 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  let proxyContract;
+  let proxyContract, proxyOwner;
+
+  if (chainId == 4 || chainId == 43113) {
+    proxyOwner = deployer;
+  } else if (chainId == 43114 || chainId == 31337) {
+    // multisig
+    proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
+  }
 
   const strategyAnyItemFromCollectionForFixedPrice = await deployments.get(
     "StrategyAnyItemFromCollectionForFixedPrice"
@@ -19,7 +26,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     proxyAddress = await deploy("ExecutionManager", {
       from: deployer,
       proxy: {
-        owner: deployer,
+        owner: proxyOwner,
         proxyContract: "OpenZeppelinTransparentProxy",
         viaAdminContract: "DefaultProxyAdmin",
         execute: {

@@ -72,7 +72,7 @@ module.exports = async function ({
     });
   });
 
-  verify(proxyContract.address, args)
+  await verify(proxyContract.address, args);
 };
 
 module.exports.tags = ["JoepegExchange"];
