@@ -21,4 +21,8 @@ interface IJoepegExchange {
         OrderTypes.TakerOrder calldata takerAsk,
         OrderTypes.MakerOrder calldata makerBid
     ) external;
+
+    function validateOrder(OrderTypes.MakerOrder calldata makerOrder)
+        external
+        view;
 }

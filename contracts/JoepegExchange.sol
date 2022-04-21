@@ -512,6 +512,17 @@ contract JoepegExchange is
     }
 
     /**
+     * @notice Verify the validity of the maker order
+     * @param makerOrder maker order
+     */
+    function validateOrder(OrderTypes.MakerOrder calldata makerOrder)
+        external
+        view
+    {
+        _validateOrder(makerOrder, makerOrder.hash());
+    }
+
+    /**
      * @notice Transfer fees and funds to royalty recipient, protocol, and seller
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
