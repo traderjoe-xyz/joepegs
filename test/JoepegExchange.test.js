@@ -65,28 +65,35 @@ describe("JoepegExchange", function () {
   beforeEach(async function () {
     this.wavax = await ethers.getContractAt("IWAVAX", WAVAX);
     this.erc721Token = await this.ERC721TokenCF.deploy();
+
     this.currencyManager = await this.CurrencyManagerCF.deploy();
+    await this.currencyManager.initialize();
+
     this.executionManager = await this.ExecutionManagerCF.deploy();
+    await this.executionManager.initialize();
+
     this.protocolFeePct = 100; // 100 = 1%
-    this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy(
-      this.protocolFeePct
-    );
+    this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy();
+    await this.protocolFeeManager.initialize(this.protocolFeePct);
+
     this.royaltyFeeLimit = 1000; // 1000 = 10%
-    this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy(
-      this.royaltyFeeLimit
-    );
-    this.royaltyFeeSetter = await this.RoyaltyFeeSetterCF.deploy(
-      this.royaltyFeeRegistry.address
-    );
-    this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy(
-      this.royaltyFeeRegistry.address
-    );
+    this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy();
+    await this.royaltyFeeRegistry.initialize(this.royaltyFeeLimit);
+
+    this.royaltyFeeSetter = await this.RoyaltyFeeSetterCF.deploy();
+    await this.royaltyFeeSetter.initialize(this.royaltyFeeRegistry.address);
+
+    this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
+    await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
+
     this.protocolFeeRecipient = this.dev.address;
     this.strategyStandardSaleForFixedPrice =
       await this.StrategyStandardSaleForFixedPriceCF.deploy();
     this.strategyAnyItemFromCollectionForFixedPrice =
       await this.StrategyAnyItemFromCollectionForFixedPriceCF.deploy();
-    this.exchange = await this.ExchangeCF.deploy(
+
+    this.exchange = await this.ExchangeCF.deploy();
+    await this.exchange.initialize(
       this.currencyManager.address,
       this.executionManager.address,
       this.protocolFeeManager.address,
@@ -94,13 +101,15 @@ describe("JoepegExchange", function () {
       WAVAX,
       this.protocolFeeRecipient
     );
-    this.transferManagerERC721 = await this.TransferManagerERC721CF.deploy(
-      this.exchange.address
-    );
-    this.transferManagerERC1155 = await this.TransferManagerERC1155CF.deploy(
-      this.exchange.address
-    );
-    this.transferSelectorNFT = await this.TransferSelectorNFTCF.deploy(
+
+    this.transferManagerERC721 = await this.TransferManagerERC721CF.deploy();
+    await this.transferManagerERC721.initialize(this.exchange.address);
+
+    this.transferManagerERC1155 = await this.TransferManagerERC1155CF.deploy();
+    await this.transferManagerERC1155.initialize(this.exchange.address);
+
+    this.transferSelectorNFT = await this.TransferSelectorNFTCF.deploy();
+    await this.transferSelectorNFT.initialize(
       this.transferManagerERC721.address,
       this.transferManagerERC1155.address
     );

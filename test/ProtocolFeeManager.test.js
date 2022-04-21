@@ -20,9 +20,8 @@ describe("ProtocolFeeManager", function () {
   beforeEach(async function () {
     this.erc721Token = await this.ERC721TokenCF.deploy();
     this.protocolFeePct = 100; // 100 -> 1%
-    this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy(
-      this.protocolFeePct
-    );
+    this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy();
+    await this.protocolFeeManager.initialize(this.protocolFeePct);
   });
 
   describe("setDefaultProtocolFee", function () {
