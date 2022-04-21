@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
@@ -10,17 +11,21 @@ import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
  * @title TransferSelectorNFT
  * @notice It selects the NFT transfer manager based on a collection address.
  */
-contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
+contract TransferSelectorNFT is
+    ITransferSelectorNFT,
+    Initializable,
+    OwnableUpgradeable
+{
     // ERC721 interfaceID
     bytes4 public constant INTERFACE_ID_ERC721 = 0x80ac58cd;
     // ERC1155 interfaceID
     bytes4 public constant INTERFACE_ID_ERC1155 = 0xd9b67a26;
 
     // Address of the transfer manager contract for ERC721 tokens
-    address public immutable TRANSFER_MANAGER_ERC721;
+    address public transferManagerERC721;
 
     // Address of the transfer manager contract for ERC1155 tokens
-    address public immutable TRANSFER_MANAGER_ERC1155;
+    address public transferManagerERC1155;
 
     // Map collection address to transfer manager address
     mapping(address => address) public transferManagerSelectorForCollection;
@@ -32,14 +37,18 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
     event CollectionTransferManagerRemoved(address indexed collection);
 
     /**
-     * @notice Constructor
+     * @notice Initializer
      * @param _transferManagerERC721 address of the ERC721 transfer manager
      * @param _transferManagerERC1155 address of the ERC1155 transfer manager
      */
-    constructor(address _transferManagerERC721, address _transferManagerERC1155)
-    {
-        TRANSFER_MANAGER_ERC721 = _transferManagerERC721;
-        TRANSFER_MANAGER_ERC1155 = _transferManagerERC1155;
+    function initialize(
+        address _transferManagerERC721,
+        address _transferManagerERC1155
+    ) public initializer {
+        __Ownable_init();
+
+        transferManagerERC721 = _transferManagerERC721;
+        transferManagerERC1155 = _transferManagerERC1155;
     }
 
     /**
@@ -101,11 +110,11 @@ contract TransferSelectorNFT is ITransferSelectorNFT, Ownable {
 
         if (transferManager == address(0)) {
             if (IERC165(collection).supportsInterface(INTERFACE_ID_ERC721)) {
-                transferManager = TRANSFER_MANAGER_ERC721;
+                transferManager = transferManagerERC721;
             } else if (
                 IERC165(collection).supportsInterface(INTERFACE_ID_ERC1155)
             ) {
-                transferManager = TRANSFER_MANAGER_ERC1155;
+                transferManager = transferManagerERC1155;
             } else {
                 revert(
                     "TransferSelectorNFT: No NFT transfer manager available"

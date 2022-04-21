@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
@@ -11,7 +12,7 @@ import {IOwnable} from "./interfaces/IOwnable.sol";
  * @title RoyaltyFeeSetter
  * @notice Used to allow creators to set royalty parameters in the RoyaltyFeeRegistry.
  */
-contract RoyaltyFeeSetter is Ownable {
+contract RoyaltyFeeSetter is Initializable, OwnableUpgradeable {
     // ERC721 interfaceID
     bytes4 public constant INTERFACE_ID_ERC721 = 0x80ac58cd;
 
@@ -21,13 +22,15 @@ contract RoyaltyFeeSetter is Ownable {
     // ERC2981 interfaceID
     bytes4 public constant INTERFACE_ID_ERC2981 = 0x2a55205a;
 
-    address public immutable royaltyFeeRegistry;
+    address public royaltyFeeRegistry;
 
     /**
-     * @notice Constructor
+     * @notice Initializer
      * @param _royaltyFeeRegistry address of the royalty fee registry
      */
-    constructor(address _royaltyFeeRegistry) {
+    function initialize(address _royaltyFeeRegistry) public initializer {
+        __Ownable_init();
+
         royaltyFeeRegistry = _royaltyFeeRegistry;
     }
 

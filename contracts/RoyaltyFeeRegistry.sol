@@ -1,15 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
+
+error RoyaltyFeeRegistry__RoyaltyFeeLimitTooHigh();
 
 /**
  * @title RoyaltyFeeRegistry
  * @notice It is a royalty fee registry for the Joepeg exchange.
  */
-contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
+contract RoyaltyFeeRegistry is
+    IRoyaltyFeeRegistry,
+    Initializable,
+    OwnableUpgradeable
+{
     struct FeeInfo {
         address setter;
         address receiver;
@@ -29,12 +36,24 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
         uint256 fee
     );
 
+    modifier isValidRoyaltyFeeLimit(uint256 _royaltyFeeLimit) {
+        if (_royaltyFeeLimit > 9500) {
+            revert RoyaltyFeeRegistry__RoyaltyFeeLimitTooHigh();
+        }
+        _;
+    }
+
     /**
-     * @notice Constructor
+     * @notice Initializer
      * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
      */
-    constructor(uint256 _royaltyFeeLimit) {
-        require(_royaltyFeeLimit <= 9500, "Owner: Royalty fee limit too high");
+    function initialize(uint256 _royaltyFeeLimit)
+        public
+        initializer
+        isValidRoyaltyFeeLimit(_royaltyFeeLimit)
+    {
+        __Ownable_init();
+
         royaltyFeeLimit = _royaltyFeeLimit;
     }
 
@@ -45,9 +64,9 @@ contract RoyaltyFeeRegistry is IRoyaltyFeeRegistry, Ownable {
     function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit)
         external
         override
+        isValidRoyaltyFeeLimit(_royaltyFeeLimit)
         onlyOwner
     {
-        require(_royaltyFeeLimit <= 9500, "Owner: Royalty fee limit too high");
         royaltyFeeLimit = _royaltyFeeLimit;
 
         emit NewRoyaltyFeeLimit(_royaltyFeeLimit);

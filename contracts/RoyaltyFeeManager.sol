@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC165, IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
@@ -11,17 +12,23 @@ import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
  * @title RoyaltyFeeManager
  * @notice Handles the logic to check and transfer royalty fees (if any).
  */
-contract RoyaltyFeeManager is IRoyaltyFeeManager, Ownable {
+contract RoyaltyFeeManager is
+    IRoyaltyFeeManager,
+    Initializable,
+    OwnableUpgradeable
+{
     // https://eips.ethereum.org/EIPS/eip-2981
     bytes4 public constant INTERFACE_ID_ERC2981 = 0x2a55205a;
 
-    IRoyaltyFeeRegistry public immutable royaltyFeeRegistry;
+    IRoyaltyFeeRegistry public royaltyFeeRegistry;
 
     /**
-     * @notice Constructor
+     * @notice Initializer
      * @param _royaltyFeeRegistry address of the RoyaltyFeeRegistry
      */
-    constructor(address _royaltyFeeRegistry) {
+    function initialize(address _royaltyFeeRegistry) public initializer {
+        __Ownable_init();
+
         royaltyFeeRegistry = IRoyaltyFeeRegistry(_royaltyFeeRegistry);
     }
 

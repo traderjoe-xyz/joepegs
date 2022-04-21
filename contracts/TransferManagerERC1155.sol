@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 
@@ -9,15 +10,15 @@ import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
  * @title TransferManagerERC1155
  * @notice It allows the transfer of ERC1155 tokens.
  */
-contract TransferManagerERC1155 is ITransferManagerNFT {
-    address public immutable JOEPEG_EXCHANGE;
+contract TransferManagerERC1155 is ITransferManagerNFT, Initializable {
+    address public joepegExchange;
 
     /**
-     * @notice Constructor
+     * @notice Initializer
      * @param _joepegExchange address of the Joepeg exchange
      */
-    constructor(address _joepegExchange) {
-        JOEPEG_EXCHANGE = _joepegExchange;
+    function initialize(address _joepegExchange) public initializer {
+        joepegExchange = _joepegExchange;
     }
 
     /**
@@ -35,7 +36,7 @@ contract TransferManagerERC1155 is ITransferManagerNFT {
         uint256 tokenId,
         uint256 amount
     ) external override {
-        require(msg.sender == JOEPEG_EXCHANGE, "Transfer: Only JoepegExchange");
+        require(msg.sender == joepegExchange, "Transfer: Only JoepegExchange");
         // https://docs.openzeppelin.com/contracts/3.x/api/token/erc1155#IERC1155-safeTransferFrom-address-address-uint256-uint256-bytes-
         IERC1155(collection).safeTransferFrom(from, to, tokenId, amount, "");
     }
