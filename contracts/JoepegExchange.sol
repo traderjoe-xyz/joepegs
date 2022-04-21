@@ -518,6 +518,7 @@ contract JoepegExchange is
     function validateOrder(OrderTypes.MakerOrder calldata makerOrder)
         external
         view
+        override
     {
         _validateOrder(makerOrder, makerOrder.hash());
     }
