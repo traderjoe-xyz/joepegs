@@ -1,8 +1,14 @@
 const { verify } = require("./utils");
 
-module.exports = async function ({ getNamedAccounts, deployments }) {
+module.exports = async function ({ 
+  getNamedAccounts, 
+  deployments, 
+  getChainId 
+}) {
   const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
+
+  const chainId = await getChainId();
 
   let proxyContract, proxyOwner;
 
@@ -17,7 +23,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const args = [defaultProtocolFeeAmount];
   await catchUnknownSigner(async () => {
-    proxyAddress = await deploy("ProtocolFeeManager", {
+    proxyContract = await deploy("ProtocolFeeManager", {
       from: deployer,
       proxy: {
         owner: proxyOwner,

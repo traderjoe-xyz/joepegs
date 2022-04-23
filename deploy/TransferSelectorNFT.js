@@ -1,10 +1,12 @@
 const { verify } = require("./utils");
 
-module.exports = async function ({ getNamedAccounts, deployments }) {
+module.exports = async function ({ getNamedAccounts, deployments, getChainId }) {
   const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
 
   let proxyContract, proxyOwner;
+
+  const chainId = await getChainId();
 
   if (chainId == 4 || chainId == 43113) {
     proxyOwner = deployer;
@@ -20,7 +22,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const args = [transferManagerERC721.address, transferManagerERC1155.address];
   await catchUnknownSigner(async () => {
-    proxyAddress = await deploy("TransferSelectorNFT", {
+    proxyContract = await deploy("TransferSelectorNFT", {
       from: deployer,
       proxy: {
         owner: proxyOwner,
