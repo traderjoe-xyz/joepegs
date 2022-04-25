@@ -15,7 +15,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     }
   );
 
-  // await verify(address, args);
+  await verify(address, args);
 };
 
 module.exports.tags = ["StrategyAnyItemFromCollectionForFixedPrice"];
