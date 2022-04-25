@@ -41,7 +41,7 @@ module.exports = async function ({
     });
   });
 
-  await verify(proxyContract.address, args);
+// await verify(proxyContract.address, args);
 };
 
 module.exports.tags = ["ProtocolFeeManager"];

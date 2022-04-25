@@ -63,7 +63,7 @@ module.exports = async function ({
 
   await currencyManager.addCurrency(wavaxAddress);
 
-  await verify(proxyContract.address, args);
+// await verify(proxyContract.address, args);
 }
 
 module.exports.tags = ["CurrencyManager"];

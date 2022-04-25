@@ -54,7 +54,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
   await executionManager.addStrategy(strategyPrivateSale.address);
   await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
 
-  await verify(proxyContract.address, args);
+// await verify(proxyContract.address, args);
 };
 
 module.exports.tags = ["ExecutionManager"];

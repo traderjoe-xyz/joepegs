@@ -1,7 +1,7 @@
 const { verify } = require("./utils");
 
 module.exports = async function ({ getNamedAccounts, deployments, getChainId }) {
-  const { deploy } = deployments;
+  const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
 
   let proxyContract, proxyOwner;
@@ -38,7 +38,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     });
   });
 
-  await verify(proxyContract.address, args);
+// await verify(proxyContract.address, args);
 }
 
 module.exports.tags = ["TransferManagerERC721"];
