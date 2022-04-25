@@ -10,9 +10,7 @@ module.exports = async function ({
 
   const chainId = await getChainId();
 
-  let wavaxAddress,
-    proxyAddress,
-    proxyOwner;
+  let wavaxAddress, proxyAddress, proxyOwner;
 
   if (chainId == 4) {
     // rinkeby contract addresses
@@ -54,7 +52,7 @@ module.exports = async function ({
   // We cannot simply do that in this deploy script to avoid circular dependency
   // issue with `TransferSelectorNFT`
   await catchUnknownSigner(async () => {
-    proxyAddress = await deploy("JoepegExchange", {
+    proxyContract = await deploy("JoepegExchange", {
       from: deployer,
       proxy: {
         owner: proxyOwner,
