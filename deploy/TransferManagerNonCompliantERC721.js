@@ -6,7 +6,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
 
   let proxyContract, proxyOwner;
 
-  const chainId = await getChainId();
+  const chainId = getChainId();
 
   if (chainId == 4 || chainId == 43113) {
     proxyOwner = deployer;
@@ -15,11 +15,12 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
   }
 
-  const royaltyFeeLimit = 1000; // 1000 = 10%
+  const joepegExchange = await deployments.get("JoepegExchange");
 
-  const args = [royaltyFeeLimit];
+  const args = [joepegExchange.address];
+
   await catchUnknownSigner(async () => {
-    proxyContract = await deploy("RoyaltyFeeRegistry", {
+    proxyContract = await deploy("TransferManagerNonCompliantERC721", {
       from: deployer,
       proxy: {
         owner: proxyOwner,
@@ -38,6 +39,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
   });
 
   await verify(proxyContract.address, args);
-};
+}
 
-module.exports.tags = ["RoyaltyFeeRegistry"];
+module.exports.tags = ["TransferManagerNonCompliantERC721"];
+module.exports.dependencies = ["JoepegExchange"];
