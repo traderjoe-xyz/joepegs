@@ -1,9 +1,9 @@
 const { verify } = require("./utils");
 
-module.exports = async function ({ 
-  getNamedAccounts, 
-  deployments, 
-  getChainId 
+module.exports = async function ({
+  getNamedAccounts,
+  deployments,
+  getChainId,
 }) {
   const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -18,8 +18,8 @@ module.exports = async function ({
     // multisig
     proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
   }
-  // TODO: Update to finalized value
-  const defaultProtocolFeeAmount = 1000; // 1000 -> 10%
+
+  const defaultProtocolFeeAmount = 200; // 200 -> 2%
 
   const args = [defaultProtocolFeeAmount];
   await catchUnknownSigner(async () => {
