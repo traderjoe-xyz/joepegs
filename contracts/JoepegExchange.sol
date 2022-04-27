@@ -407,6 +407,22 @@ contract JoepegExchange is
     }
 
     /**
+     * @notice Update wavax address
+     * @param _wavax new wavax address
+     */
+    function updateWAVAX(address _wavax)
+        external
+        onlyOwner
+    {
+        require(
+            _wavax != address(0),
+            "Owner: Cannot be null address"
+        );
+
+        WAVAX = _wavax;
+    }
+
+    /**
      * @notice Update currency manager
      * @param _currencyManager new currency manager address
      */

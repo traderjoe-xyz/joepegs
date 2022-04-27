@@ -18,7 +18,6 @@ module.exports = async function ({
     // multisig
     proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
   }
-
   const defaultProtocolFeeAmount = 200; // 200 -> 2%
 
   const args = [defaultProtocolFeeAmount];
@@ -41,7 +40,7 @@ module.exports = async function ({
     });
   });
 
-  await verify(proxyContract.address, args);
+  await verify(proxyContract.implementation, []);
 };
 
 module.exports.tags = ["ProtocolFeeManager"];
