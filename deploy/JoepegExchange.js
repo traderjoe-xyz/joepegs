@@ -46,7 +46,7 @@ module.exports = async function ({
     protocolFeeManager.address,
     royaltyFeeManager.address,
     wavaxAddress,
-    deployer,
+    proxyOwner,
   ];
   // NOTE: We need to remember to call `updateTransferSelectorNFT` after deploy.
   // We cannot simply do that in this deploy script to avoid circular dependency
