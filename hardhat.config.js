@@ -28,11 +28,11 @@ module.exports = {
     hardhat: {},
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
-      gasPrice: 26000000000,
+      accounts: process.env.DEPLOY_PRIVATE_KEY,
       chainId: 43114,
-      accounts: process.env.DEPLOY_PRIVATE_KEY
-        ? [process.env.DEPLOY_PRIVATE_KEY]
-        : [],
+      live: true,
+      saveDeployments: true,
+      gasPrice: 225000000000,
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
