@@ -13,7 +13,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.8.6",
+        version: "0.8.10",
         settings: {
           optimizer: {
             enabled: true,
@@ -28,7 +28,9 @@ module.exports = {
     hardhat: {},
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
-      accounts: process.env.DEPLOY_PRIVATE_KEY,
+      accounts: process.env.DEPLOY_PRIVATE_KEY
+        ? [process.env.DEPLOY_PRIVATE_KEY]
+        : [],      
       chainId: 43114,
       live: true,
       saveDeployments: true,

@@ -61,7 +61,7 @@ module.exports = async function ({
 
   const currencyManager = await ethers.getContract("CurrencyManager", deployer);
 
-  if (proxyContract.newlyDeployed) {
+  if (proxyContract && proxyContract.newlyDeployed) {
     await currencyManager.addCurrency(wavaxAddress);
   }
 

@@ -8,7 +8,7 @@ module.exports = {
         constructorArguments,
       });
     } catch (err) {
-      if (err.message.includes("Reason: Already Verified")) {
+      if (err.message.includes("Reason: Already Verified") || err.message.includes("already verified")) {
         console.log("Contract is already verified!");
       } else {
         throw err;

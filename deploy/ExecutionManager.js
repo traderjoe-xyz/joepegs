@@ -44,7 +44,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     deployer
   );
 
-  if (proxyContract.newlyDeployed) {
+  if (proxyContract && proxyContract.newlyDeployed) {
     await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
   }
 

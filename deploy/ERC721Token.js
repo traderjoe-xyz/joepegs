@@ -12,7 +12,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     deterministicDeployment: false,
   });
 
-  await verify(address, args);
+  await verify(address, []);
 };
 
 module.exports.tags = ["ERC721Token"];
