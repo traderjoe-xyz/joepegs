@@ -15,7 +15,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
   }
 
-  const royaltyFeeLimit = 1000; // 1000 = 10%
+  const royaltyFeeLimit = 2000; // 2000 = 20%
 
   const args = [royaltyFeeLimit];
   await catchUnknownSigner(async () => {
@@ -37,7 +37,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     });
   });
 
-  await verify(proxyContract.address, args);
+  await verify(proxyContract.implementation, []);
 };
 
 module.exports.tags = ["RoyaltyFeeRegistry"];

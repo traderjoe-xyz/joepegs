@@ -37,7 +37,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     });
   });
 
-  await verify(proxyContract.address, args);
+  await verify(proxyContract.implementation, []);
 };
 
 module.exports.tags = ["TransferManagerERC1155"];

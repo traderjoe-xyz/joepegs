@@ -32,7 +32,7 @@ module.exports = async function ({
   } else if (chainId == 43113) {
     // fuji contract addresses
     wavaxAddress = ethers.utils.getAddress(
-      "0x1D308089a2D1Ced3f1Ce36B1FcaF815b07217be3"
+      "0xd00ae08403B9bbb9124bB305C09058E32C39A48c"
     );
     proxyOwner = deployer;
   } else {
@@ -61,9 +61,11 @@ module.exports = async function ({
 
   const currencyManager = await ethers.getContract("CurrencyManager", deployer);
 
-  await currencyManager.addCurrency(wavaxAddress);
+  if (proxyContract && proxyContract.newlyDeployed) {
+    await currencyManager.addCurrency(wavaxAddress);
+  }
 
-  await verify(proxyContract.address, args);
+  await verify(proxyContract.implementation, []);
 }
 
 module.exports.tags = ["CurrencyManager"];

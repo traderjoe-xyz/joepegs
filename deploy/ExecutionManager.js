@@ -15,10 +15,6 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
   }
 
-  const strategyAnyItemFromCollectionForFixedPrice = await deployments.get(
-    "StrategyAnyItemFromCollectionForFixedPrice"
-  );
-  const strategyPrivateSale = await deployments.get("StrategyPrivateSale");
   const strategyStandardSaleForFixedPrice = await deployments.get(
     "StrategyStandardSaleForFixedPrice"
   );
@@ -48,18 +44,14 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     deployer
   );
 
-  await executionManager.addStrategy(
-    strategyAnyItemFromCollectionForFixedPrice.address
-  );
-  await executionManager.addStrategy(strategyPrivateSale.address);
-  await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
+  if (proxyContract && proxyContract.newlyDeployed) {
+    await executionManager.addStrategy(strategyStandardSaleForFixedPrice.address);
+  }
 
-  await verify(proxyContract.address, args);
+  await verify(proxyContract.implementation, []);
 };
 
 module.exports.tags = ["ExecutionManager"];
 module.exports.dependencies = [
-  "StrategyAnyItemFromCollectionForFixedPrice",
-  "StrategyPrivateSale",
   "StrategyStandardSaleForFixedPrice",
 ];
