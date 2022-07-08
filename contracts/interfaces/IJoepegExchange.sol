@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 import {ICurrencyManager} from "./ICurrencyManager.sol";
 import {IExecutionManager} from "./IExecutionManager.sol";
+import {IBatchTransferer} from "./IBatchTransferer.sol";
 
 import {OrderTypes} from "../libraries/OrderTypes.sol";
 
-interface IJoepegExchange {
+interface IJoepegExchange is IBatchTransferer {
     function matchAskWithTakerBidUsingAVAXAndWAVAX(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk

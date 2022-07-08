@@ -16,6 +16,7 @@ import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IJoepegExchange} from "./interfaces/IJoepegExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
+import {IBatchTransferer} from "./interfaces/IBatchTransferer.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
 // Joepeg libraries
@@ -778,5 +779,31 @@ contract JoepegExchange is
             executionManager.isStrategyWhitelisted(makerOrder.strategy),
             "Strategy: Not whitelisted"
         );
+    }
+
+    /**
+     * @notice Transfer multiple ERC721 and/or ERC1155 in one transaction
+     * @param from the sender address
+     * @param to the receiver address
+     * @param nfts the non fungible tokens to send
+     */
+    function batchTransferNonFungibleTokens(
+        address from,
+        address to,
+        NonFungibleToken[] calldata nfts
+    ) external override {
+        require(
+            msg.sender == from,
+            "BatchTransferer: Only assets owner can batch transfer"
+        );
+        for (uint256 i = 0; i < nfts.length; i++) {
+            _transferNonFungibleToken(
+                nfts[i].collection,
+                from,
+                to,
+                nfts[i].tokenId,
+                nfts[i].amount
+            );
+        }
     }
 }

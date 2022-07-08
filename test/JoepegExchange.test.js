@@ -6,6 +6,7 @@ const WAVAX = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 describe("JoepegExchange", function () {
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
+    this.ERC1155TokenCF = await ethers.getContractFactory("ERC1155Token");
     this.CurrencyManagerCF = await ethers.getContractFactory("CurrencyManager");
     this.ExecutionManagerCF = await ethers.getContractFactory(
       "ExecutionManager"
@@ -65,6 +66,7 @@ describe("JoepegExchange", function () {
   beforeEach(async function () {
     this.wavax = await ethers.getContractAt("IWAVAX", WAVAX);
     this.erc721Token = await this.ERC721TokenCF.deploy();
+    this.erc1155Token = await this.ERC1155TokenCF.deploy();
 
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     await this.currencyManager.initialize();
@@ -114,8 +116,13 @@ describe("JoepegExchange", function () {
       this.transferManagerERC1155.address
     );
 
-    // Mint
+    // Mint ERC721
     await this.erc721Token.mint(this.alice.address);
+    await this.erc721Token.mint(this.alice.address);
+
+    // Mint ERC1155
+    await this.erc1155Token.mint(this.alice.address, 1, 5);
+    await this.erc1155Token.mint(this.alice.address, 2, 2);
 
     // Initialization
     await this.currencyManager.addCurrency(WAVAX);
@@ -616,6 +623,84 @@ describe("JoepegExchange", function () {
       const customProtocolFee = price.mul(customProtocolFeePct).div(10000);
       expect(protocolRecipientWavaxBalanceAfter).to.be.equal(
         protocolRecipientWavaxBalanceBefore.add(customProtocolFee)
+      );
+    });
+  });
+
+  describe("can batch transfer non fungible tokens", function () {
+    it("can transfer multiple ERC721 and ERC1155 tokens", async function () {
+      // Check that Alice owns the ERC721 tokens
+      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.alice.address);
+      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.alice.address);
+
+      // Check that Alice owns the ERC1155 tokens
+      expect(
+        await this.erc1155Token.balanceOf(this.alice.address, 1)
+      ).to.be.equal(5);
+      expect(
+        await this.erc1155Token.balanceOf(this.alice.address, 2)
+      ).to.be.equal(2);
+
+      // Approve batchTransferer to transfer ERC721 collection
+      await this.erc721Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+
+      // Approve batchTransferer to transfer ERC1155 collection
+      await this.erc1155Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC1155.address, true);
+
+      // Batch transfer tokens
+      const tokens = [
+        { collection: this.erc721Token.address, tokenId: 1, amount: 1 },
+        { collection: this.erc721Token.address, tokenId: 2, amount: 1 },
+        { collection: this.erc1155Token.address, tokenId: 1, amount: 4 },
+        { collection: this.erc1155Token.address, tokenId: 2, amount: 2 },
+      ];
+      await this.exchange
+        .connect(this.alice)
+        .batchTransferNonFungibleTokens(
+          this.alice.address,
+          this.bob.address,
+          tokens
+        );
+
+      // Check that Bob received the ERC721 tokens
+      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.bob.address);
+      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.bob.address);
+
+      // Check that Bob received the ERC1155 tokens
+      expect(
+        await this.erc1155Token.balanceOf(this.bob.address, 1)
+      ).to.be.equal(4);
+      expect(
+        await this.erc1155Token.balanceOf(this.bob.address, 2)
+      ).to.be.equal(2);
+
+      // Check that Alice still has the remaining ERC1155 tokens
+      expect(
+        await this.erc1155Token.balanceOf(this.alice.address, 1)
+      ).to.be.equal(1);
+      expect(
+        await this.erc1155Token.balanceOf(this.alice.address, 2)
+      ).to.be.equal(0);
+    });
+
+    it("reverts when the msg sender is not the tokens owner", async function () {
+      const tokens = [
+        { collection: this.erc721Token.address, tokenId: 1, amount: 1 },
+      ];
+      await expect(
+        this.exchange
+          .connect(this.bob)
+          .batchTransferNonFungibleTokens(
+            this.alice.address,
+            this.bob.address,
+            tokens
+          )
+      ).to.be.revertedWith(
+        "BatchTransferer: Only assets owner can batch transfer"
       );
     });
   });
