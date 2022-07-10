@@ -1,7 +1,7 @@
 const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
 
-describe.only("Multicall", function () {
+describe("Multicall", function () {
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.ERC1155TokenCF = await ethers.getContractFactory("ERC1155Token");
@@ -42,7 +42,7 @@ describe.only("Multicall", function () {
       { id: 1, amount: 10 },
       { id: 2, amount: 5 },
     ];
-    Promise.all(
+    await Promise.all(
       this.erc1155Tokens.map((token) =>
         this.erc1155Token.mint(this.alice.address, token.id, token.amount, [])
       )
