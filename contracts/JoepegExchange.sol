@@ -787,11 +787,6 @@ contract JoepegExchange is
         );
     }
 
-    struct Trade {
-        OrderTypes.TakerOrder takerBid;
-        OrderTypes.MakerOrder makerAsk;
-    }
-
     function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades)
         external
         payable
