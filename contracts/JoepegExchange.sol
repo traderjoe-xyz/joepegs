@@ -185,6 +185,13 @@ contract JoepegExchange is
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
     ) external payable override nonReentrant {
+        _matchAskWithTakerBidUsingAVAXAndWAVAX(takerBid, makerAsk);
+    }
+
+    function _matchAskWithTakerBidUsingAVAXAndWAVAX(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    ) internal {
         require(
             (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
             "Order: Wrong sides"
@@ -778,5 +785,23 @@ contract JoepegExchange is
             executionManager.isStrategyWhitelisted(makerOrder.strategy),
             "Strategy: Not whitelisted"
         );
+    }
+
+    struct Trade {
+        OrderTypes.TakerOrder takerBid;
+        OrderTypes.MakerOrder makerAsk;
+    }
+
+    function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades)
+        external
+        payable
+        nonReentrant
+    {
+        for (uint256 i = 0; i < trades.length; i++) {
+            _matchAskWithTakerBidUsingAVAXAndWAVAX(
+                trades[i].takerBid,
+                trades[i].makerAsk
+            );
+        }
     }
 }
