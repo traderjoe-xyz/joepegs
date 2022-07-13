@@ -6,7 +6,7 @@ import {IExecutionManager} from "./IExecutionManager.sol";
 
 import {OrderTypes} from "../libraries/OrderTypes.sol";
 
-interface IJoepegMatchOrdersBatcher {
+interface IJoepegBuyBatcher {
     struct Trade {
         OrderTypes.TakerOrder takerBid;
         OrderTypes.MakerOrder makerAsk;
@@ -15,7 +15,7 @@ interface IJoepegMatchOrdersBatcher {
     function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades) external payable;
 }
 
-interface IJoepegExchange is IJoepegMatchOrdersBatcher {
+interface IJoepegExchange is IJoepegBuyBatcher {
     function matchAskWithTakerBidUsingAVAXAndWAVAX(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
