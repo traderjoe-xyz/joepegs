@@ -30,7 +30,7 @@ module.exports = async function ({
     wavaxAddress = ethers.utils.getAddress(
       "0xd00ae08403B9bbb9124bB305C09058E32C39A48c"
     );
-    proxyOwner = deployer;
+    proxyOwner = "0xdB40a7b71642FE24CC546bdF4749Aa3c0B042f78";
   } else {
     throw new Error("Failed to find WAVAX address");
   }
