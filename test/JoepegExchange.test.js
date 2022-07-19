@@ -575,7 +575,7 @@ describe("JoepegExchange", function () {
   });
 
   describe("can batch buy NFTs", function () {
-    it.only("can buy multiple ERC721 tokens with WAVAX", async function () {
+    it("can buy multiple ERC721 tokens with WAVAX", async function () {
       // Check that alice indeed owns the NFT
       const tokenIds = [1, 2];
       expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.alice.address);
@@ -621,6 +621,48 @@ describe("JoepegExchange", function () {
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
         bobWavaxBalanceBefore.sub(total)
       );
+      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.bob.address);
+      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.bob.address);
+    });
+
+    it("can buy multiple ERC721 tokens with AVAX", async function () {
+      // Check that alice indeed owns the NFT
+      const tokenIds = [1, 2];
+      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.alice.address);
+      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.alice.address);
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+
+      // Create maker ask order
+      const price = ethers.utils.parseEther("1");
+      const trades = await Promise.all(
+        tokenIds.map(async (tokenId, i) =>
+          buildMakerAskOrderAndTakerBidOrder(
+            this.DOMAIN,
+            this.alice,
+            this.bob,
+            this.erc721Token.address,
+            price,
+            tokenId,
+            this.strategyStandardSaleForFixedPrice.address,
+            WAVAX,
+            i
+          )
+        )
+      );
+
+      // Approve exchange to transfer WAVAX
+      const total = price.mul(tokenIds.length);
+
+      // Batch buy
+      await this.exchange
+        .connect(this.bob)
+        .batchBuyWithAVAXAndWAVAX(trades, { value: total });
+
+      // Check that Bob bought the items
       expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.bob.address);
       expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.bob.address);
     });
