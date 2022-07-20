@@ -799,7 +799,7 @@ contract JoepegExchange is
         // Calculate the total cost of all orders
         uint256 totalCost = 0;
         for (uint256 i = 0; i < trades.length; i++) {
-            totalCost = totalCost + trades[i].takerBid.price;
+            totalCost += trades[i].takerBid.price;
         }
 
         // Transfer WAVAX if needed
