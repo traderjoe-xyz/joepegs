@@ -68,6 +68,7 @@ describe("JoepegExchange", function () {
   beforeEach(async function () {
     this.wavax = await ethers.getContractAt("IWAVAX", WAVAX);
     this.erc721Token = await this.ERC721TokenCF.deploy();
+    this.erc721TokenB = await this.ERC721TokenCF.deploy();
 
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     await this.currencyManager.initialize();
@@ -120,6 +121,8 @@ describe("JoepegExchange", function () {
     // Mint
     await this.erc721Token.mint(this.alice.address);
     await this.erc721Token.mint(this.alice.address);
+    await this.erc721TokenB.mint(this.alice.address);
+    await this.erc721TokenB.mint(this.alice.address);
 
     // Initialization
     await this.currencyManager.addCurrency(WAVAX);
@@ -577,26 +580,36 @@ describe("JoepegExchange", function () {
   describe("can batch buy NFTs", function () {
     it("can buy multiple ERC721 tokens with WAVAX", async function () {
       // Check that alice indeed owns the NFT
-      const tokenIds = [1, 2];
-      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.alice.address);
-      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.alice.address);
+      const tokens = [
+        [1, this.erc721Token],
+        [2, this.erc721Token],
+        [1, this.erc721TokenB],
+      ];
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(
+          this.alice.address
+        );
+      }
 
       // Approve transferManagerERC721 to transfer NFT
       await this.erc721Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+      await this.erc721TokenB
         .connect(this.alice)
         .setApprovalForAll(this.transferManagerERC721.address, true);
 
       // Create maker ask order
       const price = ethers.utils.parseEther("1");
       const trades = await Promise.all(
-        tokenIds.map(async (tokenId, i) =>
+        tokens.map(async (token, i) =>
           buildMakerAskOrderAndTakerBidOrder(
             this.DOMAIN,
             this.alice,
             this.bob,
-            this.erc721Token.address,
+            token[1].address,
             price,
-            tokenId,
+            token[0],
             this.strategyStandardSaleForFixedPrice.address,
             WAVAX,
             i
@@ -605,7 +618,7 @@ describe("JoepegExchange", function () {
       );
 
       // Approve exchange to transfer WAVAX
-      const total = price.mul(tokenIds.length);
+      const total = price.mul(tokens.length);
       await this.wavax.connect(this.bob).deposit({ value: total });
       await this.wavax.connect(this.bob).approve(this.exchange.address, total);
 
@@ -621,32 +634,43 @@ describe("JoepegExchange", function () {
       expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
         bobWavaxBalanceBefore.sub(total)
       );
-      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.bob.address);
-      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.bob.address);
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
+      }
     });
 
     it("can buy multiple ERC721 tokens with AVAX", async function () {
       // Check that alice indeed owns the NFT
-      const tokenIds = [1, 2];
-      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.alice.address);
-      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.alice.address);
+      const tokens = [
+        [1, this.erc721Token],
+        [2, this.erc721Token],
+        [1, this.erc721TokenB],
+      ];
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(
+          this.alice.address
+        );
+      }
 
       // Approve transferManagerERC721 to transfer NFT
       await this.erc721Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+      await this.erc721TokenB
         .connect(this.alice)
         .setApprovalForAll(this.transferManagerERC721.address, true);
 
       // Create maker ask order
       const price = ethers.utils.parseEther("1");
       const trades = await Promise.all(
-        tokenIds.map(async (tokenId, i) =>
+        tokens.map(async (token, i) =>
           buildMakerAskOrderAndTakerBidOrder(
             this.DOMAIN,
             this.alice,
             this.bob,
-            this.erc721Token.address,
+            token[1].address,
             price,
-            tokenId,
+            token[0],
             this.strategyStandardSaleForFixedPrice.address,
             WAVAX,
             i
@@ -655,7 +679,7 @@ describe("JoepegExchange", function () {
       );
 
       // Approve exchange to transfer WAVAX
-      const total = price.mul(tokenIds.length);
+      const total = price.mul(tokens.length);
 
       // Batch buy
       await this.exchange
@@ -663,8 +687,9 @@ describe("JoepegExchange", function () {
         .batchBuyWithAVAXAndWAVAX(trades, { value: total });
 
       // Check that Bob bought the items
-      expect(await this.erc721Token.ownerOf(1)).to.be.equal(this.bob.address);
-      expect(await this.erc721Token.ownerOf(2)).to.be.equal(this.bob.address);
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
+      }
     });
   });
 
