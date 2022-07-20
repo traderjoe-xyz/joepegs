@@ -193,6 +193,11 @@ contract JoepegExchange is
         _matchAskWithTakerBidUsingAVAXAndWAVAX(takerBid, makerAsk);
     }
 
+    /**
+     * @notice Match ask with a taker bid order using AVAX
+     * @param takerBid taker bid order
+     * @param makerAsk maker ask order
+     */
     function _matchAskWithTakerBidUsingAVAXAndWAVAX(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
@@ -260,8 +265,11 @@ contract JoepegExchange is
         );
     }
 
+    /**
+     * @notice Transfer WAVAX from the buyer if not enough AVAX to cover the cost
+     * @param cost the total cost of the sale
+     */
     function _transferWAVAXIfNeeded(uint256 cost) internal {
-        // If not enough AVAX to cover the cost, use WAVAX
         if (cost > msg.value) {
             IERC20(WAVAX).safeTransferFrom(
                 msg.sender,
@@ -791,14 +799,18 @@ contract JoepegExchange is
         );
     }
 
+    /**
+     * @notice Match multiple asks with their respective taker bid order using AVAX and WAVAX
+     * @param trades an array of trades
+     */
     function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades)
         external
         payable
         nonReentrant
     {
         // Calculate the total cost of all orders
-        uint256 totalCost = 0;
-        for (uint256 i = 0; i < trades.length; i++) {
+        uint256 totalCost;
+        for (uint256 i; i < trades.length; ++i) {
             totalCost += trades[i].takerBid.price;
         }
 
@@ -809,7 +821,7 @@ contract JoepegExchange is
         IWAVAX(WAVAX).deposit{value: msg.value}();
 
         // Match orders
-        for (uint256 i = 0; i < trades.length; i++) {
+        for (uint256 i; i < trades.length; ++i) {
             _matchAskWithTakerBidUsingAVAXAndWAVAX(
                 trades[i].takerBid,
                 trades[i].makerAsk
