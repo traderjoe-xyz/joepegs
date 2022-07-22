@@ -28,7 +28,7 @@ module.exports = async function ({
       "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
     );
     // multisig
-    proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
+    proxyOwner = "0x64c4607AD853999EE5042Ba8377BfC4099C273DE";
   } else if (chainId == 43113) {
     // fuji contract addresses
     wavaxAddress = ethers.utils.getAddress(
