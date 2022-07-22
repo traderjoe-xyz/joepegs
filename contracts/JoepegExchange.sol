@@ -185,6 +185,23 @@ contract JoepegExchange is
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
     ) external payable override nonReentrant {
+        // Transfer WAVAX if needed
+        _transferWAVAXIfNeeded(takerBid.price);
+        // Wrap AVAX sent to this contract
+        IWAVAX(WAVAX).deposit{value: msg.value}();
+        // Match orders
+        _matchAskWithTakerBidUsingAVAXAndWAVAX(takerBid, makerAsk);
+    }
+
+    /**
+     * @notice Match ask with a taker bid order using AVAX
+     * @param takerBid taker bid order
+     * @param makerAsk maker ask order
+     */
+    function _matchAskWithTakerBidUsingAVAXAndWAVAX(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    ) internal {
         require(
             (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
             "Order: Wrong sides"
@@ -198,20 +215,6 @@ contract JoepegExchange is
         // Check the maker ask order
         bytes32 askHash = makerAsk.hash();
         _validateOrder(makerAsk, askHash);
-
-        // If not enough AVAX to cover the price, use WAVAX
-        if (takerBid.price > msg.value) {
-            IERC20(WAVAX).safeTransferFrom(
-                msg.sender,
-                address(this),
-                (takerBid.price - msg.value)
-            );
-        } else {
-            require(takerBid.price == msg.value, "Order: Msg.value too high");
-        }
-
-        // Wrap AVAX sent to this contract
-        IWAVAX(WAVAX).deposit{value: msg.value}();
 
         // Retrieve execution parameters
         (
@@ -260,6 +263,22 @@ contract JoepegExchange is
             amount,
             takerBid.price
         );
+    }
+
+    /**
+     * @notice Transfer WAVAX from the buyer if not enough AVAX to cover the cost
+     * @param cost the total cost of the sale
+     */
+    function _transferWAVAXIfNeeded(uint256 cost) internal {
+        if (cost > msg.value) {
+            IERC20(WAVAX).safeTransferFrom(
+                msg.sender,
+                address(this),
+                (cost - msg.value)
+            );
+        } else {
+            require(cost == msg.value, "Order: Msg.value too high");
+        }
     }
 
     /**
@@ -509,6 +528,36 @@ contract JoepegExchange is
         uint256 orderNonce
     ) external view returns (bool) {
         return _isUserOrderNonceExecutedOrCancelled[user][orderNonce];
+    }
+
+    /**
+     * @notice Match multiple asks with their respective taker bid order using AVAX and WAVAX
+     * @param trades an array of trades
+     */
+    function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades)
+        external
+        payable
+        nonReentrant
+    {
+        // Calculate the total cost of all orders
+        uint256 totalCost;
+        for (uint256 i; i < trades.length; ++i) {
+            totalCost += trades[i].takerBid.price;
+        }
+
+        // Transfer WAVAX if needed
+        _transferWAVAXIfNeeded(totalCost);
+
+        // Wrap AVAX sent to this contract
+        IWAVAX(WAVAX).deposit{value: msg.value}();
+
+        // Match orders
+        for (uint256 i; i < trades.length; ++i) {
+            _matchAskWithTakerBidUsingAVAXAndWAVAX(
+                trades[i].takerBid,
+                trades[i].makerAsk
+            );
+        }
     }
 
     /**

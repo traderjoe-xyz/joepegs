@@ -9,7 +9,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
   let proxyContract, proxyOwner;
 
   if (chainId == 4 || chainId == 43113) {
-    proxyOwner = deployer;
+    proxyOwner = "0xdB40a7b71642FE24CC546bdF4749Aa3c0B042f78";
   } else if (chainId == 43114 || chainId == 31337) {
     // multisig
     proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";

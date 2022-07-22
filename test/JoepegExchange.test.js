@@ -1,5 +1,8 @@
 const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
+const {
+  buildMakerAskOrderAndTakerBidOrder,
+} = require("./utils/maker-order.js");
 
 const WAVAX = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
@@ -65,6 +68,7 @@ describe("JoepegExchange", function () {
   beforeEach(async function () {
     this.wavax = await ethers.getContractAt("IWAVAX", WAVAX);
     this.erc721Token = await this.ERC721TokenCF.deploy();
+    this.erc721TokenB = await this.ERC721TokenCF.deploy();
 
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     await this.currencyManager.initialize();
@@ -116,6 +120,9 @@ describe("JoepegExchange", function () {
 
     // Mint
     await this.erc721Token.mint(this.alice.address);
+    await this.erc721Token.mint(this.alice.address);
+    await this.erc721TokenB.mint(this.alice.address);
+    await this.erc721TokenB.mint(this.alice.address);
 
     // Initialization
     await this.currencyManager.addCurrency(WAVAX);
@@ -210,44 +217,19 @@ describe("JoepegExchange", function () {
         .approve(this.transferManagerERC721.address, tokenId);
 
       // Create maker ask order
-      // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
       const price = ethers.utils.parseEther("1");
-      const makerAskOrder = {
-        isOrderAsk: true,
-        signer: this.alice.address,
-        collection: this.erc721Token.address,
-        price,
-        tokenId,
-        amount: 1,
-        strategy: this.strategyStandardSaleForFixedPrice.address,
-        currency: WAVAX,
-        nonce: 1,
-        startTime,
-        endTime,
-        minPercentageToAsk,
-        params: ethers.utils.formatBytes32String(""),
-      };
-
-      // Sign maker ask order
-      const signedMessage = await this.alice._signTypedData(
-        this.DOMAIN,
-        this.TYPES,
-        makerAskOrder
-      );
-      const { r, s, v } = ethers.utils.splitSignature(signedMessage);
-      makerAskOrder.r = r;
-      makerAskOrder.s = s;
-      makerAskOrder.v = v;
-
-      // Create taker bid order
-      const takerBidOrder = {
-        isOrderAsk: false,
-        taker: this.bob.address,
-        price,
-        tokenId,
-        minPercentageToAsk,
-        params: ethers.utils.formatBytes32String(""),
-      };
+      const { makerAsk: makerAskOrder, takerBid: takerBidOrder } =
+        await buildMakerAskOrderAndTakerBidOrder(
+          this.DOMAIN,
+          this.alice,
+          this.bob,
+          this.erc721Token.address,
+          price,
+          tokenId,
+          this.strategyStandardSaleForFixedPrice.address,
+          WAVAX,
+          1
+        );
 
       // Approve exchange to transfer WAVAX
       await this.wavax
@@ -555,44 +537,19 @@ describe("JoepegExchange", function () {
         .approve(this.transferManagerERC721.address, tokenId);
 
       // Create maker ask order
-      // Following https://dev.to/zemse/ethersjs-signing-eip712-typed-structs-2ph8
       const price = ethers.utils.parseEther("1");
-      const makerAskOrder = {
-        isOrderAsk: true,
-        signer: this.alice.address,
-        collection: this.erc721Token.address,
-        price,
-        tokenId,
-        amount: 1,
-        strategy: this.strategyStandardSaleForFixedPrice.address,
-        currency: WAVAX,
-        nonce: 1,
-        startTime,
-        endTime,
-        minPercentageToAsk,
-        params: ethers.utils.formatBytes32String(""),
-      };
-
-      // Sign maker ask order
-      const signedMessage = await this.alice._signTypedData(
-        this.DOMAIN,
-        this.TYPES,
-        makerAskOrder
-      );
-      const { r, s, v } = ethers.utils.splitSignature(signedMessage);
-      makerAskOrder.r = r;
-      makerAskOrder.s = s;
-      makerAskOrder.v = v;
-
-      // Create taker bid order
-      const takerBidOrder = {
-        isOrderAsk: false,
-        taker: this.bob.address,
-        price,
-        tokenId,
-        minPercentageToAsk,
-        params: ethers.utils.formatBytes32String(""),
-      };
+      const { makerAsk: makerAskOrder, takerBid: takerBidOrder } =
+        await buildMakerAskOrderAndTakerBidOrder(
+          this.DOMAIN,
+          this.alice,
+          this.bob,
+          this.erc721Token.address,
+          price,
+          tokenId,
+          this.strategyStandardSaleForFixedPrice.address,
+          WAVAX,
+          1
+        );
 
       // Approve exchange to transfer WAVAX
       await this.wavax
@@ -617,6 +574,122 @@ describe("JoepegExchange", function () {
       expect(protocolRecipientWavaxBalanceAfter).to.be.equal(
         protocolRecipientWavaxBalanceBefore.add(customProtocolFee)
       );
+    });
+  });
+
+  describe("can batch buy NFTs", function () {
+    it("can buy multiple ERC721 tokens with WAVAX", async function () {
+      // Check that alice indeed owns the NFT
+      const tokens = [
+        [1, this.erc721Token],
+        [2, this.erc721Token],
+        [1, this.erc721TokenB],
+      ];
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(
+          this.alice.address
+        );
+      }
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+      await this.erc721TokenB
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+
+      // Create maker ask order
+      const price = ethers.utils.parseEther("1");
+      const trades = await Promise.all(
+        tokens.map(async (token, i) =>
+          buildMakerAskOrderAndTakerBidOrder(
+            this.DOMAIN,
+            this.alice,
+            this.bob,
+            token[1].address,
+            price,
+            token[0],
+            this.strategyStandardSaleForFixedPrice.address,
+            WAVAX,
+            i
+          )
+        )
+      );
+
+      // Approve exchange to transfer WAVAX
+      const total = price.mul(tokens.length);
+      await this.wavax.connect(this.bob).deposit({ value: total });
+      await this.wavax.connect(this.bob).approve(this.exchange.address, total);
+
+      const bobWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.bob.address
+      );
+
+      // Batch buy
+      await this.exchange.connect(this.bob).batchBuyWithAVAXAndWAVAX(trades);
+
+      // Check that Bob bought the items
+      // Check that Bob paid `price` and now owns the NFT!
+      expect(await this.wavax.balanceOf(this.bob.address)).to.be.equal(
+        bobWavaxBalanceBefore.sub(total)
+      );
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
+      }
+    });
+
+    it("can buy multiple ERC721 tokens with AVAX", async function () {
+      // Check that alice indeed owns the NFT
+      const tokens = [
+        [1, this.erc721Token],
+        [2, this.erc721Token],
+        [1, this.erc721TokenB],
+      ];
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(
+          this.alice.address
+        );
+      }
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+      await this.erc721TokenB
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+
+      // Create maker ask order
+      const price = ethers.utils.parseEther("1");
+      const trades = await Promise.all(
+        tokens.map(async (token, i) =>
+          buildMakerAskOrderAndTakerBidOrder(
+            this.DOMAIN,
+            this.alice,
+            this.bob,
+            token[1].address,
+            price,
+            token[0],
+            this.strategyStandardSaleForFixedPrice.address,
+            WAVAX,
+            i
+          )
+        )
+      );
+
+      // Approve exchange to transfer WAVAX
+      const total = price.mul(tokens.length);
+
+      // Batch buy
+      await this.exchange
+        .connect(this.bob)
+        .batchBuyWithAVAXAndWAVAX(trades, { value: total });
+
+      // Check that Bob bought the items
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
+      }
     });
   });
 
