@@ -12,7 +12,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
     proxyOwner = "0xdB40a7b71642FE24CC546bdF4749Aa3c0B042f78";
   } else if (chainId == 43114 || chainId == 31337) {
     // multisig
-    proxyOwner = "0x2fbB61a10B96254900C03F1644E9e1d2f5E76DD2";
+    proxyOwner = "0x64c4607AD853999EE5042Ba8377BfC4099C273DE";
   }
 
   const royaltyFeeRegistry = await deployments.get("RoyaltyFeeRegistry");
