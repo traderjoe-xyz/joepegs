@@ -531,6 +531,36 @@ contract JoepegExchange is
     }
 
     /**
+     * @notice Match multiple asks with their respective taker bid order using AVAX and WAVAX
+     * @param trades an array of trades
+     */
+    function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades)
+        external
+        payable
+        nonReentrant
+    {
+        // Calculate the total cost of all orders
+        uint256 totalCost;
+        for (uint256 i; i < trades.length; ++i) {
+            totalCost += trades[i].takerBid.price;
+        }
+
+        // Transfer WAVAX if needed
+        _transferWAVAXIfNeeded(totalCost);
+
+        // Wrap AVAX sent to this contract
+        IWAVAX(WAVAX).deposit{value: msg.value}();
+
+        // Match orders
+        for (uint256 i; i < trades.length; ++i) {
+            _matchAskWithTakerBidUsingAVAXAndWAVAX(
+                trades[i].takerBid,
+                trades[i].makerAsk
+            );
+        }
+    }
+
+    /**
      * @notice Transfer fees and funds to royalty recipient, protocol, and seller
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
@@ -797,35 +827,5 @@ contract JoepegExchange is
             executionManager.isStrategyWhitelisted(makerOrder.strategy),
             "Strategy: Not whitelisted"
         );
-    }
-
-    /**
-     * @notice Match multiple asks with their respective taker bid order using AVAX and WAVAX
-     * @param trades an array of trades
-     */
-    function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades)
-        external
-        payable
-        nonReentrant
-    {
-        // Calculate the total cost of all orders
-        uint256 totalCost;
-        for (uint256 i; i < trades.length; ++i) {
-            totalCost += trades[i].takerBid.price;
-        }
-
-        // Transfer WAVAX if needed
-        _transferWAVAXIfNeeded(totalCost);
-
-        // Wrap AVAX sent to this contract
-        IWAVAX(WAVAX).deposit{value: msg.value}();
-
-        // Match orders
-        for (uint256 i; i < trades.length; ++i) {
-            _matchAskWithTakerBidUsingAVAXAndWAVAX(
-                trades[i].takerBid,
-                trades[i].makerAsk
-            );
-        }
     }
 }
