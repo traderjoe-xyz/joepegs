@@ -218,6 +218,21 @@ contract AuctionManager is
         );
     }
 
+    function cancelDutchAuction(address _collection, uint256 _tokenId) public {
+        DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
+        if (msg.sender != auction.creator) {
+            revert AuctionManager__OnlyAuctionCreatorCanCancel();
+        }
+
+        _clearDutchAuction(_collection, _tokenId);
+
+        IERC721(_collection).safeTransferFrom(
+            address(this),
+            auction.creator,
+            _tokenId
+        );
+    }
+
     function _placeBid(
         address _collection,
         uint256 _tokenId,
@@ -338,6 +353,16 @@ contract AuctionManager is
             endTime: 0,
             startingPrice: 0,
             minimumBidIncrement: 0
+        });
+    }
+
+    function _clearDutchAuction(address _collection, uint256 _tokenId) private {
+        dutchAuctions[_collection][_tokenId] = DutchAuction({
+            creator: address(0),
+            startingPrice: 0,
+            endPrice: 0,
+            startTime: 0,
+            duration: 0
         });
     }
 
