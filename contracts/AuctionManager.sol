@@ -10,6 +10,11 @@ error AuctionManager__InvalidBuyNowPrice();
 error AuctionManager__InvalidDuration();
 error AuctionManager__OnlyAuctionCreatorCanCancel();
 error AuctionManager__CannotCancelAuctionWithBid();
+error AuctionManager__NoAuctionExists();
+error AuctionManager__InsufficientBidPrice();
+error AuctionManager__AuctionCreatorCannotPlaceBid();
+error AuctionManager__TransferPreviousBidFailed();
+error AuctionManager__CannotBidOnEndedAuction();
 
 /**
  * @title AuctionManager
@@ -28,8 +33,12 @@ contract AuctionManager is Initializable, OwnableUpgradeable {
 
     mapping(address => mapping(uint256 => Auction)) public auctions;
 
-    function initialize() public initializer {
+    uint256 public refreshTime;
+
+    function initialize(uint256 _refreshTime) public initializer {
         __Ownable_init();
+
+        refreshTime = _refreshTime;
     }
 
     function startAuction(
@@ -65,6 +74,58 @@ contract AuctionManager is Initializable, OwnableUpgradeable {
             address(this),
             _tokenId
         );
+    }
+
+    function placeBid(address _collection, uint256 _tokenId) public payable {
+        Auction storage auction = auctions[_collection][_tokenId];
+        if (auction.creator == address(0)) {
+            revert AuctionManager__NoAuctionExists();
+        }
+        if (msg.sender == auction.creator) {
+            revert AuctionManager__AuctionCreatorCannotPlaceBid();
+        }
+        if (block.timestamp >= auction.endTime) {
+            revert AuctionManager__CannotBidOnEndedAuction();
+        }
+
+        if (auction.endTime - block.timestamp <= refreshTime) {
+            auction.endTime += refreshTime;
+        }
+
+        if (auction.lastBidPrice == 0) {
+            if (msg.value < auction.reservePrice) {
+                revert AuctionManager__InsufficientBidPrice();
+            }
+            auction.lastBidder = msg.sender;
+            auction.lastBidPrice = msg.value;
+        } else {
+            if (msg.sender == auction.lastBidder) {
+                if (msg.value < auction.minimumBidIncrement) {
+                    revert AuctionManager__InsufficientBidPrice();
+                }
+                auction.lastBidPrice += msg.value;
+            } else {
+                if (
+                    msg.value <
+                    auction.lastBidPrice + auction.minimumBidIncrement
+                ) {
+                    revert AuctionManager__InsufficientBidPrice();
+                }
+
+                address previousBidder = auction.lastBidder;
+                uint256 previousBidPrice = auction.lastBidPrice;
+
+                auction.lastBidder = msg.sender;
+                auction.lastBidPrice = msg.value;
+
+                (bool sent, ) = previousBidder.call{value: previousBidPrice}(
+                    ""
+                );
+                if (!sent) {
+                    revert AuctionManager__TransferPreviousBidFailed();
+                }
+            }
+        }
     }
 
     function cancelAuction(address _collection, uint256 _tokenId) public {
