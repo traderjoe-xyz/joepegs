@@ -34,7 +34,7 @@ contract AuctionManager is
 {
     using SafeERC20 for IERC20;
 
-    struct Auction {
+    struct EnglishAuction {
         address creator;
         address lastBidder;
         uint256 lastBidPrice;
@@ -51,7 +51,8 @@ contract AuctionManager is
 
     address public protocolFeeRecipient;
 
-    mapping(address => mapping(uint256 => Auction)) public auctions;
+    mapping(address => mapping(uint256 => EnglishAuction))
+        public englishAuctions;
 
     uint256 public refreshTime;
 
@@ -81,11 +82,11 @@ contract AuctionManager is
         if (_duration == 0) {
             revert AuctionManager__InvalidDuration();
         }
-        if (auctions[_collection][_tokenId].creator != address(0)) {
+        if (englishAuctions[_collection][_tokenId].creator != address(0)) {
             revert AuctionManager__AuctionAlreadyExists();
         }
 
-        auctions[_collection][_tokenId] = Auction({
+        englishAuctions[_collection][_tokenId] = EnglishAuction({
             creator: msg.sender,
             lastBidder: address(0),
             lastBidPrice: 0,
@@ -127,7 +128,7 @@ contract AuctionManager is
     }
 
     function executeAuction(address _collection, uint256 _tokenId) public {
-        Auction storage auction = auctions[_collection][_tokenId];
+        EnglishAuction storage auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert AuctionManager__NoAuctionExists();
         }
@@ -157,7 +158,7 @@ contract AuctionManager is
     }
 
     function cancelAuction(address _collection, uint256 _tokenId) public {
-        Auction memory auction = auctions[_collection][_tokenId];
+        EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
             revert AuctionManager__OnlyAuctionCreatorCanCancel();
         }
@@ -179,7 +180,7 @@ contract AuctionManager is
         uint256 _tokenId,
         uint256 _bidAmount
     ) private {
-        Auction storage auction = auctions[_collection][_tokenId];
+        EnglishAuction storage auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert AuctionManager__NoAuctionExists();
         }
@@ -285,7 +286,7 @@ contract AuctionManager is
     }
 
     function _clearAuction(address _collection, uint256 _tokenId) private {
-        auctions[_collection][_tokenId] = Auction({
+        englishAuctions[_collection][_tokenId] = EnglishAuction({
             creator: address(0),
             lastBidder: address(0),
             lastBidPrice: 0,
