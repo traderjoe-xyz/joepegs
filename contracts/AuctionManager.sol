@@ -7,6 +7,9 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
+import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
+import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
+
 error AuctionManager__AuctionAlreadyExists();
 error AuctionManager__InvalidBuyNowPrice();
 error AuctionManager__InvalidDuration();
@@ -15,8 +18,10 @@ error AuctionManager__CannotCancelAuctionWithBid();
 error AuctionManager__NoAuctionExists();
 error AuctionManager__InsufficientBidPrice();
 error AuctionManager__AuctionCreatorCannotPlaceBid();
-error AuctionManager__TransferPreviousBidFailed();
+error AuctionManager__TransferAVAXFailed();
 error AuctionManager__CannotBidOnEndedAuction();
+error AuctionManager__CannotExecuteAuctionWithNoBid();
+error AuctionManager__CannotExecuteAuctionBeforeEndTime();
 
 /**
  * @title AuctionManager
@@ -39,19 +44,31 @@ contract AuctionManager is
         uint256 minimumBidIncrement;
     }
 
+    uint256 public immutable PERCENTAGE_PRECISION = 10000;
+
     address public WAVAX;
+    IProtocolFeeManager public protocolFeeManager;
+    IRoyaltyFeeManager public royaltyFeeManager;
+
+    address public protocolFeeRecipient;
 
     mapping(address => mapping(uint256 => Auction)) public auctions;
 
     uint256 public refreshTime;
 
-    function initialize(uint256 _refreshTime, address _wavax)
-        public
-        initializer
-    {
+    function initialize(
+        uint256 _refreshTime,
+        address _protocolFeeManager,
+        address _royaltyFeeManager,
+        address _wavax,
+        address _protocolFeeRecipient
+    ) public initializer {
         __Ownable_init();
 
         refreshTime = _refreshTime;
+        protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
+        royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
+        protocolFeeRecipient = _protocolFeeRecipient;
         WAVAX = _wavax;
     }
 
@@ -113,6 +130,36 @@ contract AuctionManager is
         _placeBid(_collection, _tokenId, msg.value + _wavaxAmount);
     }
 
+    function executeAuction(address _collection, uint256 _tokenId) public {
+        Auction storage auction = auctions[_collection][_tokenId];
+        if (auction.creator == address(0)) {
+            revert AuctionManager__NoAuctionExists();
+        }
+        if (auction.lastBidPrice == 0) {
+            revert AuctionManager__CannotExecuteAuctionWithNoBid();
+        }
+        if (msg.sender != auction.creator) {
+            if (block.timestamp < auction.endTime) {
+                revert AuctionManager__CannotExecuteAuctionBeforeEndTime();
+            }
+        }
+
+        address creator = auction.creator;
+        address lastBidder = auction.lastBidder;
+        uint256 lastBidPrice = auction.lastBidPrice;
+
+        _clearAuction(_collection, _tokenId);
+
+        // Execute sale using latest highest bid
+        _transferFeesAndFunds(_collection, _tokenId, creator, lastBidPrice);
+
+        IERC721(_collection).safeTransferFrom(
+            address(this),
+            lastBidder,
+            _tokenId
+        );
+    }
+
     function cancelAuction(address _collection, uint256 _tokenId) public {
         Auction memory auction = auctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
@@ -122,15 +169,7 @@ contract AuctionManager is
             revert AuctionManager__CannotCancelAuctionWithBid();
         }
 
-        auctions[_collection][_tokenId] = Auction({
-            creator: address(0),
-            lastBidder: address(0),
-            lastBidPrice: 0,
-            endTime: 0,
-            reservePrice: 0,
-            buyNowPrice: 0,
-            minimumBidIncrement: 0
-        });
+        _clearAuction(_collection, _tokenId);
 
         IERC721(_collection).safeTransferFrom(
             address(this),
@@ -185,13 +224,102 @@ contract AuctionManager is
                 auction.lastBidder = msg.sender;
                 auction.lastBidPrice = _bidAmount;
 
-                (bool sent, ) = previousBidder.call{value: previousBidPrice}(
-                    ""
-                );
-                if (!sent) {
-                    revert AuctionManager__TransferPreviousBidFailed();
-                }
+                _transferAVAX(previousBidder, previousBidPrice);
             }
         }
+    }
+
+    function _transferFeesAndFunds(
+        address collection,
+        uint256 tokenId,
+        address to,
+        uint256 amount
+    ) private {
+        // Initialize the final amount that is transferred to seller
+        uint256 finalSellerAmount = amount;
+
+        // 1. Protocol fee
+        {
+            uint256 protocolFeeAmount = _calculateProtocolFee(
+                collection,
+                amount
+            );
+
+            // Check if the protocol fee is different than 0 for this strategy
+            if (
+                (protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)
+            ) {
+                _transferAVAX(protocolFeeRecipient, protocolFeeAmount);
+                finalSellerAmount -= protocolFeeAmount;
+            }
+        }
+
+        // 2. Royalty fee
+        {
+            (
+                address royaltyFeeRecipient,
+                uint256 royaltyFeeAmount
+            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
+                    collection,
+                    tokenId,
+                    amount
+                );
+
+            // Check if there is a royalty fee and that it is different to 0
+            if (
+                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
+            ) {
+                _transferAVAX(royaltyFeeRecipient, royaltyFeeAmount);
+                finalSellerAmount -= royaltyFeeAmount;
+
+                // emit RoyaltyPayment(
+                //     collection,
+                //     tokenId,
+                //     royaltyFeeRecipient,
+                //     address(WAVAX),
+                //     royaltyFeeAmount
+                // );
+            }
+        }
+
+        // 3. Transfer final amount (post-fees) to seller
+        {
+            _transferAVAX(to, finalSellerAmount);
+        }
+    }
+
+    function _clearAuction(address _collection, uint256 _tokenId) private {
+        auctions[_collection][_tokenId] = Auction({
+            creator: address(0),
+            lastBidder: address(0),
+            lastBidPrice: 0,
+            endTime: 0,
+            reservePrice: 0,
+            buyNowPrice: 0,
+            minimumBidIncrement: 0
+        });
+    }
+
+    function _transferAVAX(address _to, uint256 _amount) private {
+        (bool sent, ) = _to.call{value: _amount}("");
+        if (!sent) {
+            revert AuctionManager__TransferAVAXFailed();
+        }
+    }
+
+    /**
+     * @notice Calculate protocol fee for a given collection
+     * @param _collection address of collection
+     * @param _amount amount to transfer
+     */
+    function _calculateProtocolFee(address _collection, uint256 _amount)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 protocolFee = protocolFeeManager.protocolFeeForCollection(
+            _collection
+        );
+        return (protocolFee * _amount) / PERCENTAGE_PRECISION;
     }
 }
