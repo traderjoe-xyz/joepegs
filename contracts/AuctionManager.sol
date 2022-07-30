@@ -39,7 +39,7 @@ contract AuctionManager is
         uint256 startingPrice;
         uint256 endPrice;
         uint256 startTime;
-        uint256 duration;
+        uint256 endTime;
     }
 
     struct EnglishAuction {
@@ -140,7 +140,7 @@ contract AuctionManager is
     function executeEnglishAuction(address _collection, uint256 _tokenId)
         public
     {
-        EnglishAuction storage auction = englishAuctions[_collection][_tokenId];
+        EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert AuctionManager__NoAuctionExists();
         }
@@ -153,18 +153,19 @@ contract AuctionManager is
             }
         }
 
-        address creator = auction.creator;
-        address lastBidder = auction.lastBidder;
-        uint256 lastBidPrice = auction.lastBidPrice;
-
         _clearEnglishAuction(_collection, _tokenId);
 
         // Execute sale using latest highest bid
-        _transferFeesAndFunds(_collection, _tokenId, creator, lastBidPrice);
+        _transferFeesAndFunds(
+            _collection,
+            _tokenId,
+            auction.creator,
+            auction.lastBidPrice
+        );
 
         IERC721(_collection).safeTransferFrom(
             address(this),
-            lastBidder,
+            auction.lastBidder,
             _tokenId
         );
     }
@@ -208,7 +209,7 @@ contract AuctionManager is
             startingPrice: _startingPrice,
             endPrice: _endPrice,
             startTime: block.timestamp,
-            duration: _duration
+            endTime: block.timestamp + _duration
         });
 
         IERC721(_collection).safeTransferFrom(
@@ -216,6 +217,31 @@ contract AuctionManager is
             address(this),
             _tokenId
         );
+    }
+
+    function executeDutchAuction(address _collection, uint256 _tokenId) public {
+        DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
+        if (auction.creator == address(0)) {
+            revert AuctionManager__NoAuctionExists();
+        }
+        if (msg.sender != auction.creator) {
+            if (block.timestamp < auction.endTime) {
+                revert AuctionManager__CannotExecuteAuctionBeforeEndTime();
+            }
+        }
+
+        // Get auction sale price
+
+        _clearDutchAuction(_collection, _tokenId);
+
+        // // Execute sale using latest highest bid
+        // _transferFeesAndFunds(_collection, _tokenId, creator, lastBidPrice);
+
+        // IERC721(_collection).safeTransferFrom(
+        //     address(this),
+        //     lastBidder,
+        //     _tokenId
+        // );
     }
 
     function cancelDutchAuction(address _collection, uint256 _tokenId) public {
@@ -362,7 +388,7 @@ contract AuctionManager is
             startingPrice: 0,
             endPrice: 0,
             startTime: 0,
-            duration: 0
+            endTime: 0
         });
     }
 
