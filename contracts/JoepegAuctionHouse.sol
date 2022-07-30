@@ -11,27 +11,27 @@ import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
-error AuctionManager__AuctionAlreadyExists();
-error AuctionManager__InvalidDuration();
-error AuctionManager__NoAuctionExists();
-error AuctionManager__OnlyAuctionCreatorCanCancel();
-error AuctionManager__TransferAVAXFailed();
+error JoepegAuctionHouse__AuctionAlreadyExists();
+error JoepegAuctionHouse__InvalidDuration();
+error JoepegAuctionHouse__NoAuctionExists();
+error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
+error JoepegAuctionHouse__TransferAVAXFailed();
 
-error AuctionManager__EnglishAuctionCannotBidOnEndedAuction();
-error AuctionManager__EnglishAuctionCannotCancelWithExistingBid();
-error AuctionManager__EnglishAuctionCannotExecuteBeforeEndTime();
-error AuctionManager__EnglishAuctionCannotExecuteWithNoBid();
-error AuctionManager__EnglishAuctionCreatorCannotPlaceBid();
-error AuctionManager__EnglishAuctionInsufficientBidAmount();
+error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
+error JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
+error JoepegAuctionHouse__EnglishAuctionCannotExecuteBeforeEndTime();
+error JoepegAuctionHouse__EnglishAuctionCannotExecuteWithNoBid();
+error JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
+error JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
 
-error AuctionManager__DutchAuctionInsufficientAVAX();
-error AuctionManager__DutchAuctionInvalidStartEndPrice();
+error JoepegAuctionHouse__DutchAuctionInsufficientAVAX();
+error JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
 
 /**
- * @title AuctionManager
- * @notice Runs english auctions
+ * @title JoepegAuctionHouse
+ * @notice An auction house that supports running English and Dutch auctions on ERC721 tokens
  */
-contract AuctionManager is
+contract JoepegAuctionHouse is
     Initializable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
@@ -94,10 +94,10 @@ contract AuctionManager is
         uint256 _minimumBidIncrement
     ) public {
         if (_duration == 0) {
-            revert AuctionManager__InvalidDuration();
+            revert JoepegAuctionHouse__InvalidDuration();
         }
         if (englishAuctions[_collection][_tokenId].creator != address(0)) {
-            revert AuctionManager__AuctionAlreadyExists();
+            revert JoepegAuctionHouse__AuctionAlreadyExists();
         }
 
         englishAuctions[_collection][_tokenId] = EnglishAuction({
@@ -146,14 +146,14 @@ contract AuctionManager is
     {
         EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
-            revert AuctionManager__NoAuctionExists();
+            revert JoepegAuctionHouse__NoAuctionExists();
         }
         if (auction.lastBidPrice == 0) {
-            revert AuctionManager__EnglishAuctionCannotExecuteWithNoBid();
+            revert JoepegAuctionHouse__EnglishAuctionCannotExecuteWithNoBid();
         }
         if (msg.sender != auction.creator) {
             if (block.timestamp < auction.endTime) {
-                revert AuctionManager__EnglishAuctionCannotExecuteBeforeEndTime();
+                revert JoepegAuctionHouse__EnglishAuctionCannotExecuteBeforeEndTime();
             }
         }
 
@@ -179,10 +179,10 @@ contract AuctionManager is
     {
         EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
-            revert AuctionManager__OnlyAuctionCreatorCanCancel();
+            revert JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
         }
         if (auction.lastBidder != address(0)) {
-            revert AuctionManager__EnglishAuctionCannotCancelWithExistingBid();
+            revert JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
         }
 
         _clearEnglishAuction(_collection, _tokenId);
@@ -202,13 +202,13 @@ contract AuctionManager is
         uint256 _endPrice
     ) public {
         if (_duration == 0) {
-            revert AuctionManager__InvalidDuration();
+            revert JoepegAuctionHouse__InvalidDuration();
         }
         if (dutchAuctions[_collection][_tokenId].creator != address(0)) {
-            revert AuctionManager__AuctionAlreadyExists();
+            revert JoepegAuctionHouse__AuctionAlreadyExists();
         }
         if (_startPrice <= _endPrice || _endPrice == 0) {
-            revert AuctionManager__DutchAuctionInvalidStartEndPrice();
+            revert JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
         }
 
         dutchAuctions[_collection][_tokenId] = DutchAuction({
@@ -273,7 +273,7 @@ contract AuctionManager is
     function cancelDutchAuction(address _collection, uint256 _tokenId) public {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
-            revert AuctionManager__OnlyAuctionCreatorCanCancel();
+            revert JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
         }
 
         _clearDutchAuction(_collection, _tokenId);
@@ -292,13 +292,13 @@ contract AuctionManager is
     ) private {
         EnglishAuction storage auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
-            revert AuctionManager__NoAuctionExists();
+            revert JoepegAuctionHouse__NoAuctionExists();
         }
         if (msg.sender == auction.creator) {
-            revert AuctionManager__EnglishAuctionCreatorCannotPlaceBid();
+            revert JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
         }
         if (block.timestamp >= auction.endTime) {
-            revert AuctionManager__EnglishAuctionCannotBidOnEndedAuction();
+            revert JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
         }
 
         if (auction.endTime - block.timestamp <= englishAuctionRefreshTime) {
@@ -307,14 +307,14 @@ contract AuctionManager is
 
         if (auction.lastBidPrice == 0) {
             if (_bidAmount < auction.startPrice) {
-                revert AuctionManager__EnglishAuctionInsufficientBidAmount();
+                revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
             }
             auction.lastBidder = msg.sender;
             auction.lastBidPrice = _bidAmount;
         } else {
             if (msg.sender == auction.lastBidder) {
                 if (msg.value < auction.minimumBidIncrement) {
-                    revert AuctionManager__EnglishAuctionInsufficientBidAmount();
+                    revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
                 }
                 auction.lastBidPrice += _bidAmount;
             } else {
@@ -322,7 +322,7 @@ contract AuctionManager is
                     _bidAmount <
                     auction.lastBidPrice + auction.minimumBidIncrement
                 ) {
-                    revert AuctionManager__EnglishAuctionInsufficientBidAmount();
+                    revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
                 }
 
                 address previousBidder = auction.lastBidder;
@@ -343,13 +343,13 @@ contract AuctionManager is
     ) private {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
-            revert AuctionManager__NoAuctionExists();
+            revert JoepegAuctionHouse__NoAuctionExists();
         }
 
         // Get auction sale price
         uint256 salePrice = getDutchAuctionSalePrice(_collection, _tokenId);
         if (_avaxAmount < salePrice) {
-            revert AuctionManager__DutchAuctionInsufficientAVAX();
+            revert JoepegAuctionHouse__DutchAuctionInsufficientAVAX();
         }
 
         _clearDutchAuction(_collection, _tokenId);
@@ -457,7 +457,7 @@ contract AuctionManager is
     function _transferAVAX(address _to, uint256 _amount) private {
         (bool sent, ) = _to.call{value: _amount}("");
         if (!sent) {
-            revert AuctionManager__TransferAVAXFailed();
+            revert JoepegAuctionHouse__TransferAVAXFailed();
         }
     }
 
