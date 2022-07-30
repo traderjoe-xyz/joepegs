@@ -8,6 +8,8 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 error AuctionManager__AuctionAlreadyExists();
 error AuctionManager__InvalidBuyNowPrice();
 error AuctionManager__InvalidDuration();
+error AuctionManager__OnlyAuctionCreatorCanCancel();
+error AuctionManager__CannotCancelAuctionWithBid();
 
 /**
  * @title AuctionManager
@@ -15,7 +17,7 @@ error AuctionManager__InvalidDuration();
  */
 contract AuctionManager is Initializable, OwnableUpgradeable {
     struct Auction {
-        address owner;
+        address creator;
         address lastBidder;
         uint256 lastBidPrice;
         uint256 endTime;
@@ -44,12 +46,12 @@ contract AuctionManager is Initializable, OwnableUpgradeable {
         if (_buyNowPrice > 0 && _buyNowPrice < _reservePrice) {
             revert AuctionManager__InvalidBuyNowPrice();
         }
-        if (auctions[_collection][_tokenId].owner != address(0)) {
+        if (auctions[_collection][_tokenId].creator != address(0)) {
             revert AuctionManager__AuctionAlreadyExists();
         }
 
         auctions[_collection][_tokenId] = Auction({
-            owner: msg.sender,
+            creator: msg.sender,
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: block.timestamp + _duration,
@@ -61,6 +63,32 @@ contract AuctionManager is Initializable, OwnableUpgradeable {
         IERC721(_collection).safeTransferFrom(
             msg.sender,
             address(this),
+            _tokenId
+        );
+    }
+
+    function cancelAuction(address _collection, uint256 _tokenId) public {
+        Auction memory auction = auctions[_collection][_tokenId];
+        if (msg.sender != auction.creator) {
+            revert AuctionManager__OnlyAuctionCreatorCanCancel();
+        }
+        if (auction.lastBidder != address(0)) {
+            revert AuctionManager__CannotCancelAuctionWithBid();
+        }
+
+        auctions[_collection][_tokenId] = Auction({
+            creator: address(0),
+            lastBidder: address(0),
+            lastBidPrice: 0,
+            endTime: 0,
+            reservePrice: 0,
+            buyNowPrice: 0,
+            minimumBidIncrement: 0
+        });
+
+        IERC721(_collection).safeTransferFrom(
+            address(this),
+            auction.creator,
             _tokenId
         );
     }
