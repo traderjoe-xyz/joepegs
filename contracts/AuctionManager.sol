@@ -13,17 +13,19 @@ import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
 error AuctionManager__AuctionAlreadyExists();
 error AuctionManager__InvalidDuration();
-error AuctionManager__OnlyAuctionCreatorCanCancel();
-error AuctionManager__CannotCancelAuctionWithBid();
 error AuctionManager__NoAuctionExists();
-error AuctionManager__InsufficientBidAmount();
-error AuctionManager__AuctionCreatorCannotPlaceBid();
+error AuctionManager__OnlyAuctionCreatorCanCancel();
 error AuctionManager__TransferAVAXFailed();
-error AuctionManager__CannotBidOnEndedAuction();
-error AuctionManager__CannotExecuteAuctionWithNoBid();
-error AuctionManager__CannotExecuteAuctionBeforeEndTime();
-error AuctionManager__DutchAuctionInvalidStartEndPrice();
+
+error AuctionManager__EnglishAuctionCannotBidOnEndedAuction();
+error AuctionManager__EnglishAuctionCannotCancelWithExistingBid();
+error AuctionManager__EnglishAuctionCannotExecuteBeforeEndTime();
+error AuctionManager__EnglishAuctionCannotExecuteWithNoBid();
+error AuctionManager__EnglishAuctionCreatorCannotPlaceBid();
+error AuctionManager__EnglishAuctionInsufficientBidAmount();
+
 error AuctionManager__DutchAuctionInsufficientAVAX();
+error AuctionManager__DutchAuctionInvalidStartEndPrice();
 
 /**
  * @title AuctionManager
@@ -147,11 +149,11 @@ contract AuctionManager is
             revert AuctionManager__NoAuctionExists();
         }
         if (auction.lastBidPrice == 0) {
-            revert AuctionManager__CannotExecuteAuctionWithNoBid();
+            revert AuctionManager__EnglishAuctionCannotExecuteWithNoBid();
         }
         if (msg.sender != auction.creator) {
             if (block.timestamp < auction.endTime) {
-                revert AuctionManager__CannotExecuteAuctionBeforeEndTime();
+                revert AuctionManager__EnglishAuctionCannotExecuteBeforeEndTime();
             }
         }
 
@@ -180,7 +182,7 @@ contract AuctionManager is
             revert AuctionManager__OnlyAuctionCreatorCanCancel();
         }
         if (auction.lastBidder != address(0)) {
-            revert AuctionManager__CannotCancelAuctionWithBid();
+            revert AuctionManager__EnglishAuctionCannotCancelWithExistingBid();
         }
 
         _clearEnglishAuction(_collection, _tokenId);
@@ -293,10 +295,10 @@ contract AuctionManager is
             revert AuctionManager__NoAuctionExists();
         }
         if (msg.sender == auction.creator) {
-            revert AuctionManager__AuctionCreatorCannotPlaceBid();
+            revert AuctionManager__EnglishAuctionCreatorCannotPlaceBid();
         }
         if (block.timestamp >= auction.endTime) {
-            revert AuctionManager__CannotBidOnEndedAuction();
+            revert AuctionManager__EnglishAuctionCannotBidOnEndedAuction();
         }
 
         if (auction.endTime - block.timestamp <= englishAuctionRefreshTime) {
@@ -305,14 +307,14 @@ contract AuctionManager is
 
         if (auction.lastBidPrice == 0) {
             if (_bidAmount < auction.startPrice) {
-                revert AuctionManager__InsufficientBidAmount();
+                revert AuctionManager__EnglishAuctionInsufficientBidAmount();
             }
             auction.lastBidder = msg.sender;
             auction.lastBidPrice = _bidAmount;
         } else {
             if (msg.sender == auction.lastBidder) {
                 if (msg.value < auction.minimumBidIncrement) {
-                    revert AuctionManager__InsufficientBidAmount();
+                    revert AuctionManager__EnglishAuctionInsufficientBidAmount();
                 }
                 auction.lastBidPrice += _bidAmount;
             } else {
@@ -320,7 +322,7 @@ contract AuctionManager is
                     _bidAmount <
                     auction.lastBidPrice + auction.minimumBidIncrement
                 ) {
-                    revert AuctionManager__InsufficientBidAmount();
+                    revert AuctionManager__EnglishAuctionInsufficientBidAmount();
                 }
 
                 address previousBidder = auction.lastBidder;
