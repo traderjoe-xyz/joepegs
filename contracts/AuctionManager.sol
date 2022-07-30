@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 error AuctionManager__AuctionAlreadyExists();
 error AuctionManager__InvalidBuyNowPrice();
@@ -20,7 +22,13 @@ error AuctionManager__CannotBidOnEndedAuction();
  * @title AuctionManager
  * @notice Runs english auctions
  */
-contract AuctionManager is Initializable, OwnableUpgradeable {
+contract AuctionManager is
+    Initializable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
+    using SafeERC20 for IERC20;
+
     struct Auction {
         address creator;
         address lastBidder;
@@ -31,14 +39,20 @@ contract AuctionManager is Initializable, OwnableUpgradeable {
         uint256 minimumBidIncrement;
     }
 
+    address public WAVAX;
+
     mapping(address => mapping(uint256 => Auction)) public auctions;
 
     uint256 public refreshTime;
 
-    function initialize(uint256 _refreshTime) public initializer {
+    function initialize(uint256 _refreshTime, address _wavax)
+        public
+        initializer
+    {
         __Ownable_init();
 
         refreshTime = _refreshTime;
+        WAVAX = _wavax;
     }
 
     function startAuction(
@@ -76,56 +90,27 @@ contract AuctionManager is Initializable, OwnableUpgradeable {
         );
     }
 
-    function placeBid(address _collection, uint256 _tokenId) public payable {
-        Auction storage auction = auctions[_collection][_tokenId];
-        if (auction.creator == address(0)) {
-            revert AuctionManager__NoAuctionExists();
-        }
-        if (msg.sender == auction.creator) {
-            revert AuctionManager__AuctionCreatorCannotPlaceBid();
-        }
-        if (block.timestamp >= auction.endTime) {
-            revert AuctionManager__CannotBidOnEndedAuction();
-        }
+    function placeBid(address _collection, uint256 _tokenId)
+        public
+        payable
+        nonReentrant
+    {
+        _placeBid(_collection, _tokenId, msg.value);
+    }
 
-        if (auction.endTime - block.timestamp <= refreshTime) {
-            auction.endTime += refreshTime;
+    function placeBidWithAVAXAndWAVAX(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _wavaxAmount
+    ) public payable nonReentrant {
+        if (_wavaxAmount > 0) {
+            IERC20(WAVAX).safeTransferFrom(
+                msg.sender,
+                address(this),
+                _wavaxAmount
+            );
         }
-
-        if (auction.lastBidPrice == 0) {
-            if (msg.value < auction.reservePrice) {
-                revert AuctionManager__InsufficientBidPrice();
-            }
-            auction.lastBidder = msg.sender;
-            auction.lastBidPrice = msg.value;
-        } else {
-            if (msg.sender == auction.lastBidder) {
-                if (msg.value < auction.minimumBidIncrement) {
-                    revert AuctionManager__InsufficientBidPrice();
-                }
-                auction.lastBidPrice += msg.value;
-            } else {
-                if (
-                    msg.value <
-                    auction.lastBidPrice + auction.minimumBidIncrement
-                ) {
-                    revert AuctionManager__InsufficientBidPrice();
-                }
-
-                address previousBidder = auction.lastBidder;
-                uint256 previousBidPrice = auction.lastBidPrice;
-
-                auction.lastBidder = msg.sender;
-                auction.lastBidPrice = msg.value;
-
-                (bool sent, ) = previousBidder.call{value: previousBidPrice}(
-                    ""
-                );
-                if (!sent) {
-                    revert AuctionManager__TransferPreviousBidFailed();
-                }
-            }
-        }
+        _placeBid(_collection, _tokenId, msg.value + _wavaxAmount);
     }
 
     function cancelAuction(address _collection, uint256 _tokenId) public {
@@ -152,5 +137,61 @@ contract AuctionManager is Initializable, OwnableUpgradeable {
             auction.creator,
             _tokenId
         );
+    }
+
+    function _placeBid(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _bidAmount
+    ) private {
+        Auction storage auction = auctions[_collection][_tokenId];
+        if (auction.creator == address(0)) {
+            revert AuctionManager__NoAuctionExists();
+        }
+        if (msg.sender == auction.creator) {
+            revert AuctionManager__AuctionCreatorCannotPlaceBid();
+        }
+        if (block.timestamp >= auction.endTime) {
+            revert AuctionManager__CannotBidOnEndedAuction();
+        }
+
+        if (auction.endTime - block.timestamp <= refreshTime) {
+            auction.endTime += refreshTime;
+        }
+
+        if (auction.lastBidPrice == 0) {
+            if (_bidAmount < auction.reservePrice) {
+                revert AuctionManager__InsufficientBidPrice();
+            }
+            auction.lastBidder = msg.sender;
+            auction.lastBidPrice = _bidAmount;
+        } else {
+            if (msg.sender == auction.lastBidder) {
+                if (msg.value < auction.minimumBidIncrement) {
+                    revert AuctionManager__InsufficientBidPrice();
+                }
+                auction.lastBidPrice += _bidAmount;
+            } else {
+                if (
+                    _bidAmount <
+                    auction.lastBidPrice + auction.minimumBidIncrement
+                ) {
+                    revert AuctionManager__InsufficientBidPrice();
+                }
+
+                address previousBidder = auction.lastBidder;
+                uint256 previousBidPrice = auction.lastBidPrice;
+
+                auction.lastBidder = msg.sender;
+                auction.lastBidPrice = _bidAmount;
+
+                (bool sent, ) = previousBidder.call{value: previousBidPrice}(
+                    ""
+                );
+                if (!sent) {
+                    revert AuctionManager__TransferPreviousBidFailed();
+                }
+            }
+        }
     }
 }
