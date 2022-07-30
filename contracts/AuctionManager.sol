@@ -157,7 +157,7 @@ contract AuctionManager is
         address lastBidder = auction.lastBidder;
         uint256 lastBidPrice = auction.lastBidPrice;
 
-        _clearAuction(_collection, _tokenId);
+        _clearEnglishAuction(_collection, _tokenId);
 
         // Execute sale using latest highest bid
         _transferFeesAndFunds(_collection, _tokenId, creator, lastBidPrice);
@@ -180,7 +180,7 @@ contract AuctionManager is
             revert AuctionManager__CannotCancelAuctionWithBid();
         }
 
-        _clearAuction(_collection, _tokenId);
+        _clearEnglishAuction(_collection, _tokenId);
 
         IERC721(_collection).safeTransferFrom(
             address(this),
@@ -328,7 +328,9 @@ contract AuctionManager is
         }
     }
 
-    function _clearAuction(address _collection, uint256 _tokenId) private {
+    function _clearEnglishAuction(address _collection, uint256 _tokenId)
+        private
+    {
         englishAuctions[_collection][_tokenId] = EnglishAuction({
             creator: address(0),
             lastBidder: address(0),
