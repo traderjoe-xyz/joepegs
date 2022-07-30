@@ -54,10 +54,10 @@ contract AuctionManager is
     mapping(address => mapping(uint256 => EnglishAuction))
         public englishAuctions;
 
-    uint256 public refreshTime;
+    uint256 public englishAuctionRefreshTime;
 
     function initialize(
-        uint256 _refreshTime,
+        uint256 _englishAuctionRefreshTime,
         address _protocolFeeManager,
         address _royaltyFeeManager,
         address _wavax,
@@ -65,7 +65,7 @@ contract AuctionManager is
     ) public initializer {
         __Ownable_init();
 
-        refreshTime = _refreshTime;
+        englishAuctionRefreshTime = _englishAuctionRefreshTime;
         protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
         protocolFeeRecipient = _protocolFeeRecipient;
@@ -191,8 +191,8 @@ contract AuctionManager is
             revert AuctionManager__CannotBidOnEndedAuction();
         }
 
-        if (auction.endTime - block.timestamp <= refreshTime) {
-            auction.endTime += refreshTime;
+        if (auction.endTime - block.timestamp <= englishAuctionRefreshTime) {
+            auction.endTime += englishAuctionRefreshTime;
         }
 
         if (auction.lastBidPrice == 0) {
