@@ -11,7 +11,6 @@ import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 
 error AuctionManager__AuctionAlreadyExists();
-error AuctionManager__InvalidBuyNowPrice();
 error AuctionManager__InvalidDuration();
 error AuctionManager__OnlyAuctionCreatorCanCancel();
 error AuctionManager__CannotCancelAuctionWithBid();
@@ -40,7 +39,6 @@ contract AuctionManager is
         uint256 lastBidPrice;
         uint256 endTime;
         uint256 reservePrice;
-        uint256 buyNowPrice;
         uint256 minimumBidIncrement;
     }
 
@@ -77,14 +75,10 @@ contract AuctionManager is
         uint256 _tokenId,
         uint256 _duration,
         uint256 _reservePrice,
-        uint256 _minimumBidIncrement,
-        uint256 _buyNowPrice
+        uint256 _minimumBidIncrement
     ) public {
         if (_duration == 0) {
             revert AuctionManager__InvalidDuration();
-        }
-        if (_buyNowPrice > 0 && _buyNowPrice < _reservePrice) {
-            revert AuctionManager__InvalidBuyNowPrice();
         }
         if (auctions[_collection][_tokenId].creator != address(0)) {
             revert AuctionManager__AuctionAlreadyExists();
@@ -96,7 +90,6 @@ contract AuctionManager is
             lastBidPrice: 0,
             endTime: block.timestamp + _duration,
             reservePrice: _reservePrice,
-            buyNowPrice: _buyNowPrice,
             minimumBidIncrement: _minimumBidIncrement
         });
 
@@ -295,7 +288,6 @@ contract AuctionManager is
             lastBidPrice: 0,
             endTime: 0,
             reservePrice: 0,
-            buyNowPrice: 0,
             minimumBidIncrement: 0
         });
     }
