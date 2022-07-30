@@ -34,6 +34,14 @@ contract AuctionManager is
 {
     using SafeERC20 for IERC20;
 
+    struct DutchAuction {
+        address creator;
+        uint256 startingPrice;
+        uint256 endPrice;
+        uint256 startTime;
+        uint256 duration;
+    }
+
     struct EnglishAuction {
         address creator;
         address lastBidder;
@@ -51,9 +59,11 @@ contract AuctionManager is
 
     address public protocolFeeRecipient;
 
+    mapping(address => mapping(uint256 => DutchAuction)) public dutchAuctions;
     mapping(address => mapping(uint256 => EnglishAuction))
         public englishAuctions;
 
+    uint256 public dutchAuctionDropInterval;
     uint256 public englishAuctionRefreshTime;
 
     function initialize(
@@ -72,7 +82,7 @@ contract AuctionManager is
         WAVAX = _wavax;
     }
 
-    function startAuction(
+    function startEnglishAuction(
         address _collection,
         uint256 _tokenId,
         uint256 _duration,
@@ -127,7 +137,9 @@ contract AuctionManager is
         _placeBid(_collection, _tokenId, msg.value + _wavaxAmount);
     }
 
-    function executeAuction(address _collection, uint256 _tokenId) public {
+    function executeEnglishAuction(address _collection, uint256 _tokenId)
+        public
+    {
         EnglishAuction storage auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert AuctionManager__NoAuctionExists();
@@ -157,7 +169,9 @@ contract AuctionManager is
         );
     }
 
-    function cancelAuction(address _collection, uint256 _tokenId) public {
+    function cancelEnglishAuction(address _collection, uint256 _tokenId)
+        public
+    {
         EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
             revert AuctionManager__OnlyAuctionCreatorCanCancel();
@@ -171,6 +185,35 @@ contract AuctionManager is
         IERC721(_collection).safeTransferFrom(
             address(this),
             auction.creator,
+            _tokenId
+        );
+    }
+
+    function startDutchAuction(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _duration,
+        uint256 _startingPrice,
+        uint256 _endPrice
+    ) public {
+        if (_duration == 0) {
+            revert AuctionManager__InvalidDuration();
+        }
+        if (dutchAuctions[_collection][_tokenId].creator != address(0)) {
+            revert AuctionManager__AuctionAlreadyExists();
+        }
+
+        dutchAuctions[_collection][_tokenId] = DutchAuction({
+            creator: msg.sender,
+            startingPrice: _startingPrice,
+            endPrice: _endPrice,
+            startTime: block.timestamp,
+            duration: _duration
+        });
+
+        IERC721(_collection).safeTransferFrom(
+            msg.sender,
+            address(this),
             _tokenId
         );
     }
