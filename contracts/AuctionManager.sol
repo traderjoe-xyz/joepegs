@@ -9,6 +9,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/se
 
 import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
+import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
 error AuctionManager__AuctionAlreadyExists();
 error AuctionManager__InvalidDuration();
@@ -119,6 +120,8 @@ contract AuctionManager is
                 address(this),
                 _wavaxAmount
             );
+            // Unwrap WAVAX
+            IWAVAX(WAVAX).withdraw(_wavaxAmount);
         }
         _placeBid(_collection, _tokenId, msg.value + _wavaxAmount);
     }
