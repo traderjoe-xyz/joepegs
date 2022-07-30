@@ -39,7 +39,7 @@ contract AuctionManager is
         address lastBidder;
         uint256 lastBidPrice;
         uint256 endTime;
-        uint256 reservePrice;
+        uint256 startingPrice;
         uint256 minimumBidIncrement;
     }
 
@@ -75,7 +75,7 @@ contract AuctionManager is
         address _collection,
         uint256 _tokenId,
         uint256 _duration,
-        uint256 _reservePrice,
+        uint256 _startingPrice,
         uint256 _minimumBidIncrement
     ) public {
         if (_duration == 0) {
@@ -90,7 +90,7 @@ contract AuctionManager is
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: block.timestamp + _duration,
-            reservePrice: _reservePrice,
+            startingPrice: _startingPrice,
             minimumBidIncrement: _minimumBidIncrement
         });
 
@@ -195,7 +195,7 @@ contract AuctionManager is
         }
 
         if (auction.lastBidPrice == 0) {
-            if (_bidAmount < auction.reservePrice) {
+            if (_bidAmount < auction.startingPrice) {
                 revert AuctionManager__InsufficientBidPrice();
             }
             auction.lastBidder = msg.sender;
@@ -290,7 +290,7 @@ contract AuctionManager is
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: 0,
-            reservePrice: 0,
+            startingPrice: 0,
             minimumBidIncrement: 0
         });
     }
