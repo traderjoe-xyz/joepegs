@@ -16,12 +16,14 @@ error AuctionManager__InvalidDuration();
 error AuctionManager__OnlyAuctionCreatorCanCancel();
 error AuctionManager__CannotCancelAuctionWithBid();
 error AuctionManager__NoAuctionExists();
-error AuctionManager__InsufficientBidPrice();
+error AuctionManager__InsufficientBidAmount();
 error AuctionManager__AuctionCreatorCannotPlaceBid();
 error AuctionManager__TransferAVAXFailed();
 error AuctionManager__CannotBidOnEndedAuction();
 error AuctionManager__CannotExecuteAuctionWithNoBid();
 error AuctionManager__CannotExecuteAuctionBeforeEndTime();
+error AuctionManager__DutchAuctionInvalidStartEndPrice();
+error AuctionManager__DutchAuctionInsufficientAVAX();
 
 /**
  * @title AuctionManager
@@ -36,7 +38,7 @@ contract AuctionManager is
 
     struct DutchAuction {
         address creator;
-        uint256 startingPrice;
+        uint256 startPrice;
         uint256 endPrice;
         uint256 startTime;
         uint256 endTime;
@@ -47,7 +49,7 @@ contract AuctionManager is
         address lastBidder;
         uint256 lastBidPrice;
         uint256 endTime;
-        uint256 startingPrice;
+        uint256 startPrice;
         uint256 minimumBidIncrement;
     }
 
@@ -86,7 +88,7 @@ contract AuctionManager is
         address _collection,
         uint256 _tokenId,
         uint256 _duration,
-        uint256 _startingPrice,
+        uint256 _startPrice,
         uint256 _minimumBidIncrement
     ) public {
         if (_duration == 0) {
@@ -101,7 +103,7 @@ contract AuctionManager is
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: block.timestamp + _duration,
-            startingPrice: _startingPrice,
+            startPrice: _startPrice,
             minimumBidIncrement: _minimumBidIncrement
         });
 
@@ -194,7 +196,7 @@ contract AuctionManager is
         address _collection,
         uint256 _tokenId,
         uint256 _duration,
-        uint256 _startingPrice,
+        uint256 _startPrice,
         uint256 _endPrice
     ) public {
         if (_duration == 0) {
@@ -203,10 +205,13 @@ contract AuctionManager is
         if (dutchAuctions[_collection][_tokenId].creator != address(0)) {
             revert AuctionManager__AuctionAlreadyExists();
         }
+        if (_startPrice <= _endPrice || _endPrice == 0) {
+            revert AuctionManager__DutchAuctionInvalidStartEndPrice();
+        }
 
         dutchAuctions[_collection][_tokenId] = DutchAuction({
             creator: msg.sender,
-            startingPrice: _startingPrice,
+            startPrice: _startPrice,
             endPrice: _endPrice,
             startTime: block.timestamp,
             endTime: block.timestamp + _duration
@@ -219,29 +224,48 @@ contract AuctionManager is
         );
     }
 
-    function executeDutchAuction(address _collection, uint256 _tokenId) public {
+    function executeDutchAuction(address _collection, uint256 _tokenId)
+        public
+        payable
+    {
+        _executeDutchAuction(_collection, _tokenId, msg.value);
+    }
+
+    function executeDutchAuctionWithAVAXAndWAVAX(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _wavaxAmount
+    ) public payable {
+        if (_wavaxAmount > 0) {
+            IERC20(WAVAX).safeTransferFrom(
+                msg.sender,
+                address(this),
+                _wavaxAmount
+            );
+            // Unwrap WAVAX
+            IWAVAX(WAVAX).withdraw(_wavaxAmount);
+        }
+        _executeDutchAuction(_collection, _tokenId, msg.value + _wavaxAmount);
+    }
+
+    function getDutchAuctionSalePrice(address _collection, uint256 _tokenId)
+        public
+        view
+        returns (uint256)
+    {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
-        if (auction.creator == address(0)) {
-            revert AuctionManager__NoAuctionExists();
+        if (block.timestamp >= auction.endTime) {
+            return auction.endPrice;
         }
-        if (msg.sender != auction.creator) {
-            if (block.timestamp < auction.endTime) {
-                revert AuctionManager__CannotExecuteAuctionBeforeEndTime();
-            }
-        }
+        uint256 timeElapsed = block.timestamp - auction.startTime;
+        uint256 elapsedSteps = timeElapsed / dutchAuctionDropInterval;
+        uint256 totalPossibleSteps = (auction.endTime - auction.startTime) /
+            dutchAuctionDropInterval;
 
-        // Get auction sale price
+        uint256 priceDifference = auction.startPrice - auction.endPrice;
+        uint256 priceDropPerStep = priceDifference / totalPossibleSteps;
 
-        _clearDutchAuction(_collection, _tokenId);
-
-        // // Execute sale using latest highest bid
-        // _transferFeesAndFunds(_collection, _tokenId, creator, lastBidPrice);
-
-        // IERC721(_collection).safeTransferFrom(
-        //     address(this),
-        //     lastBidder,
-        //     _tokenId
-        // );
+        return auction.startPrice - elapsedSteps * priceDropPerStep;
     }
 
     function cancelDutchAuction(address _collection, uint256 _tokenId) public {
@@ -280,15 +304,15 @@ contract AuctionManager is
         }
 
         if (auction.lastBidPrice == 0) {
-            if (_bidAmount < auction.startingPrice) {
-                revert AuctionManager__InsufficientBidPrice();
+            if (_bidAmount < auction.startPrice) {
+                revert AuctionManager__InsufficientBidAmount();
             }
             auction.lastBidder = msg.sender;
             auction.lastBidPrice = _bidAmount;
         } else {
             if (msg.sender == auction.lastBidder) {
                 if (msg.value < auction.minimumBidIncrement) {
-                    revert AuctionManager__InsufficientBidPrice();
+                    revert AuctionManager__InsufficientBidAmount();
                 }
                 auction.lastBidPrice += _bidAmount;
             } else {
@@ -296,7 +320,7 @@ contract AuctionManager is
                     _bidAmount <
                     auction.lastBidPrice + auction.minimumBidIncrement
                 ) {
-                    revert AuctionManager__InsufficientBidPrice();
+                    revert AuctionManager__InsufficientBidAmount();
                 }
 
                 address previousBidder = auction.lastBidder;
@@ -307,6 +331,42 @@ contract AuctionManager is
 
                 _transferAVAX(previousBidder, previousBidPrice);
             }
+        }
+    }
+
+    function _executeDutchAuction(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _avaxAmount
+    ) private {
+        DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
+        if (auction.creator == address(0)) {
+            revert AuctionManager__NoAuctionExists();
+        }
+
+        // Get auction sale price
+        uint256 salePrice = getDutchAuctionSalePrice(_collection, _tokenId);
+        if (_avaxAmount < salePrice) {
+            revert AuctionManager__DutchAuctionInsufficientAVAX();
+        }
+
+        _clearDutchAuction(_collection, _tokenId);
+
+        _transferFeesAndFunds(
+            _collection,
+            _tokenId,
+            auction.creator,
+            salePrice
+        );
+
+        IERC721(_collection).safeTransferFrom(
+            address(this),
+            msg.sender,
+            _tokenId
+        );
+
+        if (_avaxAmount > salePrice) {
+            _transferAVAX(msg.sender, _avaxAmount - salePrice);
         }
     }
 
@@ -377,7 +437,7 @@ contract AuctionManager is
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: 0,
-            startingPrice: 0,
+            startPrice: 0,
             minimumBidIncrement: 0
         });
     }
@@ -385,7 +445,7 @@ contract AuctionManager is
     function _clearDutchAuction(address _collection, uint256 _tokenId) private {
         dutchAuctions[_collection][_tokenId] = DutchAuction({
             creator: address(0),
-            startingPrice: 0,
+            startPrice: 0,
             endPrice: 0,
             startTime: 0,
             endTime: 0
