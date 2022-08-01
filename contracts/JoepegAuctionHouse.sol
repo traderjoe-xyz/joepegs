@@ -141,7 +141,7 @@ contract JoepegAuctionHouse is
         _placeBid(_collection, _tokenId, msg.value + _wavaxAmount);
     }
 
-    function executeEnglishAuction(address _collection, uint256 _tokenId)
+    function settleEnglishAuction(address _collection, uint256 _tokenId)
         public
     {
         EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
@@ -224,14 +224,14 @@ contract JoepegAuctionHouse is
         );
     }
 
-    function executeDutchAuction(address _collection, uint256 _tokenId)
+    function settleDutchAuction(address _collection, uint256 _tokenId)
         public
         payable
     {
-        _executeDutchAuction(_collection, _tokenId, msg.value);
+        _settleDutchAuction(_collection, _tokenId, msg.value);
     }
 
-    function executeDutchAuctionWithAVAXAndWAVAX(
+    function settleDutchAuctionWithAVAXAndWAVAX(
         address _collection,
         uint256 _tokenId,
         uint256 _wavaxAmount
@@ -245,7 +245,7 @@ contract JoepegAuctionHouse is
             // Unwrap WAVAX
             IWAVAX(WAVAX).withdraw(_wavaxAmount);
         }
-        _executeDutchAuction(_collection, _tokenId, msg.value + _wavaxAmount);
+        _settleDutchAuction(_collection, _tokenId, msg.value + _wavaxAmount);
     }
 
     function getDutchAuctionSalePrice(address _collection, uint256 _tokenId)
@@ -334,7 +334,7 @@ contract JoepegAuctionHouse is
         }
     }
 
-    function _executeDutchAuction(
+    function _settleDutchAuction(
         address _collection,
         uint256 _tokenId,
         uint256 _avaxAmount
