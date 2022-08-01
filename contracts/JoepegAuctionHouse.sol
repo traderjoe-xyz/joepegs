@@ -73,11 +73,23 @@ contract JoepegAuctionHouse is
 
     address public protocolFeeRecipient;
 
+    /// @notice Stores Dutch Auction data for NFTs
+    /// @dev (collection address => token id => dutch auction)
     mapping(address => mapping(uint256 => DutchAuction)) public dutchAuctions;
+
+    /// @notice Stores English Auction data for NFTs
+    /// @dev (collection address => token id => english auction)
     mapping(address => mapping(uint256 => EnglishAuction))
         public englishAuctions;
 
+    /// @notice Required minimum percent increase from last bid in order to
+    /// place a new bid on an English Auction
     uint256 public englishAuctionMinBidIncrementPct;
+
+    /// @notice Represents both:
+    /// - Number of seconds before an English Auction ends where any new
+    ///   bid will extend the auction's end time
+    /// - Number of seconds to extend an English Auction's end time by
     uint256 public englishAuctionRefreshTime;
 
     event NewCurrencyManager(address indexed currencyManager);
@@ -98,6 +110,14 @@ contract JoepegAuctionHouse is
         }
     }
 
+    ///  @notice Initializer
+    ///  @param _englishAuctionMinBidIncrementPct minimum bid increment percentage for English Auctions
+    ///  @param _englishAuctionRefreshTime refresh time for English auctions
+    ///  @param _currencyManager currency manager address
+    ///  @param _protocolFeeManager protocol fee manager address
+    ///  @param _royaltyFeeManager royalty fee manager address
+    ///  @param _wavax address of WAVAX
+    ///  @param _protocolFeeRecipient protocol fee recipient
     function initialize(
         uint256 _englishAuctionMinBidIncrementPct,
         uint256 _englishAuctionRefreshTime,
