@@ -94,9 +94,9 @@ contract JoepegAuctionHouse is
 
     event DutchAuctionStart(
         address indexed creator,
-        address indexed currency,
+        address currency,
         address indexed collection,
-        uint256 tokenId,
+        uint256 indexed tokenId,
         uint256 startPrice,
         uint256 endPrice,
         uint256 startTime,
@@ -119,9 +119,9 @@ contract JoepegAuctionHouse is
 
     event EnglishAuctionStart(
         address indexed creator,
-        address indexed currency,
+        address currency,
         address indexed collection,
-        uint256 tokenId,
+        uint256 indexed tokenId,
         uint256 startPrice,
         uint256 startTime,
         uint256 endTime
