@@ -208,7 +208,7 @@ contract JoepegAuctionHouse is
     /// - Can be called by creator at any time (including before the auction's end time to accept the
     ///   current latest bid)
     /// - Can be called by anyone after the auction ends
-    /// - Transfers fees appropriately to seller, royalty receiver, and protocol fee recipient
+    /// - Transfers funds and fees appropriately to seller, royalty receiver, and protocol fee recipient
     /// - Transfers ERC721 token to last highest bidder
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
@@ -329,11 +329,11 @@ contract JoepegAuctionHouse is
 
     /// @notice Settles a Dutch Auction
     /// @dev Note:
-    /// - Transfers fees appropriately to seller, royalty receiver, and protocol fee recipient
-    /// - Transfers ERC721 token to bidder
+    /// - Transfers funds and fees appropriately to seller, royalty receiver, and protocol fee recipient
+    /// - Transfers ERC721 token to buyer
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
-    /// @param _currency address of currency to sell ERC721 token for
+    /// @param _currency address of currency to buy ERC721 token with
     function settleDutchAuction(
         address _collection,
         uint256 _tokenId,
@@ -342,6 +342,12 @@ contract JoepegAuctionHouse is
         _settleDutchAuction(_collection, _tokenId, _currency);
     }
 
+    /// @notice Settles a Dutch Auction with AVAX and/or WAVAX
+    /// @dev Note:
+    /// - Transfers funds and fees appropriately to seller, royalty receiver, and protocol fee recipient
+    /// - Transfers ERC721 token to buyer
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
     function settleDutchAuctionWithAVAXAndWAVAX(
         address _collection,
         uint256 _tokenId
