@@ -111,6 +111,13 @@ contract JoepegAuctionHouse is
         WAVAX = _wavax;
     }
 
+    /// @notice Starts an English Auction for an ERC721 token
+    /// @dev Note this requires the auction house to hold the ERC721 token in escrow
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to sell ERC721 token for
+    /// @param _duration number of seconds for English Auction to run
+    /// @param _startPrice minimum starting bid price
     function startEnglishAuction(
         address _collection,
         uint256 _tokenId,
@@ -134,6 +141,7 @@ contract JoepegAuctionHouse is
             startPrice: _startPrice
         });
 
+        // Hold ERC721 token in escrow
         IERC721(_collection).safeTransferFrom(
             msg.sender,
             address(this),
@@ -141,23 +149,42 @@ contract JoepegAuctionHouse is
         );
     }
 
-    function placeBid(
+    /// @notice Place bid on a running English Auction
+    /// @dev Note:
+    /// - Requires holding the bid in escrow until either a higher bid is placed
+    ///   or the auction is settled
+    /// - If a bid already exists, only bids at least `englishAuctionMinBidIncrementPct`
+    ///   percent higher can be placed
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to bid
+    /// @param _amount amount of currency to bid
+    function placeEnglishAuctionBid(
         address _collection,
         uint256 _tokenId,
         address _currency,
         uint256 _amount
     ) public nonReentrant {
         IERC20(_currency).safeTransferFrom(msg.sender, address(this), _amount);
-        _placeBid(_collection, _tokenId, _currency, _amount);
+        _placeEnglishAuctionBid(_collection, _tokenId, _currency, _amount);
     }
 
-    function placeBidWithAVAXAndWAVAX(
+    /// @notice Place bid on a running English Auction using AVAX/WAVAX
+    /// @dev Note:
+    /// - Requires holding the bid in escrow until either a higher bid is placed
+    ///   or the auction is settled
+    /// - If a bid already exists, only bids at least `englishAuctionMinBidIncrementPct`
+    ///   percent higher can be placed
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _wavaxAmount amount of WAVAX to bid
+    function placeEnglishAuctionBidWithAVAXAndWAVAX(
         address _collection,
         uint256 _tokenId,
         uint256 _wavaxAmount
     ) public payable nonReentrant {
         if (msg.value > 0) {
-            // Wrap WAVAX
+            // Wrap AVAX into WAVAX
             IWAVAX(WAVAX).deposit{value: msg.value}();
         }
         if (_wavaxAmount > 0) {
@@ -167,9 +194,23 @@ contract JoepegAuctionHouse is
                 _wavaxAmount
             );
         }
-        _placeBid(_collection, _tokenId, WAVAX, msg.value + _wavaxAmount);
+        _placeEnglishAuctionBid(
+            _collection,
+            _tokenId,
+            WAVAX,
+            msg.value + _wavaxAmount
+        );
     }
 
+    /// @notice Settles an English Auction
+    /// @dev Note:
+    /// - Can be called by creator at any time (including before the auction's end time to accept the
+    ///   current latest bid)
+    /// - Can be called by anyone after the auction ends
+    /// - Transfers fees appropriately to seller, royalty receiver, and protocol fee recipient
+    /// - Transfers ERC721 token to last highest bidder
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
     function settleEnglishAuction(address _collection, uint256 _tokenId)
         public
     {
@@ -214,6 +255,12 @@ contract JoepegAuctionHouse is
         );
     }
 
+    /// @notice Cancels an English Auction
+    /// @dev Note:
+    /// - Can only be called by auction creator
+    /// - Can only be cancelled if no bids have been placed
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
     function cancelEnglishAuction(address _collection, uint256 _tokenId)
         public
     {
@@ -338,7 +385,7 @@ contract JoepegAuctionHouse is
         );
     }
 
-    function _placeBid(
+    function _placeEnglishAuctionBid(
         address _collection,
         uint256 _tokenId,
         address _currency,
