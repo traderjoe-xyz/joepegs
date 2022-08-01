@@ -14,6 +14,7 @@ import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
 error JoepegAuctionHouse__AuctionAlreadyExists();
 error JoepegAuctionHouse__CurrencyMismatch();
+error JoepegAuctionHouse__ExpectedNonnullAddress();
 error JoepegAuctionHouse__InvalidDuration();
 error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
@@ -78,6 +79,11 @@ contract JoepegAuctionHouse is
 
     uint256 public englishAuctionMinBidIncrementPct;
     uint256 public englishAuctionRefreshTime;
+
+    event NewCurrencyManager(address indexed currencyManager);
+    event NewProtocolFeeManager(address indexed protocolFeeManager);
+    event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
+    event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
 
     event NewEnglishAuctionMinBidIncrementPct(
         uint256 englishAuctionMinBidIncrementPct
@@ -393,11 +399,7 @@ contract JoepegAuctionHouse is
     function updateEnglishAuctionMinBidIncrementPct(
         uint256 _englishAuctionMinBidIncrementPct
     ) external onlyOwner {
-        if (
-            _englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION ||
-            englishAuctionMinBidIncrementPct ==
-            _englishAuctionMinBidIncrementPct
-        ) {
+        if (_englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
         }
 
@@ -413,12 +415,57 @@ contract JoepegAuctionHouse is
         external
         onlyOwner
     {
-        if (englishAuctionRefreshTime == _englishAuctionRefreshTime) {
-            revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
-        }
-
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
         emit NewEnglishAuctionRefreshTime(englishAuctionRefreshTime);
+    }
+
+    /// @notice Update currency manager
+    /// @param _currencyManager new currency manager address
+    function updateCurrencyManager(address _currencyManager)
+        external
+        onlyOwner
+    {
+        if (_currencyManager == address(0)) {
+            revert JoepegAuctionHouse__ExpectedNonnullAddress();
+        }
+        currencyManager = ICurrencyManager(_currencyManager);
+        emit NewCurrencyManager(_currencyManager);
+    }
+
+    /// @notice Update protocol fee manager
+    /// @param _protocolFeeManager new protocol fee manager address
+    function updateProtocolFeeManager(address _protocolFeeManager)
+        external
+        onlyOwner
+    {
+        if (_protocolFeeManager == address(0)) {
+            revert JoepegAuctionHouse__ExpectedNonnullAddress();
+        }
+        protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
+        emit NewProtocolFeeManager(_protocolFeeManager);
+    }
+
+    /// @notice Update protocol fee recipient
+    /// @param _protocolFeeRecipient new recipient for protocol fees
+    function updateProtocolFeeRecipient(address _protocolFeeRecipient)
+        external
+        onlyOwner
+    {
+        protocolFeeRecipient = _protocolFeeRecipient;
+        emit NewProtocolFeeRecipient(_protocolFeeRecipient);
+    }
+
+    /// @notice Update royalty fee manager
+    /// @param _royaltyFeeManager new fee manager address
+    function updateRoyaltyFeeManager(address _royaltyFeeManager)
+        external
+        onlyOwner
+    {
+        if (_royaltyFeeManager == address(0)) {
+            revert JoepegAuctionHouse__ExpectedNonnullAddress();
+        }
+        royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
+        emit NewRoyaltyFeeManager(_royaltyFeeManager);
     }
 
     /// @notice Place bid on a running English Auction
