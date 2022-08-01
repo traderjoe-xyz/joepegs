@@ -149,11 +149,6 @@ contract JoepegAuctionHouse is
     }
 
     /// @notice Place bid on a running English Auction
-    /// @dev Note:
-    /// - Requires holding the bid in escrow until either a higher bid is placed
-    ///   or the auction is settled
-    /// - If a bid already exists, only bids at least `englishAuctionMinBidIncrementPct`
-    ///   percent higher can be placed
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     /// @param _currency address of currency to bid
@@ -169,11 +164,6 @@ contract JoepegAuctionHouse is
     }
 
     /// @notice Place bid on a running English Auction using AVAX/WAVAX
-    /// @dev Note:
-    /// - Requires holding the bid in escrow until either a higher bid is placed
-    ///   or the auction is settled
-    /// - If a bid already exists, only bids at least `englishAuctionMinBidIncrementPct`
-    ///   percent higher can be placed
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     /// @param _wavaxAmount amount of WAVAX to bid
@@ -329,9 +319,6 @@ contract JoepegAuctionHouse is
     }
 
     /// @notice Settles a Dutch Auction
-    /// @dev Note:
-    /// - Transfers funds and fees appropriately to seller, royalty receiver, and protocol fee recipient
-    /// - Transfers ERC721 token to buyer
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     /// @param _currency address of currency to buy ERC721 token with
@@ -344,9 +331,6 @@ contract JoepegAuctionHouse is
     }
 
     /// @notice Settles a Dutch Auction with AVAX and/or WAVAX
-    /// @dev Note:
-    /// - Transfers funds and fees appropriately to seller, royalty receiver, and protocol fee recipient
-    /// - Transfers ERC721 token to buyer
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     function settleDutchAuctionWithAVAXAndWAVAX(
@@ -380,6 +364,9 @@ contract JoepegAuctionHouse is
         return auction.startPrice - elapsedSteps * priceDropPerStep;
     }
 
+    /// @notice Cancels a running Dutch Auction
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
     function cancelDutchAuction(address _collection, uint256 _tokenId) public {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
@@ -395,6 +382,16 @@ contract JoepegAuctionHouse is
         );
     }
 
+    /// @notice Place bid on a running English Auction
+    /// @dev Note:
+    /// - Requires holding the bid in escrow until either a higher bid is placed
+    ///   or the auction is settled
+    /// - If a bid already exists, only bids at least `englishAuctionMinBidIncrementPct`
+    ///   percent higher can be placed
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to bid
+    /// @param _bidAmount amount of currency to bid
     function _placeEnglishAuctionBid(
         address _collection,
         uint256 _tokenId,
@@ -427,7 +424,8 @@ contract JoepegAuctionHouse is
             auction.lastBidPrice = _bidAmount;
         } else {
             if (msg.sender == auction.lastBidder) {
-                // _bidAmount >= lastBidPrice * minBidIncrement / 10000
+                // If bidder is same as last bidder, ensure their bid is at least
+                // `englishAuctionMinBidIncrementPct` percent of their previous bid
                 if (
                     _bidAmount * PERCENTAGE_PRECISION >=
                     auction.lastBidPrice * englishAuctionMinBidIncrementPct
@@ -436,7 +434,8 @@ contract JoepegAuctionHouse is
                 }
                 auction.lastBidPrice += _bidAmount;
             } else {
-                // _bidAmount >= lastBidPrice * (10000 + minBidIncrement) / 10000
+                // Ensure bid is at least `englishAuctionMinBidIncrementPct` percent greater
+                // than last bid
                 if (
                     _bidAmount * PERCENTAGE_PRECISION >=
                     auction.lastBidPrice *
@@ -452,6 +451,7 @@ contract JoepegAuctionHouse is
                 auction.lastBidder = msg.sender;
                 auction.lastBidPrice = _bidAmount;
 
+                // Transfer previous bid back to bidder
                 IERC20(_currency).safeTransfer(
                     previousBidder,
                     previousBidPrice
@@ -460,6 +460,13 @@ contract JoepegAuctionHouse is
         }
     }
 
+    /// @notice Settles a Dutch Auction
+    /// @dev Note:
+    /// - Transfers funds and fees appropriately to seller, royalty receiver, and protocol fee recipient
+    /// - Transfers ERC721 token to buyer
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to buy ERC721 token with
     function _settleDutchAuction(
         address _collection,
         uint256 _tokenId,
@@ -526,6 +533,13 @@ contract JoepegAuctionHouse is
         );
     }
 
+    /// @notice Transfer fees and funds to royalty recipient, protocol, and seller
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of token being used for the purchase (e.g. USDC)
+    /// @param _from sender of the funds
+    /// @param _to seller's recipient
+    /// @param _amount amount being transferred (in currency)
     function _transferFeesAndFunds(
         address _collection,
         uint256 _tokenId,
@@ -595,6 +609,12 @@ contract JoepegAuctionHouse is
         }
     }
 
+    /// @notice Transfer fees and funds in AVAX using WAVAX to royalty recipient,
+    /// protocol, and seller
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _to seller's recipient
+    /// @param _amount amount of WAVAX being transferred
     function _transferFeesAndFundsWithWAVAX(
         address _collection,
         uint256 _tokenId,
@@ -657,6 +677,9 @@ contract JoepegAuctionHouse is
         }
     }
 
+    /// @notice Clears English Auction data for a given NFT
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
     function _clearEnglishAuction(address _collection, uint256 _tokenId)
         private
     {
@@ -670,6 +693,9 @@ contract JoepegAuctionHouse is
         });
     }
 
+    /// @notice Clears Dutch Auction data for a given NFT
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
     function _clearDutchAuction(address _collection, uint256 _tokenId) private {
         dutchAuctions[_collection][_tokenId] = DutchAuction({
             creator: address(0),
@@ -682,6 +708,9 @@ contract JoepegAuctionHouse is
         });
     }
 
+    /// @notice Transfer AVAX to specified address
+    /// @param _to address to send AVAX to
+    /// @param _amount amount of AVAX to send
     function _transferAVAX(address _to, uint256 _amount) private {
         (bool sent, ) = _to.call{value: _amount}("");
         if (!sent) {
@@ -689,11 +718,9 @@ contract JoepegAuctionHouse is
         }
     }
 
-    /**
-     * @notice Calculate protocol fee for a given collection
-     * @param _collection address of collection
-     * @param _amount amount to transfer
-     */
+    /// @notice Calculate protocol fee for a given collection
+    /// @param _collection address of collection
+    /// @param _amount amount to transfer
     function _calculateProtocolFee(address _collection, uint256 _amount)
         private
         view
