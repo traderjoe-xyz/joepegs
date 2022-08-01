@@ -93,14 +93,44 @@ contract JoepegAuctionHouse is
     uint256 public englishAuctionRefreshTime;
 
     event NewCurrencyManager(address indexed currencyManager);
-    event NewProtocolFeeManager(address indexed protocolFeeManager);
-    event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
-    event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
-
     event NewEnglishAuctionMinBidIncrementPct(
         uint256 englishAuctionMinBidIncrementPct
     );
     event NewEnglishAuctionRefreshTime(uint256 englishAuctionRefreshTime);
+    event NewProtocolFeeManager(address indexed protocolFeeManager);
+    event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
+    event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
+
+    event EnglishAuctionStart(
+        address indexed creator,
+        address indexed currency,
+        address indexed collection,
+        uint256 tokenId,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 startPrice
+    );
+    event EnglishAuctionPlaceBid(
+        address indexed creator,
+        address indexed bidder,
+        address indexed currency,
+        address collection,
+        uint256 tokenId,
+        uint256 bidAmount
+    );
+    event EnglishAuctionSettle(
+        address indexed creator,
+        address indexed bidder,
+        address indexed currency,
+        address collection,
+        uint256 tokenId,
+        uint256 price
+    );
+    event EnglishAuctionCancel(
+        address indexed creator,
+        address indexed collection,
+        uint256 indexed tokenId
+    );
 
     modifier isSupportedCurrency(address _currency) {
         if (!currencyManager.isCurrencyWhitelisted(_currency)) {
@@ -163,7 +193,7 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__AuctionAlreadyExists();
         }
 
-        englishAuctions[_collection][_tokenId] = EnglishAuction({
+        EnglishAuction memory auction = EnglishAuction({
             creator: msg.sender,
             currency: _currency,
             lastBidder: address(0),
@@ -171,12 +201,23 @@ contract JoepegAuctionHouse is
             endTime: block.timestamp + _duration,
             startPrice: _startPrice
         });
+        englishAuctions[_collection][_tokenId] = auction;
 
         // Hold ERC721 token in escrow
         IERC721(_collection).safeTransferFrom(
             msg.sender,
             address(this),
             _tokenId
+        );
+
+        emit EnglishAuctionStart(
+            auction.creator,
+            auction.currency,
+            _collection,
+            _tokenId,
+            block.timestamp,
+            auction.endTime,
+            auction.startPrice
         );
     }
 
@@ -274,6 +315,15 @@ contract JoepegAuctionHouse is
             auction.lastBidder,
             _tokenId
         );
+
+        emit EnglishAuctionSettle(
+            auction.creator,
+            auction.lastBidder,
+            auction.currency,
+            _collection,
+            _tokenId,
+            auction.lastBidPrice
+        );
     }
 
     /// @notice Cancels an English Auction
@@ -300,6 +350,8 @@ contract JoepegAuctionHouse is
             auction.creator,
             _tokenId
         );
+
+        emit EnglishAuctionCancel(auction.creator, _collection, _tokenId);
     }
 
     /// @notice Starts a Dutch Auction for an ERC721 token
@@ -564,6 +616,15 @@ contract JoepegAuctionHouse is
                 );
             }
         }
+
+        emit EnglishAuctionPlaceBid(
+            auction.creator,
+            auction.lastBidder,
+            auction.currency,
+            _collection,
+            _tokenId,
+            auction.lastBidPrice
+        );
     }
 
     /// @notice Settles a Dutch Auction
