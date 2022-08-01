@@ -19,7 +19,7 @@ error JoepegAuctionHouse__TransferAVAXFailed();
 
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
-error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettle();
+error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
 error JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
 error JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
 error JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
@@ -151,13 +151,15 @@ contract JoepegAuctionHouse is
         if (auction.lastBidPrice == 0) {
             revert JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
         }
-        if (msg.sender != auction.creator) {
-            revert JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettle();
+        if (
+            msg.sender != auction.creator && block.timestamp < auction.endTime
+        ) {
+            revert JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
         }
 
         _clearEnglishAuction(_collection, _tokenId);
 
-        // Settle sale using latest highest bid
+        // Settle auction using latest bid
         _transferFeesAndFunds(
             _collection,
             _tokenId,
