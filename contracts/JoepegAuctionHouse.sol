@@ -50,6 +50,7 @@ contract JoepegAuctionHouse is
         uint256 endPrice;
         uint256 startTime;
         uint256 endTime;
+        uint256 dropInterval;
     }
 
     struct EnglishAuction {
@@ -74,7 +75,6 @@ contract JoepegAuctionHouse is
     mapping(address => mapping(uint256 => EnglishAuction))
         public englishAuctions;
 
-    uint256 public dutchAuctionDropInterval;
     uint256 public englishAuctionMinBidIncrementPct;
     uint256 public englishAuctionRefreshTime;
 
@@ -87,7 +87,6 @@ contract JoepegAuctionHouse is
     }
 
     function initialize(
-        uint256 _dutchAuctionDropInterval,
         uint256 _englishAuctionMinBidIncrementPct,
         uint256 _englishAuctionRefreshTime,
         address _currencyManager,
@@ -102,7 +101,6 @@ contract JoepegAuctionHouse is
 
         __Ownable_init();
 
-        dutchAuctionDropInterval = _dutchAuctionDropInterval;
         englishAuctionMinBidIncrementPct = _englishAuctionMinBidIncrementPct;
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
         currencyManager = ICurrencyManager(_currencyManager);
@@ -291,6 +289,7 @@ contract JoepegAuctionHouse is
     /// @param _tokenId token id of ERC721 token
     /// @param _currency address of currency to sell ERC721 token for
     /// @param _duration number of seconds for Dutch Auction to run
+    /// @param _dropInterval number of seconds between each drop in price
     /// @param _startPrice starting sell price
     /// @param _endPrice ending sell price
     function startDutchAuction(
@@ -298,10 +297,11 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         address _currency,
         uint256 _duration,
+        uint256 _dropInterval,
         uint256 _startPrice,
         uint256 _endPrice
     ) public isSupportedCurrency(_currency) {
-        if (_duration == 0) {
+        if (_duration == 0 || _duration < _dropInterval) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
         if (dutchAuctions[_collection][_tokenId].creator != address(0)) {
@@ -317,7 +317,8 @@ contract JoepegAuctionHouse is
             startPrice: _startPrice,
             endPrice: _endPrice,
             startTime: block.timestamp,
-            endTime: block.timestamp + _duration
+            endTime: block.timestamp + _duration,
+            dropInterval: _dropInterval
         });
 
         IERC721(_collection).safeTransferFrom(
@@ -355,6 +356,10 @@ contract JoepegAuctionHouse is
         _settleDutchAuction(_collection, _tokenId, WAVAX);
     }
 
+    /// @notice Calculates current Dutch Auction sale price for an ERC721 token
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @return current Dutch Auction sale price for specified ERC721 token
     function getDutchAuctionSalePrice(address _collection, uint256 _tokenId)
         public
         view
@@ -365,9 +370,9 @@ contract JoepegAuctionHouse is
             return auction.endPrice;
         }
         uint256 timeElapsed = block.timestamp - auction.startTime;
-        uint256 elapsedSteps = timeElapsed / dutchAuctionDropInterval;
+        uint256 elapsedSteps = timeElapsed / auction.dropInterval;
         uint256 totalPossibleSteps = (auction.endTime - auction.startTime) /
-            dutchAuctionDropInterval;
+            auction.dropInterval;
 
         uint256 priceDifference = auction.startPrice - auction.endPrice;
         uint256 priceDropPerStep = priceDifference / totalPossibleSteps;
@@ -672,7 +677,8 @@ contract JoepegAuctionHouse is
             startPrice: 0,
             endPrice: 0,
             startTime: 0,
-            endTime: 0
+            endTime: 0,
+            dropInterval: 0
         });
     }
 
