@@ -52,7 +52,6 @@ contract JoepegAuctionHouse is
         uint256 lastBidPrice;
         uint256 endTime;
         uint256 startPrice;
-        uint256 minimumBidIncrement;
     }
 
     uint256 public immutable PERCENTAGE_PRECISION = 10000;
@@ -68,9 +67,12 @@ contract JoepegAuctionHouse is
         public englishAuctions;
 
     uint256 public dutchAuctionDropInterval;
+    uint256 public englishAuctionMinBidIncrementPct;
     uint256 public englishAuctionRefreshTime;
 
     function initialize(
+        uint256 _dutchAuctionDropInterval,
+        uint256 _englishAuctionMinBidIncrementPct,
         uint256 _englishAuctionRefreshTime,
         address _protocolFeeManager,
         address _royaltyFeeManager,
@@ -79,6 +81,8 @@ contract JoepegAuctionHouse is
     ) public initializer {
         __Ownable_init();
 
+        dutchAuctionDropInterval = _dutchAuctionDropInterval;
+        englishAuctionMinBidIncrementPct = _englishAuctionMinBidIncrementPct;
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
         protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
@@ -90,8 +94,7 @@ contract JoepegAuctionHouse is
         address _collection,
         uint256 _tokenId,
         uint256 _duration,
-        uint256 _startPrice,
-        uint256 _minimumBidIncrement
+        uint256 _startPrice
     ) public {
         if (_duration == 0) {
             revert JoepegAuctionHouse__InvalidDuration();
@@ -105,8 +108,7 @@ contract JoepegAuctionHouse is
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: block.timestamp + _duration,
-            startPrice: _startPrice,
-            minimumBidIncrement: _minimumBidIncrement
+            startPrice: _startPrice
         });
 
         IERC721(_collection).safeTransferFrom(
@@ -313,14 +315,21 @@ contract JoepegAuctionHouse is
             auction.lastBidPrice = _bidAmount;
         } else {
             if (msg.sender == auction.lastBidder) {
-                if (msg.value < auction.minimumBidIncrement) {
+                // _bidAmount >= lastBidPrice * minBidIncrement / 10000
+                if (
+                    _bidAmount * PERCENTAGE_PRECISION >=
+                    auction.lastBidPrice * englishAuctionMinBidIncrementPct
+                ) {
                     revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
                 }
                 auction.lastBidPrice += _bidAmount;
             } else {
+                // _bidAmount >= lastBidPrice * (10000 + minBidIncrement) / 10000
                 if (
-                    _bidAmount <
-                    auction.lastBidPrice + auction.minimumBidIncrement
+                    _bidAmount * PERCENTAGE_PRECISION >=
+                    auction.lastBidPrice *
+                        (PERCENTAGE_PRECISION +
+                            englishAuctionMinBidIncrementPct)
                 ) {
                     revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
                 }
@@ -439,8 +448,7 @@ contract JoepegAuctionHouse is
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: 0,
-            startPrice: 0,
-            minimumBidIncrement: 0
+            startPrice: 0
         });
     }
 
