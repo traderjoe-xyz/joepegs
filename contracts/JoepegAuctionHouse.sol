@@ -26,6 +26,7 @@ error JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
 error JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
 error JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
 error JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
+error JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
 error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
 
 error JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
@@ -77,6 +78,11 @@ contract JoepegAuctionHouse is
 
     uint256 public englishAuctionMinBidIncrementPct;
     uint256 public englishAuctionRefreshTime;
+
+    event NewEnglishAuctionMinBidIncrementPct(
+        uint256 englishAuctionMinBidIncrementPct
+    );
+    event NewEnglishAuctionRefreshTime(uint256 englishAuctionRefreshTime);
 
     modifier isSupportedCurrency(address _currency) {
         if (!currencyManager.isCurrencyWhitelisted(_currency)) {
@@ -380,6 +386,39 @@ contract JoepegAuctionHouse is
             auction.creator,
             _tokenId
         );
+    }
+
+    /// @notice Update `englishAuctionMinBidIncrementPct`
+    /// @param _englishAuctionMinBidIncrementPct new minimum bid increment percetange for English auctions
+    function updateEnglishAuctionMinBidIncrementPct(
+        uint256 _englishAuctionMinBidIncrementPct
+    ) external onlyOwner {
+        if (
+            _englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION ||
+            englishAuctionMinBidIncrementPct ==
+            _englishAuctionMinBidIncrementPct
+        ) {
+            revert JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
+        }
+
+        englishAuctionMinBidIncrementPct = _englishAuctionMinBidIncrementPct;
+        emit NewEnglishAuctionMinBidIncrementPct(
+            _englishAuctionMinBidIncrementPct
+        );
+    }
+
+    /// @notice Update `englishAuctionRefreshTime`
+    /// @param _englishAuctionRefreshTime new refresh time for English auctions
+    function updateEnglishAuctionRefreshTime(uint256 _englishAuctionRefreshTime)
+        external
+        onlyOwner
+    {
+        if (englishAuctionRefreshTime == _englishAuctionRefreshTime) {
+            revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
+        }
+
+        englishAuctionRefreshTime = _englishAuctionRefreshTime;
+        emit NewEnglishAuctionRefreshTime(englishAuctionRefreshTime);
     }
 
     /// @notice Place bid on a running English Auction
