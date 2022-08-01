@@ -28,7 +28,8 @@ error JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
 error JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
 error JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
 
-error JoepegAuctionHouse__DutchAuctionInsufficientAVAX();
+error JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
+error JoepegAuctionHouse__DutchAuctionInsufficientAmountToSettle();
 error JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
 
 /**
@@ -281,6 +282,17 @@ contract JoepegAuctionHouse is
         );
     }
 
+    /// @notice Starts a Dutch Auction for an ERC721 token
+    /// @dev Note:
+    /// - Requires the auction house to hold the ERC721 token in escrow
+    /// - Drops in price every `dutchAuctionDropInterval` seconds in equal
+    ///   amounts
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to sell ERC721 token for
+    /// @param _duration number of seconds for Dutch Auction to run
+    /// @param _startPrice starting sell price
+    /// @param _endPrice ending sell price
     function startDutchAuction(
         address _collection,
         uint256 _tokenId,
@@ -315,39 +327,26 @@ contract JoepegAuctionHouse is
         );
     }
 
+    /// @notice Settles a Dutch Auction
+    /// @dev Note:
+    /// - Transfers fees appropriately to seller, royalty receiver, and protocol fee recipient
+    /// - Transfers ERC721 token to bidder
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to sell ERC721 token for
     function settleDutchAuction(
         address _collection,
         uint256 _tokenId,
-        address _currency,
-        uint256 _amount
+        address _currency
     ) public {
-        if (_currency == WAVAX) {
-            IERC20(WAVAX).safeTransferFrom(msg.sender, address(this), _amount);
-        }
-        _settleDutchAuction(_collection, _tokenId, _currency, _amount);
+        _settleDutchAuction(_collection, _tokenId, _currency);
     }
 
     function settleDutchAuctionWithAVAXAndWAVAX(
         address _collection,
-        uint256 _tokenId,
-        uint256 _wavaxAmount
+        uint256 _tokenId
     ) public payable {
-        if (msg.value > 0) {
-            IWAVAX(WAVAX).deposit{value: msg.value}();
-        }
-        if (_wavaxAmount > 0) {
-            IERC20(WAVAX).safeTransferFrom(
-                msg.sender,
-                address(this),
-                _wavaxAmount
-            );
-        }
-        _settleDutchAuction(
-            _collection,
-            _tokenId,
-            WAVAX,
-            msg.value + _wavaxAmount
-        );
+        _settleDutchAuction(_collection, _tokenId, WAVAX);
     }
 
     function getDutchAuctionSalePrice(address _collection, uint256 _tokenId)
@@ -453,12 +452,14 @@ contract JoepegAuctionHouse is
     function _settleDutchAuction(
         address _collection,
         uint256 _tokenId,
-        address _currency,
-        uint256 _amount
+        address _currency
     ) private {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert JoepegAuctionHouse__NoAuctionExists();
+        }
+        if (msg.sender == auction.creator) {
+            revert JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
         }
         if (auction.currency != _currency) {
             revert JoepegAuctionHouse__CurrencyMismatch();
@@ -466,24 +467,36 @@ contract JoepegAuctionHouse is
 
         // Get auction sale price
         uint256 salePrice = getDutchAuctionSalePrice(_collection, _tokenId);
-        if (_amount < salePrice) {
-            revert JoepegAuctionHouse__DutchAuctionInsufficientAVAX();
-        }
 
         _clearDutchAuction(_collection, _tokenId);
 
         if (_currency == WAVAX) {
+            uint256 avaxAmountToWrap;
+            if (salePrice > msg.value) {
+                avaxAmountToWrap = msg.value;
+                IERC20(WAVAX).safeTransferFrom(
+                    msg.sender,
+                    address(this),
+                    salePrice - msg.value
+                );
+            } else if (salePrice == msg.value) {
+                avaxAmountToWrap = msg.value;
+            } else {
+                avaxAmountToWrap = salePrice;
+                _transferAVAX(msg.sender, msg.value - salePrice);
+            }
+
+            // Wrap AVAX if needed
+            if (avaxAmountToWrap > 0) {
+                IWAVAX(WAVAX).deposit{value: avaxAmountToWrap}();
+            }
+
             _transferFeesAndFundsWithWAVAX(
                 _collection,
                 _tokenId,
                 auction.creator,
                 salePrice
             );
-            if (_amount > salePrice) {
-                uint256 refundAmount = _amount - salePrice;
-                IWAVAX(WAVAX).withdraw(refundAmount);
-                _transferAVAX(msg.sender, refundAmount);
-            }
         } else {
             _transferFeesAndFunds(
                 _collection,
