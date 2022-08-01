@@ -13,20 +13,20 @@ import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
 error JoepegAuctionHouse__AuctionAlreadyExists();
+error JoepegAuctionHouse__CurrencyMismatch();
 error JoepegAuctionHouse__InvalidDuration();
 error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
 error JoepegAuctionHouse__TransferAVAXFailed();
 error JoepegAuctionHouse__UnsupportedCurrency();
-error JoepegAuctionHouse__CurrencyMismatch();
 
-error JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
-error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
 error JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
 error JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
 error JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
+error JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
+error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
 
 error JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
 error JoepegAuctionHouse__DutchAuctionInsufficientAmountToSettle();
