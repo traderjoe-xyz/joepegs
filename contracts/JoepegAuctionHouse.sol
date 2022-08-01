@@ -92,15 +92,6 @@ contract JoepegAuctionHouse is
     /// - Number of seconds to extend an English Auction's end time by
     uint256 public englishAuctionRefreshTime;
 
-    event NewCurrencyManager(address indexed currencyManager);
-    event NewEnglishAuctionMinBidIncrementPct(
-        uint256 englishAuctionMinBidIncrementPct
-    );
-    event NewEnglishAuctionRefreshTime(uint256 englishAuctionRefreshTime);
-    event NewProtocolFeeManager(address indexed protocolFeeManager);
-    event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
-    event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
-
     event DutchAuctionStart(
         address indexed creator,
         address indexed currency,
@@ -156,6 +147,23 @@ contract JoepegAuctionHouse is
         address indexed creator,
         address indexed collection,
         uint256 indexed tokenId
+    );
+
+    event NewCurrencyManager(address indexed currencyManager);
+    event NewEnglishAuctionMinBidIncrementPct(
+        uint256 englishAuctionMinBidIncrementPct
+    );
+    event NewEnglishAuctionRefreshTime(uint256 englishAuctionRefreshTime);
+    event NewProtocolFeeManager(address indexed protocolFeeManager);
+    event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
+    event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
+
+    event RoyaltyPayment(
+        address indexed collection,
+        uint256 indexed tokenId,
+        address indexed royaltyRecipient,
+        address currency,
+        uint256 amount
     );
 
     modifier isSupportedCurrency(address _currency) {
@@ -811,13 +819,13 @@ contract JoepegAuctionHouse is
                 );
                 finalSellerAmount -= royaltyFeeAmount;
 
-                // emit RoyaltyPayment(
-                //     collection,
-                //     tokenId,
-                //     royaltyFeeRecipient,
-                //     address(WAVAX),
-                //     royaltyFeeAmount
-                // );
+                emit RoyaltyPayment(
+                    _collection,
+                    _tokenId,
+                    royaltyFeeRecipient,
+                    _currency,
+                    royaltyFeeAmount
+                );
             }
         }
 
@@ -879,13 +887,13 @@ contract JoepegAuctionHouse is
                 _transferAVAX(royaltyFeeRecipient, royaltyFeeAmount);
                 finalSellerAmount -= royaltyFeeAmount;
 
-                // emit RoyaltyPayment(
-                //     collection,
-                //     tokenId,
-                //     royaltyFeeRecipient,
-                //     address(WAVAX),
-                //     royaltyFeeAmount
-                // );
+                emit RoyaltyPayment(
+                    _collection,
+                    _tokenId,
+                    royaltyFeeRecipient,
+                    address(WAVAX),
+                    royaltyFeeAmount
+                );
             }
         }
 
