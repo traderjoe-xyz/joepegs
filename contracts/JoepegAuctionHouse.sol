@@ -7,6 +7,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
+import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
@@ -16,6 +17,8 @@ error JoepegAuctionHouse__InvalidDuration();
 error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
 error JoepegAuctionHouse__TransferAVAXFailed();
+error JoepegAuctionHouse__UnsupportedCurrency();
+error JoepegAuctionHouse__CurrencyMismatch();
 
 error JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
@@ -41,6 +44,7 @@ contract JoepegAuctionHouse is
 
     struct DutchAuction {
         address creator;
+        address currency;
         uint256 startPrice;
         uint256 endPrice;
         uint256 startTime;
@@ -49,6 +53,7 @@ contract JoepegAuctionHouse is
 
     struct EnglishAuction {
         address creator;
+        address currency;
         address lastBidder;
         uint256 lastBidPrice;
         uint256 endTime;
@@ -58,6 +63,7 @@ contract JoepegAuctionHouse is
     uint256 public immutable PERCENTAGE_PRECISION = 10000;
 
     address public WAVAX;
+    ICurrencyManager public currencyManager;
     IProtocolFeeManager public protocolFeeManager;
     IRoyaltyFeeManager public royaltyFeeManager;
 
@@ -71,10 +77,19 @@ contract JoepegAuctionHouse is
     uint256 public englishAuctionMinBidIncrementPct;
     uint256 public englishAuctionRefreshTime;
 
+    modifier isSupportedCurrency(address _currency) {
+        if (!currencyManager.isCurrencyWhitelisted(_currency)) {
+            revert JoepegAuctionHouse__UnsupportedCurrency();
+        } else {
+            _;
+        }
+    }
+
     function initialize(
         uint256 _dutchAuctionDropInterval,
         uint256 _englishAuctionMinBidIncrementPct,
         uint256 _englishAuctionRefreshTime,
+        address _currencyManager,
         address _protocolFeeManager,
         address _royaltyFeeManager,
         address _wavax,
@@ -89,6 +104,7 @@ contract JoepegAuctionHouse is
         dutchAuctionDropInterval = _dutchAuctionDropInterval;
         englishAuctionMinBidIncrementPct = _englishAuctionMinBidIncrementPct;
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
+        currencyManager = ICurrencyManager(_currencyManager);
         protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
         royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
         protocolFeeRecipient = _protocolFeeRecipient;
@@ -98,9 +114,10 @@ contract JoepegAuctionHouse is
     function startEnglishAuction(
         address _collection,
         uint256 _tokenId,
+        address _currency,
         uint256 _duration,
         uint256 _startPrice
-    ) public {
+    ) public isSupportedCurrency(_currency) {
         if (_duration == 0) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -110,6 +127,7 @@ contract JoepegAuctionHouse is
 
         englishAuctions[_collection][_tokenId] = EnglishAuction({
             creator: msg.sender,
+            currency: _currency,
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: block.timestamp + _duration,
@@ -123,12 +141,14 @@ contract JoepegAuctionHouse is
         );
     }
 
-    function placeBid(address _collection, uint256 _tokenId)
-        public
-        payable
-        nonReentrant
-    {
-        _placeBid(_collection, _tokenId, msg.value);
+    function placeBid(
+        address _collection,
+        uint256 _tokenId,
+        address _currency,
+        uint256 _amount
+    ) public nonReentrant {
+        IERC20(_currency).safeTransferFrom(msg.sender, address(this), _amount);
+        _placeBid(_collection, _tokenId, _currency, _amount);
     }
 
     function placeBidWithAVAXAndWAVAX(
@@ -136,16 +156,18 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         uint256 _wavaxAmount
     ) public payable nonReentrant {
+        if (msg.value > 0) {
+            // Wrap WAVAX
+            IWAVAX(WAVAX).deposit{value: msg.value}();
+        }
         if (_wavaxAmount > 0) {
             IERC20(WAVAX).safeTransferFrom(
                 msg.sender,
                 address(this),
                 _wavaxAmount
             );
-            // Unwrap WAVAX
-            IWAVAX(WAVAX).withdraw(_wavaxAmount);
         }
-        _placeBid(_collection, _tokenId, msg.value + _wavaxAmount);
+        _placeBid(_collection, _tokenId, WAVAX, msg.value + _wavaxAmount);
     }
 
     function settleEnglishAuction(address _collection, uint256 _tokenId)
@@ -167,12 +189,23 @@ contract JoepegAuctionHouse is
         _clearEnglishAuction(_collection, _tokenId);
 
         // Settle auction using latest bid
-        _transferFeesAndFunds(
-            _collection,
-            _tokenId,
-            auction.creator,
-            auction.lastBidPrice
-        );
+        if (auction.currency == WAVAX) {
+            _transferFeesAndFundsWithWAVAX(
+                _collection,
+                _tokenId,
+                auction.creator,
+                auction.lastBidPrice
+            );
+        } else {
+            _transferFeesAndFunds(
+                _collection,
+                _tokenId,
+                auction.currency,
+                address(this),
+                auction.creator,
+                auction.lastBidPrice
+            );
+        }
 
         IERC721(_collection).safeTransferFrom(
             address(this),
@@ -204,10 +237,11 @@ contract JoepegAuctionHouse is
     function startDutchAuction(
         address _collection,
         uint256 _tokenId,
+        address _currency,
         uint256 _duration,
         uint256 _startPrice,
         uint256 _endPrice
-    ) public {
+    ) public isSupportedCurrency(_currency) {
         if (_duration == 0) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -220,6 +254,7 @@ contract JoepegAuctionHouse is
 
         dutchAuctions[_collection][_tokenId] = DutchAuction({
             creator: msg.sender,
+            currency: _currency,
             startPrice: _startPrice,
             endPrice: _endPrice,
             startTime: block.timestamp,
@@ -233,11 +268,16 @@ contract JoepegAuctionHouse is
         );
     }
 
-    function settleDutchAuction(address _collection, uint256 _tokenId)
-        public
-        payable
-    {
-        _settleDutchAuction(_collection, _tokenId, msg.value);
+    function settleDutchAuction(
+        address _collection,
+        uint256 _tokenId,
+        address _currency,
+        uint256 _amount
+    ) public {
+        if (_currency == WAVAX) {
+            IERC20(WAVAX).safeTransferFrom(msg.sender, address(this), _amount);
+        }
+        _settleDutchAuction(_collection, _tokenId, _currency, _amount);
     }
 
     function settleDutchAuctionWithAVAXAndWAVAX(
@@ -245,16 +285,22 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         uint256 _wavaxAmount
     ) public payable {
+        if (msg.value > 0) {
+            IWAVAX(WAVAX).deposit{value: msg.value}();
+        }
         if (_wavaxAmount > 0) {
             IERC20(WAVAX).safeTransferFrom(
                 msg.sender,
                 address(this),
                 _wavaxAmount
             );
-            // Unwrap WAVAX
-            IWAVAX(WAVAX).withdraw(_wavaxAmount);
         }
-        _settleDutchAuction(_collection, _tokenId, msg.value + _wavaxAmount);
+        _settleDutchAuction(
+            _collection,
+            _tokenId,
+            WAVAX,
+            msg.value + _wavaxAmount
+        );
     }
 
     function getDutchAuctionSalePrice(address _collection, uint256 _tokenId)
@@ -295,11 +341,15 @@ contract JoepegAuctionHouse is
     function _placeBid(
         address _collection,
         uint256 _tokenId,
+        address _currency,
         uint256 _bidAmount
     ) private {
         EnglishAuction storage auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert JoepegAuctionHouse__NoAuctionExists();
+        }
+        if (auction.currency != _currency) {
+            revert JoepegAuctionHouse__CurrencyMismatch();
         }
         if (msg.sender == auction.creator) {
             revert JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
@@ -345,7 +395,10 @@ contract JoepegAuctionHouse is
                 auction.lastBidder = msg.sender;
                 auction.lastBidPrice = _bidAmount;
 
-                _transferAVAX(previousBidder, previousBidPrice);
+                IERC20(_currency).safeTransfer(
+                    previousBidder,
+                    previousBidPrice
+                );
             }
         }
     }
@@ -353,53 +406,141 @@ contract JoepegAuctionHouse is
     function _settleDutchAuction(
         address _collection,
         uint256 _tokenId,
-        uint256 _avaxAmount
+        address _currency,
+        uint256 _amount
     ) private {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert JoepegAuctionHouse__NoAuctionExists();
         }
+        if (auction.currency != _currency) {
+            revert JoepegAuctionHouse__CurrencyMismatch();
+        }
 
         // Get auction sale price
         uint256 salePrice = getDutchAuctionSalePrice(_collection, _tokenId);
-        if (_avaxAmount < salePrice) {
+        if (_amount < salePrice) {
             revert JoepegAuctionHouse__DutchAuctionInsufficientAVAX();
         }
 
         _clearDutchAuction(_collection, _tokenId);
 
-        _transferFeesAndFunds(
-            _collection,
-            _tokenId,
-            auction.creator,
-            salePrice
-        );
+        if (_currency == WAVAX) {
+            _transferFeesAndFundsWithWAVAX(
+                _collection,
+                _tokenId,
+                auction.creator,
+                salePrice
+            );
+            if (_amount > salePrice) {
+                uint256 refundAmount = _amount - salePrice;
+                IWAVAX(WAVAX).withdraw(refundAmount);
+                _transferAVAX(msg.sender, refundAmount);
+            }
+        } else {
+            _transferFeesAndFunds(
+                _collection,
+                _tokenId,
+                _currency,
+                msg.sender,
+                auction.creator,
+                salePrice
+            );
+        }
 
         IERC721(_collection).safeTransferFrom(
             address(this),
             msg.sender,
             _tokenId
         );
-
-        if (_avaxAmount > salePrice) {
-            _transferAVAX(msg.sender, _avaxAmount - salePrice);
-        }
     }
 
     function _transferFeesAndFunds(
-        address collection,
-        uint256 tokenId,
-        address to,
-        uint256 amount
+        address _collection,
+        uint256 _tokenId,
+        address _currency,
+        address _from,
+        address _to,
+        uint256 _amount
     ) private {
         // Initialize the final amount that is transferred to seller
-        uint256 finalSellerAmount = amount;
+        uint256 finalSellerAmount = _amount;
 
         // 1. Protocol fee
         {
             uint256 protocolFeeAmount = _calculateProtocolFee(
-                collection,
-                amount
+                _collection,
+                _amount
+            );
+
+            // Check if the protocol fee is different than 0 for this strategy
+            if (
+                (protocolFeeRecipient != address(0)) && (protocolFeeAmount != 0)
+            ) {
+                IERC20(_currency).safeTransferFrom(
+                    _from,
+                    protocolFeeRecipient,
+                    protocolFeeAmount
+                );
+                finalSellerAmount -= protocolFeeAmount;
+            }
+        }
+
+        // 2. Royalty fee
+        {
+            (
+                address royaltyFeeRecipient,
+                uint256 royaltyFeeAmount
+            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
+                    _collection,
+                    _tokenId,
+                    _amount
+                );
+
+            // Check if there is a royalty fee and that it is different to 0
+            if (
+                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
+            ) {
+                IERC20(_currency).safeTransferFrom(
+                    _from,
+                    royaltyFeeRecipient,
+                    royaltyFeeAmount
+                );
+                finalSellerAmount -= royaltyFeeAmount;
+
+                // emit RoyaltyPayment(
+                //     collection,
+                //     tokenId,
+                //     royaltyFeeRecipient,
+                //     address(WAVAX),
+                //     royaltyFeeAmount
+                // );
+            }
+        }
+
+        // 3. Transfer final amount (post-fees) to seller
+        {
+            IERC20(_currency).safeTransferFrom(_from, _to, finalSellerAmount);
+        }
+    }
+
+    function _transferFeesAndFundsWithWAVAX(
+        address _collection,
+        uint256 _tokenId,
+        address _to,
+        uint256 _amount
+    ) private {
+        // Unwrap WAVAX
+        IWAVAX(WAVAX).withdraw(_amount);
+
+        // Initialize the final amount that is transferred to seller
+        uint256 finalSellerAmount = _amount;
+
+        // 1. Protocol fee
+        {
+            uint256 protocolFeeAmount = _calculateProtocolFee(
+                _collection,
+                _amount
             );
 
             // Check if the protocol fee is different than 0 for this strategy
@@ -417,9 +558,9 @@ contract JoepegAuctionHouse is
                 address royaltyFeeRecipient,
                 uint256 royaltyFeeAmount
             ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
-                    collection,
-                    tokenId,
-                    amount
+                    _collection,
+                    _tokenId,
+                    _amount
                 );
 
             // Check if there is a royalty fee and that it is different to 0
@@ -441,7 +582,7 @@ contract JoepegAuctionHouse is
 
         // 3. Transfer final amount (post-fees) to seller
         {
-            _transferAVAX(to, finalSellerAmount);
+            _transferAVAX(_to, finalSellerAmount);
         }
     }
 
@@ -450,6 +591,7 @@ contract JoepegAuctionHouse is
     {
         englishAuctions[_collection][_tokenId] = EnglishAuction({
             creator: address(0),
+            currency: address(0),
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: 0,
@@ -460,6 +602,7 @@ contract JoepegAuctionHouse is
     function _clearDutchAuction(address _collection, uint256 _tokenId) private {
         dutchAuctions[_collection][_tokenId] = DutchAuction({
             creator: address(0),
+            currency: address(0),
             startPrice: 0,
             endPrice: 0,
             startTime: 0,
