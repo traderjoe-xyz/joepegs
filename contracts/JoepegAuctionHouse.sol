@@ -101,14 +101,39 @@ contract JoepegAuctionHouse is
     event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
     event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
 
+    event DutchAuctionStart(
+        address indexed creator,
+        address indexed currency,
+        address indexed collection,
+        uint256 tokenId,
+        uint256 startPrice,
+        uint256 endPrice,
+        uint256 startTime,
+        uint256 endTime,
+        uint256 dropInterval
+    );
+    event DutchAuctionSettle(
+        address indexed creator,
+        address indexed buyer,
+        address indexed currency,
+        address collection,
+        uint256 tokenId,
+        uint256 price
+    );
+    event DutchAuctionCancel(
+        address indexed creator,
+        address indexed collection,
+        uint256 indexed tokenId
+    );
+
     event EnglishAuctionStart(
         address indexed creator,
         address indexed currency,
         address indexed collection,
         uint256 tokenId,
+        uint256 startPrice,
         uint256 startTime,
-        uint256 endTime,
-        uint256 startPrice
+        uint256 endTime
     );
     event EnglishAuctionPlaceBid(
         address indexed creator,
@@ -116,7 +141,8 @@ contract JoepegAuctionHouse is
         address indexed currency,
         address collection,
         uint256 tokenId,
-        uint256 bidAmount
+        uint256 bidAmount,
+        uint256 endTime
     );
     event EnglishAuctionSettle(
         address indexed creator,
@@ -215,9 +241,9 @@ contract JoepegAuctionHouse is
             auction.currency,
             _collection,
             _tokenId,
+            auction.startPrice,
             block.timestamp,
-            auction.endTime,
-            auction.startPrice
+            auction.endTime
         );
     }
 
@@ -385,7 +411,7 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
         }
 
-        dutchAuctions[_collection][_tokenId] = DutchAuction({
+        DutchAuction memory auction = DutchAuction({
             creator: msg.sender,
             currency: _currency,
             startPrice: _startPrice,
@@ -394,11 +420,24 @@ contract JoepegAuctionHouse is
             endTime: block.timestamp + _duration,
             dropInterval: _dropInterval
         });
+        dutchAuctions[_collection][_tokenId] = auction;
 
         IERC721(_collection).safeTransferFrom(
             msg.sender,
             address(this),
             _tokenId
+        );
+
+        emit DutchAuctionStart(
+            auction.creator,
+            auction.currency,
+            _collection,
+            _tokenId,
+            auction.startPrice,
+            auction.endPrice,
+            auction.startTime,
+            auction.endTime,
+            auction.dropInterval
         );
     }
 
@@ -464,6 +503,8 @@ contract JoepegAuctionHouse is
             auction.creator,
             _tokenId
         );
+
+        emit DutchAuctionCancel(auction.creator, _collection, _tokenId);
     }
 
     /// @notice Update `englishAuctionMinBidIncrementPct`
@@ -623,7 +664,8 @@ contract JoepegAuctionHouse is
             auction.currency,
             _collection,
             _tokenId,
-            auction.lastBidPrice
+            auction.lastBidPrice,
+            auction.endTime
         );
     }
 
@@ -697,6 +739,15 @@ contract JoepegAuctionHouse is
             address(this),
             msg.sender,
             _tokenId
+        );
+
+        emit DutchAuctionSettle(
+            auction.creator,
+            msg.sender,
+            auction.currency,
+            _collection,
+            _tokenId,
+            salePrice
         );
     }
 
