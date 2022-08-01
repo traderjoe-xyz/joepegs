@@ -17,6 +17,7 @@ error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
 error JoepegAuctionHouse__TransferAVAXFailed();
 
+error JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
 error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
@@ -79,6 +80,10 @@ contract JoepegAuctionHouse is
         address _wavax,
         address _protocolFeeRecipient
     ) public initializer {
+        if (_englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION) {
+            revert JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
+        }
+
         __Ownable_init();
 
         dutchAuctionDropInterval = _dutchAuctionDropInterval;
