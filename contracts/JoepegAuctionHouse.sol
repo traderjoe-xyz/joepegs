@@ -224,7 +224,7 @@ contract JoepegAuctionHouse is
         address _currency,
         uint256 _duration,
         uint256 _startPrice
-    ) external isSupportedCurrency(_currency) {
+    ) external isSupportedCurrency(_currency) nonReentrant {
         if (_duration == 0) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -263,16 +263,20 @@ contract JoepegAuctionHouse is
     /// @notice Place bid on a running English Auction
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
-    /// @param _currency address of currency to bid
     /// @param _amount amount of currency to bid
     function placeEnglishAuctionBid(
         address _collection,
         uint256 _tokenId,
-        address _currency,
         uint256 _amount
     ) external nonReentrant {
-        IERC20(_currency).safeTransferFrom(msg.sender, address(this), _amount);
-        _placeEnglishAuctionBid(_collection, _tokenId, _currency, _amount);
+        EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
+        address currency = auction.currency;
+        if (currency == address(0)) {
+            revert JoepegAuctionHouse__NoAuctionExists();
+        }
+
+        IERC20(currency).safeTransferFrom(msg.sender, address(this), _amount);
+        _placeEnglishAuctionBid(_collection, _tokenId, _amount, auction);
     }
 
     /// @notice Place bid on a running English Auction using AVAX and/or WAVAX
@@ -284,6 +288,12 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         uint256 _wavaxAmount
     ) external payable nonReentrant {
+        EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
+        address currency = auction.currency;
+        if (currency != WAVAX) {
+            revert JoepegAuctionHouse__CurrencyMismatch();
+        }
+
         if (msg.value > 0) {
             // Wrap AVAX into WAVAX
             IWAVAX(WAVAX).deposit{value: msg.value}();
@@ -298,8 +308,8 @@ contract JoepegAuctionHouse is
         _placeEnglishAuctionBid(
             _collection,
             _tokenId,
-            WAVAX,
-            msg.value + _wavaxAmount
+            msg.value + _wavaxAmount,
+            auction
         );
     }
 
@@ -313,7 +323,7 @@ contract JoepegAuctionHouse is
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     function settleEnglishAuction(address _collection, uint256 _tokenId)
-        public
+        external
         nonReentrant
     {
         EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
@@ -343,7 +353,7 @@ contract JoepegAuctionHouse is
             _transferFeesAndFunds(
                 _collection,
                 _tokenId,
-                auction.currency,
+                IERC20(auction.currency),
                 address(this),
                 auction.creator,
                 auction.lastBidPrice
@@ -373,7 +383,8 @@ contract JoepegAuctionHouse is
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     function cancelEnglishAuction(address _collection, uint256 _tokenId)
-        public
+        external
+        nonReentrant
     {
         EnglishAuction memory auction = englishAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
@@ -414,7 +425,7 @@ contract JoepegAuctionHouse is
         uint256 _dropInterval,
         uint256 _startPrice,
         uint256 _endPrice
-    ) external isSupportedCurrency(_currency) {
+    ) external isSupportedCurrency(_currency) nonReentrant {
         if (_duration == 0 || _duration < _dropInterval) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -458,13 +469,11 @@ contract JoepegAuctionHouse is
     /// @notice Settles a Dutch Auction
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
-    /// @param _currency address of currency to buy ERC721 token with
-    function settleDutchAuction(
-        address _collection,
-        uint256 _tokenId,
-        address _currency
-    ) external nonReentrant {
-        _settleDutchAuction(_collection, _tokenId, _currency);
+    function settleDutchAuction(address _collection, uint256 _tokenId)
+        external
+        nonReentrant
+    {
+        _settleDutchAuction(_collection, _tokenId);
     }
 
     /// @notice Settles a Dutch Auction with AVAX and/or WAVAX
@@ -474,7 +483,7 @@ contract JoepegAuctionHouse is
         address _collection,
         uint256 _tokenId
     ) external payable nonReentrant {
-        _settleDutchAuction(_collection, _tokenId, WAVAX);
+        _settleDutchAuction(_collection, _tokenId);
     }
 
     /// @notice Calculates current Dutch Auction sale price for an ERC721 token
@@ -508,6 +517,7 @@ contract JoepegAuctionHouse is
     /// @param _tokenId token id of ERC721 token
     function cancelDutchAuction(address _collection, uint256 _tokenId)
         external
+        nonReentrant
     {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
@@ -616,20 +626,15 @@ contract JoepegAuctionHouse is
     ///   percent higher can be placed
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
-    /// @param _currency address of currency to bid
     /// @param _bidAmount amount of currency to bid
     function _placeEnglishAuctionBid(
         address _collection,
         uint256 _tokenId,
-        address _currency,
-        uint256 _bidAmount
+        uint256 _bidAmount,
+        EnglishAuction memory auction
     ) private {
-        EnglishAuction storage auction = englishAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert JoepegAuctionHouse__NoAuctionExists();
-        }
-        if (auction.currency != _currency) {
-            revert JoepegAuctionHouse__CurrencyMismatch();
         }
         if (_bidAmount == 0) {
             revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
@@ -681,12 +686,14 @@ contract JoepegAuctionHouse is
                 auction.lastBidPrice = _bidAmount;
 
                 // Transfer previous bid back to bidder
-                IERC20(_currency).safeTransfer(
+                IERC20(auction.currency).safeTransfer(
                     previousBidder,
                     previousBidPrice
                 );
             }
         }
+
+        englishAuctions[_collection][_tokenId] = auction;
 
         emit EnglishAuctionPlaceBid(
             auction.creator,
@@ -705,12 +712,9 @@ contract JoepegAuctionHouse is
     /// - Transfers ERC721 token to buyer
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
-    /// @param _currency address of currency to buy ERC721 token with
-    function _settleDutchAuction(
-        address _collection,
-        uint256 _tokenId,
-        address _currency
-    ) private {
+    function _settleDutchAuction(address _collection, uint256 _tokenId)
+        private
+    {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (auction.creator == address(0)) {
             revert JoepegAuctionHouse__NoAuctionExists();
@@ -718,16 +722,13 @@ contract JoepegAuctionHouse is
         if (msg.sender == auction.creator) {
             revert JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
         }
-        if (auction.currency != _currency) {
-            revert JoepegAuctionHouse__CurrencyMismatch();
-        }
 
         // Get auction sale price
         uint256 salePrice = getDutchAuctionSalePrice(_collection, _tokenId);
 
         delete dutchAuctions[_collection][_tokenId];
 
-        if (_currency == WAVAX) {
+        if (auction.currency == WAVAX) {
             uint256 avaxAmountToWrap;
             if (salePrice > msg.value) {
                 avaxAmountToWrap = msg.value;
@@ -758,7 +759,7 @@ contract JoepegAuctionHouse is
             _transferFeesAndFunds(
                 _collection,
                 _tokenId,
-                _currency,
+                IERC20(auction.currency),
                 msg.sender,
                 auction.creator,
                 salePrice
