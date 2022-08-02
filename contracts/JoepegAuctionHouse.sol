@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -44,16 +45,17 @@ contract JoepegAuctionHouse is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable
 {
+    using SafeCast for uint256;
     using SafeERC20 for IERC20;
 
     struct DutchAuction {
         address creator;
+        uint96 startTime;
         address currency;
+        uint96 endTime;
         uint256 startPrice;
         uint256 endPrice;
-        uint256 startTime;
-        uint256 endTime;
-        uint256 dropInterval;
+        uint32 dropInterval;
     }
 
     struct EnglishAuction {
@@ -421,8 +423,8 @@ contract JoepegAuctionHouse is
         address _collection,
         uint256 _tokenId,
         address _currency,
-        uint256 _duration,
-        uint256 _dropInterval,
+        uint96 _duration,
+        uint32 _dropInterval,
         uint256 _startPrice,
         uint256 _endPrice
     ) external isSupportedCurrency(_currency) nonReentrant {
@@ -436,13 +438,14 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
         }
 
+        uint96 timestamp = block.timestamp.toUint96();
         DutchAuction memory auction = DutchAuction({
             creator: msg.sender,
             currency: _currency,
             startPrice: _startPrice,
             endPrice: _endPrice,
-            startTime: block.timestamp,
-            endTime: block.timestamp + _duration,
+            startTime: timestamp,
+            endTime: timestamp + _duration,
             dropInterval: _dropInterval
         });
         dutchAuctions[_collection][_tokenId] = auction;
