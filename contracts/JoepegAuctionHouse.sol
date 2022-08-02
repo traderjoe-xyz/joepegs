@@ -102,9 +102,9 @@ contract JoepegAuctionHouse is
         uint256 indexed tokenId,
         uint256 startPrice,
         uint256 endPrice,
-        uint256 startTime,
-        uint256 endTime,
-        uint256 dropInterval
+        uint96 startTime,
+        uint96 endTime,
+        uint32 dropInterval
     );
     event DutchAuctionSettle(
         address indexed creator,
@@ -126,8 +126,8 @@ contract JoepegAuctionHouse is
         address indexed collection,
         uint256 indexed tokenId,
         uint256 startPrice,
-        uint256 startTime,
-        uint256 endTime
+        uint96 startTime,
+        uint96 endTime
     );
     event EnglishAuctionPlaceBid(
         address indexed creator,
@@ -136,7 +136,7 @@ contract JoepegAuctionHouse is
         address collection,
         uint256 tokenId,
         uint256 bidAmount,
-        uint256 endTime
+        uint96 endTime
     );
     event EnglishAuctionSettle(
         address indexed creator,
@@ -274,7 +274,7 @@ contract JoepegAuctionHouse is
             _collection,
             _tokenId,
             auction.startPrice,
-            block.timestamp,
+            timestamp,
             auction.endTime
         );
     }
