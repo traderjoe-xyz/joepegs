@@ -62,8 +62,8 @@ contract JoepegAuctionHouse is
         address creator;
         address currency;
         address lastBidder;
+        uint96 endTime;
         uint256 lastBidPrice;
-        uint256 endTime;
         uint256 startPrice;
     }
 
@@ -224,7 +224,7 @@ contract JoepegAuctionHouse is
         address _collection,
         uint256 _tokenId,
         address _currency,
-        uint256 _duration,
+        uint96 _duration,
         uint256 _startPrice
     ) external isSupportedCurrency(_currency) nonReentrant {
         if (_duration == 0) {
@@ -234,12 +234,13 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__AuctionAlreadyExists();
         }
 
+        uint96 timestamp = block.timestamp.toUint96();
         EnglishAuction memory auction = EnglishAuction({
             creator: msg.sender,
             currency: _currency,
             lastBidder: address(0),
             lastBidPrice: 0,
-            endTime: block.timestamp + _duration,
+            endTime: timestamp + _duration,
             startPrice: _startPrice
         });
         englishAuctions[_collection][_tokenId] = auction;
