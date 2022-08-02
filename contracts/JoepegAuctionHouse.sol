@@ -192,7 +192,10 @@ contract JoepegAuctionHouse is
         address _wavax,
         address _protocolFeeRecipient
     ) public initializer {
-        if (_englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION) {
+        if (
+            _englishAuctionMinBidIncrementPct == 0 ||
+            _englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION
+        ) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
         }
 
@@ -527,7 +530,10 @@ contract JoepegAuctionHouse is
     function updateEnglishAuctionMinBidIncrementPct(
         uint256 _englishAuctionMinBidIncrementPct
     ) external onlyOwner {
-        if (_englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION) {
+        if (
+            _englishAuctionMinBidIncrementPct == 0 ||
+            _englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION
+        ) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
         }
 
@@ -625,6 +631,9 @@ contract JoepegAuctionHouse is
         if (auction.currency != _currency) {
             revert JoepegAuctionHouse__CurrencyMismatch();
         }
+        if (_bidAmount == 0) {
+            revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
+        }
         if (msg.sender == auction.creator) {
             revert JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
         }
@@ -647,7 +656,7 @@ contract JoepegAuctionHouse is
                 // If bidder is same as last bidder, ensure their bid is at least
                 // `englishAuctionMinBidIncrementPct` percent of their previous bid
                 if (
-                    _bidAmount * PERCENTAGE_PRECISION >=
+                    _bidAmount * PERCENTAGE_PRECISION <
                     auction.lastBidPrice * englishAuctionMinBidIncrementPct
                 ) {
                     revert JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
@@ -657,7 +666,7 @@ contract JoepegAuctionHouse is
                 // Ensure bid is at least `englishAuctionMinBidIncrementPct` percent greater
                 // than last bid
                 if (
-                    _bidAmount * PERCENTAGE_PRECISION >=
+                    _bidAmount * PERCENTAGE_PRECISION <
                     auction.lastBidPrice *
                         (PERCENTAGE_PRECISION +
                             englishAuctionMinBidIncrementPct)
