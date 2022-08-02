@@ -93,7 +93,7 @@ contract JoepegAuctionHouse is
     /// - Number of seconds before an English Auction ends where any new
     ///   bid will extend the auction's end time
     /// - Number of seconds to extend an English Auction's end time by
-    uint256 public englishAuctionRefreshTime;
+    uint96 public englishAuctionRefreshTime;
 
     event DutchAuctionStart(
         address indexed creator,
@@ -161,8 +161,8 @@ contract JoepegAuctionHouse is
         uint256 newEnglishAuctionMinBidIncrementPct
     );
     event EnglishAuctionRefreshTimeSet(
-        uint256 oldEnglishAuctionRefreshTime,
-        uint256 newEnglishAuctionRefreshTime
+        uint96 oldEnglishAuctionRefreshTime,
+        uint96 newEnglishAuctionRefreshTime
     );
     event ProtocolFeeManagerSet(
         address indexed oldProtocolFeeManager,
@@ -203,7 +203,7 @@ contract JoepegAuctionHouse is
     ///  @param _protocolFeeRecipient protocol fee recipient
     function initialize(
         uint256 _englishAuctionMinBidIncrementPct,
-        uint256 _englishAuctionRefreshTime,
+        uint96 _englishAuctionRefreshTime,
         ICurrencyManager _currencyManager,
         IProtocolFeeManager _protocolFeeManager,
         IRoyaltyFeeManager _royaltyFeeManager,
@@ -577,14 +577,14 @@ contract JoepegAuctionHouse is
 
     /// @notice Update `englishAuctionRefreshTime`
     /// @param _englishAuctionRefreshTime new refresh time for English auctions
-    function updateEnglishAuctionRefreshTime(uint256 _englishAuctionRefreshTime)
+    function updateEnglishAuctionRefreshTime(uint96 _englishAuctionRefreshTime)
         external
         onlyOwner
     {
         if (englishAuctionRefreshTime == 0) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
         }
-        uint256 oldEnglishAuctionRefreshTime = englishAuctionRefreshTime;
+        uint96 oldEnglishAuctionRefreshTime = englishAuctionRefreshTime;
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
         emit EnglishAuctionRefreshTimeSet(
             oldEnglishAuctionRefreshTime,
