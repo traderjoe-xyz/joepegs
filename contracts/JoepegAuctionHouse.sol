@@ -204,28 +204,24 @@ contract JoepegAuctionHouse is
     function initialize(
         uint256 _englishAuctionMinBidIncrementPct,
         uint96 _englishAuctionRefreshTime,
-        ICurrencyManager _currencyManager,
-        IProtocolFeeManager _protocolFeeManager,
-        IRoyaltyFeeManager _royaltyFeeManager,
+        address _currencyManager,
+        address _protocolFeeManager,
+        address _royaltyFeeManager,
         address _wavax,
         address _protocolFeeRecipient
     ) public initializer {
-        if (
-            _englishAuctionMinBidIncrementPct == 0 ||
-            _englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION
-        ) {
-            revert JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
-        }
-
         __Ownable_init();
         __ReentrancyGuard_init();
 
-        englishAuctionMinBidIncrementPct = _englishAuctionMinBidIncrementPct;
-        englishAuctionRefreshTime = _englishAuctionRefreshTime;
-        currencyManager = _currencyManager;
-        protocolFeeManager = _protocolFeeManager;
-        royaltyFeeManager = _royaltyFeeManager;
-        protocolFeeRecipient = _protocolFeeRecipient;
+        _updateEnglishAuctionMinBidIncrementPct(
+            _englishAuctionMinBidIncrementPct
+        );
+        _updateEnglishAuctionRefreshTime(_englishAuctionRefreshTime);
+        _updateCurrencyManager(_currencyManager);
+        _updateProtocolFeeManager(_protocolFeeManager);
+        _updateRoyaltyFeeManager(_royaltyFeeManager);
+        _updateProtocolFeeRecipient(_protocolFeeRecipient);
+
         WAVAX = _wavax;
     }
 
@@ -560,6 +556,16 @@ contract JoepegAuctionHouse is
     function updateEnglishAuctionMinBidIncrementPct(
         uint256 _englishAuctionMinBidIncrementPct
     ) external onlyOwner {
+        _updateEnglishAuctionMinBidIncrementPct(
+            _englishAuctionMinBidIncrementPct
+        );
+    }
+
+    /// @notice Update `englishAuctionMinBidIncrementPct`
+    /// @param _englishAuctionMinBidIncrementPct new minimum bid increment percetange for English auctions
+    function _updateEnglishAuctionMinBidIncrementPct(
+        uint256 _englishAuctionMinBidIncrementPct
+    ) private {
         if (
             _englishAuctionMinBidIncrementPct == 0 ||
             _englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION
@@ -581,6 +587,14 @@ contract JoepegAuctionHouse is
         external
         onlyOwner
     {
+        _updateEnglishAuctionRefreshTime(_englishAuctionRefreshTime);
+    }
+
+    /// @notice Update `englishAuctionRefreshTime`
+    /// @param _englishAuctionRefreshTime new refresh time for English auctions
+    function _updateEnglishAuctionRefreshTime(uint96 _englishAuctionRefreshTime)
+        private
+    {
         if (englishAuctionRefreshTime == 0) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
         }
@@ -594,37 +608,44 @@ contract JoepegAuctionHouse is
 
     /// @notice Update currency manager
     /// @param _currencyManager new currency manager address
-    function updateCurrencyManager(ICurrencyManager _currencyManager)
+    function updateCurrencyManager(address _currencyManager)
         external
         onlyOwner
     {
-        address currencyManagerAddress = address(_currencyManager);
-        if (currencyManagerAddress == address(0)) {
+        _updateCurrencyManager(_currencyManager);
+    }
+
+    /// @notice Update currency manager
+    /// @param _currencyManager new currency manager address
+    function _updateCurrencyManager(address _currencyManager) private {
+        if (_currencyManager == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
         address oldCurrencyManagerAddress = address(currencyManager);
-        currencyManager = _currencyManager;
-        emit CurrencyManagerSet(
-            oldCurrencyManagerAddress,
-            currencyManagerAddress
-        );
+        currencyManager = ICurrencyManager(_currencyManager);
+        emit CurrencyManagerSet(oldCurrencyManagerAddress, _currencyManager);
     }
 
     /// @notice Update protocol fee manager
     /// @param _protocolFeeManager new protocol fee manager address
-    function updateProtocolFeeManager(IProtocolFeeManager _protocolFeeManager)
+    function updateProtocolFeeManager(address _protocolFeeManager)
         external
         onlyOwner
     {
-        address protocolFeeManagerAddress = address(_protocolFeeManager);
-        if (protocolFeeManagerAddress == address(0)) {
+        _updateProtocolFeeManager(_protocolFeeManager);
+    }
+
+    /// @notice Update protocol fee manager
+    /// @param _protocolFeeManager new protocol fee manager address
+    function _updateProtocolFeeManager(address _protocolFeeManager) private {
+        if (_protocolFeeManager == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
         address oldProtocolFeeManagerAddress = address(protocolFeeManager);
-        protocolFeeManager = _protocolFeeManager;
+        protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
         emit ProtocolFeeManagerSet(
             oldProtocolFeeManagerAddress,
-            protocolFeeManagerAddress
+            _protocolFeeManager
         );
     }
 
@@ -633,6 +654,14 @@ contract JoepegAuctionHouse is
     function updateProtocolFeeRecipient(address _protocolFeeRecipient)
         external
         onlyOwner
+    {
+        _updateProtocolFeeRecipient(_protocolFeeRecipient);
+    }
+
+    /// @notice Update protocol fee recipient
+    /// @param _protocolFeeRecipient new recipient for protocol fees
+    function _updateProtocolFeeRecipient(address _protocolFeeRecipient)
+        private
     {
         address oldProtocolFeeRecipient = protocolFeeRecipient;
         protocolFeeRecipient = _protocolFeeRecipient;
@@ -644,19 +673,24 @@ contract JoepegAuctionHouse is
 
     /// @notice Update royalty fee manager
     /// @param _royaltyFeeManager new fee manager address
-    function updateRoyaltyFeeManager(IRoyaltyFeeManager _royaltyFeeManager)
+    function updateRoyaltyFeeManager(address _royaltyFeeManager)
         external
         onlyOwner
     {
-        address royaltyFeeManagerAddress = address(_royaltyFeeManager);
-        if (royaltyFeeManagerAddress == address(0)) {
+        _updateRoyaltyFeeManager(_royaltyFeeManager);
+    }
+
+    /// @notice Update royalty fee manager
+    /// @param _royaltyFeeManager new fee manager address
+    function _updateRoyaltyFeeManager(address _royaltyFeeManager) private {
+        if (_royaltyFeeManager == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
         address oldRoyaltyFeeManagerAddress = address(royaltyFeeManager);
-        royaltyFeeManager = _royaltyFeeManager;
+        royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
         emit RoyaltyFeeManagerSet(
             oldRoyaltyFeeManagerAddress,
-            royaltyFeeManagerAddress
+            _royaltyFeeManager
         );
     }
 
