@@ -64,7 +64,7 @@ contract JoepegAuctionHouse is
         uint256 startPrice;
     }
 
-    uint256 public immutable PERCENTAGE_PRECISION = 10000;
+    uint256 public constant PERCENTAGE_PRECISION = 10000;
 
     address public WAVAX;
     ICurrencyManager public currencyManager;
@@ -185,9 +185,9 @@ contract JoepegAuctionHouse is
     function initialize(
         uint256 _englishAuctionMinBidIncrementPct,
         uint256 _englishAuctionRefreshTime,
-        address _currencyManager,
-        address _protocolFeeManager,
-        address _royaltyFeeManager,
+        ICurrencyManager _currencyManager,
+        IProtocolFeeManager _protocolFeeManager,
+        IRoyaltyFeeManager _royaltyFeeManager,
         address _wavax,
         address _protocolFeeRecipient
     ) public initializer {
@@ -196,12 +196,13 @@ contract JoepegAuctionHouse is
         }
 
         __Ownable_init();
+        __ReentrancyGuard_init();
 
         englishAuctionMinBidIncrementPct = _englishAuctionMinBidIncrementPct;
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
-        currencyManager = ICurrencyManager(_currencyManager);
-        protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
-        royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
+        currencyManager = _currencyManager;
+        protocolFeeManager = _protocolFeeManager;
+        royaltyFeeManager = _royaltyFeeManager;
         protocolFeeRecipient = _protocolFeeRecipient;
         WAVAX = _wavax;
     }
@@ -219,7 +220,7 @@ contract JoepegAuctionHouse is
         address _currency,
         uint256 _duration,
         uint256 _startPrice
-    ) public isSupportedCurrency(_currency) {
+    ) external isSupportedCurrency(_currency) {
         if (_duration == 0) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -265,12 +266,12 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         address _currency,
         uint256 _amount
-    ) public nonReentrant {
+    ) external nonReentrant {
         IERC20(_currency).safeTransferFrom(msg.sender, address(this), _amount);
         _placeEnglishAuctionBid(_collection, _tokenId, _currency, _amount);
     }
 
-    /// @notice Place bid on a running English Auction using AVAX/WAVAX
+    /// @notice Place bid on a running English Auction using AVAX and/or WAVAX
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     /// @param _wavaxAmount amount of WAVAX to bid
@@ -278,7 +279,7 @@ contract JoepegAuctionHouse is
         address _collection,
         uint256 _tokenId,
         uint256 _wavaxAmount
-    ) public payable nonReentrant {
+    ) external payable nonReentrant {
         if (msg.value > 0) {
             // Wrap AVAX into WAVAX
             IWAVAX(WAVAX).deposit{value: msg.value}();
@@ -408,7 +409,7 @@ contract JoepegAuctionHouse is
         uint256 _dropInterval,
         uint256 _startPrice,
         uint256 _endPrice
-    ) public isSupportedCurrency(_currency) {
+    ) external isSupportedCurrency(_currency) {
         if (_duration == 0 || _duration < _dropInterval) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -457,7 +458,7 @@ contract JoepegAuctionHouse is
         address _collection,
         uint256 _tokenId,
         address _currency
-    ) public {
+    ) external {
         _settleDutchAuction(_collection, _tokenId, _currency);
     }
 
@@ -467,7 +468,7 @@ contract JoepegAuctionHouse is
     function settleDutchAuctionWithAVAXAndWAVAX(
         address _collection,
         uint256 _tokenId
-    ) public payable {
+    ) external payable {
         _settleDutchAuction(_collection, _tokenId, WAVAX);
     }
 
@@ -490,15 +491,19 @@ contract JoepegAuctionHouse is
             auction.dropInterval;
 
         uint256 priceDifference = auction.startPrice - auction.endPrice;
-        uint256 priceDropPerStep = priceDifference / totalPossibleSteps;
 
-        return auction.startPrice - elapsedSteps * priceDropPerStep;
+        return
+            auction.startPrice -
+            (elapsedSteps * priceDifference) /
+            totalPossibleSteps;
     }
 
     /// @notice Cancels a running Dutch Auction
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
-    function cancelDutchAuction(address _collection, uint256 _tokenId) public {
+    function cancelDutchAuction(address _collection, uint256 _tokenId)
+        external
+    {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
         if (msg.sender != auction.creator) {
             revert JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
