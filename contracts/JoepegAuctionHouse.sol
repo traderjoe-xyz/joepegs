@@ -152,14 +152,30 @@ contract JoepegAuctionHouse is
         uint256 indexed tokenId
     );
 
-    event NewCurrencyManager(address indexed currencyManager);
-    event NewEnglishAuctionMinBidIncrementPct(
-        uint256 englishAuctionMinBidIncrementPct
+    event CurrencyManagerSet(
+        address indexed oldCurrencyManager,
+        address indexed newCurrencyManager
     );
-    event NewEnglishAuctionRefreshTime(uint256 englishAuctionRefreshTime);
-    event NewProtocolFeeManager(address indexed protocolFeeManager);
-    event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
-    event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
+    event EnglishAuctionMinBidIncrementPctSet(
+        uint256 oldEnglishAuctionMinBidIncrementPct,
+        uint256 newEnglishAuctionMinBidIncrementPct
+    );
+    event EnglishAuctionRefreshTimeSet(
+        uint256 oldEnglishAuctionRefreshTime,
+        uint256 newEnglishAuctionRefreshTime
+    );
+    event ProtocolFeeManagerSet(
+        address indexed oldProtocolFeeManager,
+        address indexed newProtocolFeeManager
+    );
+    event ProtocolFeeRecipientSet(
+        address indexed oldProtocolFeeRecipient,
+        address indexed newProtocolFeeRecipient
+    );
+    event RoyaltyFeeManagerSet(
+        address indexed oldRoyaltyFeeManager,
+        address indexed newRoyaltyFeeManager
+    );
 
     event RoyaltyPayment(
         address indexed collection,
@@ -551,8 +567,10 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
         }
 
+        uint256 oldEnglishAuctionMinBidIncrementPct = englishAuctionMinBidIncrementPct;
         englishAuctionMinBidIncrementPct = _englishAuctionMinBidIncrementPct;
-        emit NewEnglishAuctionMinBidIncrementPct(
+        emit EnglishAuctionMinBidIncrementPctSet(
+            oldEnglishAuctionMinBidIncrementPct,
             _englishAuctionMinBidIncrementPct
         );
     }
@@ -566,8 +584,12 @@ contract JoepegAuctionHouse is
         if (englishAuctionRefreshTime == 0) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
         }
+        uint256 oldEnglishAuctionRefreshTime = englishAuctionRefreshTime;
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
-        emit NewEnglishAuctionRefreshTime(englishAuctionRefreshTime);
+        emit EnglishAuctionRefreshTimeSet(
+            oldEnglishAuctionRefreshTime,
+            englishAuctionRefreshTime
+        );
     }
 
     /// @notice Update currency manager
@@ -580,8 +602,12 @@ contract JoepegAuctionHouse is
         if (currencyManagerAddress == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
+        address oldCurrencyManagerAddress = address(currencyManager);
         currencyManager = _currencyManager;
-        emit NewCurrencyManager(currencyManagerAddress);
+        emit CurrencyManagerSet(
+            oldCurrencyManagerAddress,
+            currencyManagerAddress
+        );
     }
 
     /// @notice Update protocol fee manager
@@ -594,8 +620,12 @@ contract JoepegAuctionHouse is
         if (protocolFeeManagerAddress == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
+        address oldProtocolFeeManagerAddress = address(protocolFeeManager);
         protocolFeeManager = _protocolFeeManager;
-        emit NewProtocolFeeManager(protocolFeeManagerAddress);
+        emit ProtocolFeeManagerSet(
+            oldProtocolFeeManagerAddress,
+            protocolFeeManagerAddress
+        );
     }
 
     /// @notice Update protocol fee recipient
@@ -604,8 +634,12 @@ contract JoepegAuctionHouse is
         external
         onlyOwner
     {
+        address oldProtocolFeeRecipient = protocolFeeRecipient;
         protocolFeeRecipient = _protocolFeeRecipient;
-        emit NewProtocolFeeRecipient(_protocolFeeRecipient);
+        emit ProtocolFeeRecipientSet(
+            oldProtocolFeeRecipient,
+            _protocolFeeRecipient
+        );
     }
 
     /// @notice Update royalty fee manager
@@ -618,8 +652,12 @@ contract JoepegAuctionHouse is
         if (royaltyFeeManagerAddress == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
+        address oldRoyaltyFeeManagerAddress = address(royaltyFeeManager);
         royaltyFeeManager = _royaltyFeeManager;
-        emit NewRoyaltyFeeManager(royaltyFeeManagerAddress);
+        emit RoyaltyFeeManagerSet(
+            oldRoyaltyFeeManagerAddress,
+            royaltyFeeManagerAddress
+        );
     }
 
     /// @notice Place bid on a running English Auction
