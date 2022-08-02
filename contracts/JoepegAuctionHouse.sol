@@ -14,7 +14,7 @@ import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
 error JoepegAuctionHouse__AuctionAlreadyExists();
 error JoepegAuctionHouse__CurrencyMismatch();
-error JoepegAuctionHouse__ExpectedNonnullAddress();
+error JoepegAuctionHouse__ExpectedNonNullAddress();
 error JoepegAuctionHouse__InvalidDuration();
 error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
@@ -541,34 +541,39 @@ contract JoepegAuctionHouse is
         external
         onlyOwner
     {
+        if (englishAuctionRefreshTime == 0) {
+            revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
+        }
         englishAuctionRefreshTime = _englishAuctionRefreshTime;
         emit NewEnglishAuctionRefreshTime(englishAuctionRefreshTime);
     }
 
     /// @notice Update currency manager
     /// @param _currencyManager new currency manager address
-    function updateCurrencyManager(address _currencyManager)
+    function updateCurrencyManager(ICurrencyManager _currencyManager)
         external
         onlyOwner
     {
-        if (_currencyManager == address(0)) {
-            revert JoepegAuctionHouse__ExpectedNonnullAddress();
+        address currencyManagerAddress = address(_currencyManager);
+        if (currencyManagerAddress == address(0)) {
+            revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
-        currencyManager = ICurrencyManager(_currencyManager);
-        emit NewCurrencyManager(_currencyManager);
+        currencyManager = _currencyManager;
+        emit NewCurrencyManager(currencyManagerAddress);
     }
 
     /// @notice Update protocol fee manager
     /// @param _protocolFeeManager new protocol fee manager address
-    function updateProtocolFeeManager(address _protocolFeeManager)
+    function updateProtocolFeeManager(IProtocolFeeManager _protocolFeeManager)
         external
         onlyOwner
     {
-        if (_protocolFeeManager == address(0)) {
-            revert JoepegAuctionHouse__ExpectedNonnullAddress();
+        address protocolFeeManagerAddress = address(_protocolFeeManager);
+        if (protocolFeeManagerAddress == address(0)) {
+            revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
-        protocolFeeManager = IProtocolFeeManager(_protocolFeeManager);
-        emit NewProtocolFeeManager(_protocolFeeManager);
+        protocolFeeManager = _protocolFeeManager;
+        emit NewProtocolFeeManager(protocolFeeManagerAddress);
     }
 
     /// @notice Update protocol fee recipient
@@ -583,15 +588,16 @@ contract JoepegAuctionHouse is
 
     /// @notice Update royalty fee manager
     /// @param _royaltyFeeManager new fee manager address
-    function updateRoyaltyFeeManager(address _royaltyFeeManager)
+    function updateRoyaltyFeeManager(IRoyaltyFeeManager _royaltyFeeManager)
         external
         onlyOwner
     {
-        if (_royaltyFeeManager == address(0)) {
-            revert JoepegAuctionHouse__ExpectedNonnullAddress();
+        address royaltyFeeManagerAddress = address(_royaltyFeeManager);
+        if (royaltyFeeManagerAddress == address(0)) {
+            revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
-        royaltyFeeManager = IRoyaltyFeeManager(_royaltyFeeManager);
-        emit NewRoyaltyFeeManager(_royaltyFeeManager);
+        royaltyFeeManager = _royaltyFeeManager;
+        emit NewRoyaltyFeeManager(royaltyFeeManagerAddress);
     }
 
     /// @notice Place bid on a running English Auction
