@@ -185,8 +185,8 @@ contract JoepegAuctionHouse is
         uint256 amount
     );
 
-    modifier isSupportedCurrency(address _currency) {
-        if (!currencyManager.isCurrencyWhitelisted(_currency)) {
+    modifier isSupportedCurrency(IERC20 _currency) {
+        if (!currencyManager.isCurrencyWhitelisted(address(_currency))) {
             revert JoepegAuctionHouse__UnsupportedCurrency();
         } else {
             _;
@@ -237,7 +237,7 @@ contract JoepegAuctionHouse is
     function startEnglishAuction(
         IERC721 _collection,
         uint256 _tokenId,
-        address _currency,
+        IERC20 _currency,
         uint96 _duration,
         uint256 _startPrice
     ) external isSupportedCurrency(_currency) nonReentrant {
@@ -254,7 +254,7 @@ contract JoepegAuctionHouse is
         uint96 timestamp = block.timestamp.toUint96();
         EnglishAuction memory auction = EnglishAuction({
             creator: msg.sender,
-            currency: _currency,
+            currency: address(_currency),
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: timestamp + _duration,
@@ -442,7 +442,7 @@ contract JoepegAuctionHouse is
     function startDutchAuction(
         IERC721 _collection,
         uint256 _tokenId,
-        address _currency,
+        IERC20 _currency,
         uint96 _duration,
         uint256 _dropInterval,
         uint256 _startPrice,
@@ -462,7 +462,7 @@ contract JoepegAuctionHouse is
         uint96 timestamp = block.timestamp.toUint96();
         DutchAuction memory auction = DutchAuction({
             creator: msg.sender,
-            currency: _currency,
+            currency: address(_currency),
             startPrice: _startPrice,
             endPrice: _endPrice,
             startTime: timestamp,
