@@ -54,7 +54,7 @@ contract JoepegAuctionHouse is
         uint96 endTime;
         uint256 startPrice;
         uint256 endPrice;
-        uint32 dropInterval;
+        uint256 dropInterval;
     }
 
     struct EnglishAuction {
@@ -104,7 +104,7 @@ contract JoepegAuctionHouse is
         uint256 endPrice,
         uint96 startTime,
         uint96 endTime,
-        uint32 dropInterval
+        uint256 dropInterval
     );
     event DutchAuctionSettle(
         address indexed creator,
@@ -444,7 +444,7 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         address _currency,
         uint96 _duration,
-        uint32 _dropInterval,
+        uint256 _dropInterval,
         uint256 _startPrice,
         uint256 _endPrice
     ) external isSupportedCurrency(_currency) nonReentrant {
