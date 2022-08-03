@@ -69,7 +69,8 @@ contract JoepegAuctionHouse is
 
     uint256 public constant PERCENTAGE_PRECISION = 10000;
 
-    address public WAVAX;
+    address public immutable WAVAX;
+
     ICurrencyManager public currencyManager;
     IProtocolFeeManager public protocolFeeManager;
     IRoyaltyFeeManager public royaltyFeeManager;
@@ -193,13 +194,18 @@ contract JoepegAuctionHouse is
         }
     }
 
+    ///  @notice Constructor
+    ///  @param _wavax address of WAVAX
+    constructor(address _wavax) {
+        WAVAX = _wavax;
+    }
+
     ///  @notice Initializer
     ///  @param _englishAuctionMinBidIncrementPct minimum bid increment percentage for English Auctions
     ///  @param _englishAuctionRefreshTime refresh time for English auctions
     ///  @param _currencyManager currency manager address
     ///  @param _protocolFeeManager protocol fee manager address
     ///  @param _royaltyFeeManager royalty fee manager address
-    ///  @param _wavax address of WAVAX
     ///  @param _protocolFeeRecipient protocol fee recipient
     function initialize(
         uint256 _englishAuctionMinBidIncrementPct,
@@ -207,7 +213,6 @@ contract JoepegAuctionHouse is
         address _currencyManager,
         address _protocolFeeManager,
         address _royaltyFeeManager,
-        address _wavax,
         address _protocolFeeRecipient
     ) public initializer {
         __Ownable_init();
@@ -221,8 +226,6 @@ contract JoepegAuctionHouse is
         _updateProtocolFeeManager(_protocolFeeManager);
         _updateRoyaltyFeeManager(_royaltyFeeManager);
         _updateProtocolFeeRecipient(_protocolFeeRecipient);
-
-        WAVAX = _wavax;
     }
 
     /// @notice Starts an English Auction for an ERC721 token
