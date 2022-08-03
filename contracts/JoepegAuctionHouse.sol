@@ -20,7 +20,6 @@ error JoepegAuctionHouse__ExpectedNonZeroFinalSellerAmount();
 error JoepegAuctionHouse__InvalidDuration();
 error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
-error JoepegAuctionHouse__TransferAVAXFailed();
 error JoepegAuctionHouse__UnsupportedCurrency();
 
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
@@ -816,24 +815,23 @@ contract JoepegAuctionHouse is
         delete dutchAuctions[collectionAddress][_tokenId];
 
         if (auction.currency == WAVAX) {
-            uint256 avaxAmountToWrap;
+            // Transfer WAVAX if needed
             if (salePrice > msg.value) {
-                avaxAmountToWrap = msg.value;
                 IERC20(WAVAX).safeTransferFrom(
                     msg.sender,
                     address(this),
                     salePrice - msg.value
                 );
-            } else if (salePrice == msg.value) {
-                avaxAmountToWrap = msg.value;
-            } else {
-                avaxAmountToWrap = salePrice;
-                _transferAVAX(msg.sender, msg.value - salePrice);
             }
 
             // Wrap AVAX if needed
-            if (avaxAmountToWrap > 0) {
-                IWAVAX(WAVAX).deposit{value: avaxAmountToWrap}();
+            if (msg.value > 0) {
+                IWAVAX(WAVAX).deposit{value: msg.value}();
+            }
+
+            // Refund excess AVAX if needed
+            if (salePrice < msg.value) {
+                IERC20(WAVAX).safeTransfer(msg.sender, msg.value - salePrice);
             }
 
             _transferFeesAndFundsWithWAVAX(
@@ -959,9 +957,6 @@ contract JoepegAuctionHouse is
         address _to,
         uint256 _amount
     ) private {
-        // Unwrap WAVAX
-        IWAVAX(WAVAX).withdraw(_amount);
-
         // Initialize the final amount that is transferred to seller
         uint256 finalSellerAmount = _amount;
 
@@ -978,7 +973,10 @@ contract JoepegAuctionHouse is
                 (_protocolFeeRecipient != address(0)) &&
                 (protocolFeeAmount != 0)
             ) {
-                _transferAVAX(_protocolFeeRecipient, protocolFeeAmount);
+                IERC20(WAVAX).safeTransfer(
+                    protocolFeeRecipient,
+                    protocolFeeAmount
+                );
                 finalSellerAmount -= protocolFeeAmount;
             }
         }
@@ -998,7 +996,10 @@ contract JoepegAuctionHouse is
             if (
                 (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
             ) {
-                _transferAVAX(royaltyFeeRecipient, royaltyFeeAmount);
+                IERC20(WAVAX).safeTransfer(
+                    royaltyFeeRecipient,
+                    royaltyFeeAmount
+                );
                 finalSellerAmount -= royaltyFeeAmount;
 
                 emit RoyaltyPayment(
@@ -1017,17 +1018,7 @@ contract JoepegAuctionHouse is
 
         // 3. Transfer final amount (post-fees) to seller
         {
-            _transferAVAX(_to, finalSellerAmount);
-        }
-    }
-
-    /// @notice Transfer AVAX to specified address
-    /// @param _to address to send AVAX to
-    /// @param _amount amount of AVAX to send
-    function _transferAVAX(address _to, uint256 _amount) private {
-        (bool sent, ) = _to.call{value: _amount}("");
-        if (!sent) {
-            revert JoepegAuctionHouse__TransferAVAXFailed();
+            IERC20(WAVAX).safeTransfer(_to, finalSellerAmount);
         }
     }
 
