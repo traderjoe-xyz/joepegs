@@ -638,7 +638,7 @@ contract JoepegAuctionHouse is
     function _updateEnglishAuctionRefreshTime(uint96 _englishAuctionRefreshTime)
         internal
     {
-        if (englishAuctionRefreshTime == 0) {
+        if (_englishAuctionRefreshTime == 0) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
         }
         uint96 oldEnglishAuctionRefreshTime = englishAuctionRefreshTime;

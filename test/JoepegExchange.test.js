@@ -1,12 +1,12 @@
 const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
+
+const { WAVAX } = require("./utils/constants");
 const {
   buildMakerAskOrderAndTakerBidOrder,
 } = require("./utils/maker-order.js");
 
-const WAVAX = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
-
-describe("JoepegExchange", function () {
+xdescribe("JoepegExchange", function () {
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.CurrencyManagerCF = await ethers.getContractFactory("CurrencyManager");
