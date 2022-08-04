@@ -147,9 +147,10 @@ contract JoepegAuctionHouse is
         uint256 price
     );
     event EnglishAuctionCancel(
+        address indexed caller,
         address indexed creator,
         address indexed collection,
-        uint256 indexed tokenId
+        uint256 tokenId
     );
 
     event CurrencyManagerSet(
@@ -424,7 +425,46 @@ contract JoepegAuctionHouse is
 
         _collection.safeTransferFrom(address(this), auction.creator, _tokenId);
 
-        emit EnglishAuctionCancel(auction.creator, collectionAddress, _tokenId);
+        emit EnglishAuctionCancel(
+            msg.sender,
+            auction.creator,
+            collectionAddress,
+            _tokenId
+        );
+    }
+
+    /// @notice Only owner function to cancel an English Auction in case of emergencies
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    function emergencyCancelEnglishAuction(
+        IERC721 _collection,
+        uint256 _tokenId
+    ) external nonReentrant onlyOwner {
+        address collectionAddress = address(_collection);
+        EnglishAuction memory auction = englishAuctions[collectionAddress][
+            _tokenId
+        ];
+        if (auction.creator == address(0)) {
+            revert JoepegAuctionHouse__NoAuctionExists();
+        }
+
+        address lastBidder = auction.lastBidder;
+        uint256 lastBidPrice = auction.lastBidPrice;
+
+        delete englishAuctions[collectionAddress][_tokenId];
+
+        _collection.safeTransferFrom(address(this), auction.creator, _tokenId);
+
+        if (lastBidPrice > 0) {
+            IERC20(auction.currency).safeTransfer(lastBidder, lastBidPrice);
+        }
+
+        emit EnglishAuctionCancel(
+            msg.sender,
+            auction.creator,
+            collectionAddress,
+            _tokenId
+        );
     }
 
     /// @notice Starts a Dutch Auction for an ERC721 token
