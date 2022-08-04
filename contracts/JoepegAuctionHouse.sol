@@ -568,7 +568,7 @@ contract JoepegAuctionHouse is
     /// @param _englishAuctionMinBidIncrementPct new minimum bid increment percetange for English auctions
     function _updateEnglishAuctionMinBidIncrementPct(
         uint256 _englishAuctionMinBidIncrementPct
-    ) private {
+    ) internal {
         if (
             _englishAuctionMinBidIncrementPct == 0 ||
             _englishAuctionMinBidIncrementPct > PERCENTAGE_PRECISION
@@ -596,7 +596,7 @@ contract JoepegAuctionHouse is
     /// @notice Update `englishAuctionRefreshTime`
     /// @param _englishAuctionRefreshTime new refresh time for English auctions
     function _updateEnglishAuctionRefreshTime(uint96 _englishAuctionRefreshTime)
-        private
+        internal
     {
         if (englishAuctionRefreshTime == 0) {
             revert JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
@@ -620,7 +620,7 @@ contract JoepegAuctionHouse is
 
     /// @notice Update currency manager
     /// @param _currencyManager new currency manager address
-    function _updateCurrencyManager(address _currencyManager) private {
+    function _updateCurrencyManager(address _currencyManager) internal {
         if (_currencyManager == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
@@ -640,7 +640,7 @@ contract JoepegAuctionHouse is
 
     /// @notice Update protocol fee manager
     /// @param _protocolFeeManager new protocol fee manager address
-    function _updateProtocolFeeManager(address _protocolFeeManager) private {
+    function _updateProtocolFeeManager(address _protocolFeeManager) internal {
         if (_protocolFeeManager == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
@@ -664,7 +664,7 @@ contract JoepegAuctionHouse is
     /// @notice Update protocol fee recipient
     /// @param _protocolFeeRecipient new recipient for protocol fees
     function _updateProtocolFeeRecipient(address _protocolFeeRecipient)
-        private
+        internal
     {
         address oldProtocolFeeRecipient = protocolFeeRecipient;
         protocolFeeRecipient = _protocolFeeRecipient;
@@ -685,7 +685,7 @@ contract JoepegAuctionHouse is
 
     /// @notice Update royalty fee manager
     /// @param _royaltyFeeManager new fee manager address
-    function _updateRoyaltyFeeManager(address _royaltyFeeManager) private {
+    function _updateRoyaltyFeeManager(address _royaltyFeeManager) internal {
         if (_royaltyFeeManager == address(0)) {
             revert JoepegAuctionHouse__ExpectedNonNullAddress();
         }
@@ -711,7 +711,7 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         uint256 _bidAmount,
         EnglishAuction memory auction
-    ) private {
+    ) internal {
         if (auction.creator == address(0)) {
             revert JoepegAuctionHouse__NoAuctionExists();
         }
@@ -793,7 +793,7 @@ contract JoepegAuctionHouse is
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     function _settleDutchAuction(IERC721 _collection, uint256 _tokenId)
-        private
+        internal
     {
         address collectionAddress = address(_collection);
         DutchAuction memory auction = dutchAuctions[collectionAddress][
@@ -877,7 +877,7 @@ contract JoepegAuctionHouse is
         address _from,
         address _to,
         uint256 _amount
-    ) private {
+    ) internal {
         // Initialize the final amount that is transferred to seller
         uint256 finalSellerAmount = _amount;
 
@@ -956,7 +956,7 @@ contract JoepegAuctionHouse is
         uint256 _tokenId,
         address _to,
         uint256 _amount
-    ) private {
+    ) internal {
         // Initialize the final amount that is transferred to seller
         uint256 finalSellerAmount = _amount;
 
@@ -1026,7 +1026,7 @@ contract JoepegAuctionHouse is
     /// @param _collection address of collection
     /// @param _amount amount to transfer
     function _calculateProtocolFee(address _collection, uint256 _amount)
-        private
+        internal
         view
         returns (uint256)
     {
