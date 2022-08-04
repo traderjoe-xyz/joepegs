@@ -6,6 +6,17 @@ const { WAVAX, ZERO_ADDRESS } = require("./utils/constants");
 const { latest } = require("./utils/time");
 
 describe("JoepegAuctionHouse", function () {
+  let alice;
+  let bob;
+  let auctionHouse;
+  let erc721Token;
+
+  const aliceTokenId = 1;
+  const auctionDuration = 6000;
+  const englishAuctionStartPrice = ethers.utils.parseEther("1");
+  const englishAuctionMinBidIncrementPct = 500; // 500 = 5%
+  const englishAuctionRefreshTime = 300; // 300 = 5 minutes
+
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.CurrencyManagerCF = await ethers.getContractFactory("CurrencyManager");
@@ -23,7 +34,9 @@ describe("JoepegAuctionHouse", function () {
     this.signers = await ethers.getSigners();
     this.dev = this.signers[0];
     this.alice = this.signers[1];
+    alice = this.alice;
     this.bob = this.signers[2];
+    bob = this.bob;
     this.carol = this.signers[3];
 
     await network.provider.request({
@@ -44,6 +57,7 @@ describe("JoepegAuctionHouse", function () {
   beforeEach(async function () {
     this.wavax = await ethers.getContractAt("IWAVAX", WAVAX);
     this.erc721Token = await this.ERC721TokenCF.deploy();
+    erc721Token = this.erc721Token;
 
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     await this.currencyManager.initialize();
@@ -62,13 +76,12 @@ describe("JoepegAuctionHouse", function () {
     this.protocolFeeRecipient = this.dev.address;
 
     this.auctionHouse = await this.AuctionHouseCF.deploy(WAVAX);
+    auctionHouse = this.auctionHouse;
 
     // Initialization
-    this.englishAuctionMinBidIncrementPct = 500; // 500 = 5%
-    this.englishAuctionRefreshTime = 300; // 300 = 5 minutes
     await this.auctionHouse.initialize(
-      this.englishAuctionMinBidIncrementPct,
-      this.englishAuctionRefreshTime,
+      englishAuctionMinBidIncrementPct,
+      englishAuctionRefreshTime,
       this.currencyManager.address,
       this.protocolFeeManager.address,
       this.royaltyFeeManager.address,
@@ -78,104 +91,151 @@ describe("JoepegAuctionHouse", function () {
     await this.currencyManager.addCurrency(WAVAX);
 
     // Mint
-    this.aliceTokenId = 1;
     await this.erc721Token.mint(this.alice.address);
-
-    this.auctionDuration = 6000;
-    this.englishAuctionStartPrice = ethers.utils.parseEther("1");
   });
+
+  const startEnglishAuctionAlice = async () => {
+    await erc721Token
+      .connect(alice)
+      .approve(auctionHouse.address, aliceTokenId);
+    await auctionHouse
+      .connect(alice)
+      .startEnglishAuction(
+        erc721Token.address,
+        aliceTokenId,
+        WAVAX,
+        auctionDuration,
+        englishAuctionStartPrice
+      );
+  };
 
   describe("startEnglishAuction", function () {
     it("cannot start with unsupported currency", async function () {
       const joe = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
       await expect(
-        this.auctionHouse.startEnglishAuction(
-          this.erc721Token.address,
-          this.aliceTokenId,
-          joe,
-          this.auctionDuration,
-          this.englishAuctionStartPrice
-        )
+        this.auctionHouse
+          .connect(this.alice)
+          .startEnglishAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            joe,
+            auctionDuration,
+            englishAuctionStartPrice
+          )
       ).to.be.revertedWith("JoepegAuctionHouse__UnsupportedCurrency");
     });
 
     it("cannot start with zero duration", async function () {
       await expect(
-        this.auctionHouse.startEnglishAuction(
-          this.erc721Token.address,
-          this.aliceTokenId,
-          WAVAX,
-          0,
-          ethers.utils.parseEther("1")
-        )
+        this.auctionHouse
+          .connect(this.alice)
+          .startEnglishAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            0,
+            englishAuctionStartPrice
+          )
       ).to.be.revertedWith("JoepegAuctionHouse__InvalidDuration");
     });
 
     it("cannot start with existing auction", async function () {
-      await this.erc721Token
-        .connect(this.alice)
-        .approve(this.auctionHouse.address, this.aliceTokenId);
-      await this.auctionHouse
-        .connect(this.alice)
-        .startEnglishAuction(
-          this.erc721Token.address,
-          this.aliceTokenId,
-          WAVAX,
-          this.auctionDuration,
-          this.englishAuctionStartPrice
-        );
+      await startEnglishAuctionAlice();
       await expect(
         this.auctionHouse
           .connect(this.alice)
           .startEnglishAuction(
             this.erc721Token.address,
-            this.aliceTokenId,
+            aliceTokenId,
             WAVAX,
-            this.auctionDuration,
-            this.englishAuctionStartPrice
+            auctionDuration,
+            englishAuctionStartPrice
           )
       ).to.be.revertedWith("JoepegAuctionHouse__AuctionAlreadyExists");
     });
 
-    it("missing ERC721 approval for auction house", async function () {
+    it("cannot start with missing ERC721 approval", async function () {
       await expect(
         this.auctionHouse
           .connect(this.alice)
           .startEnglishAuction(
             this.erc721Token.address,
-            this.aliceTokenId,
+            aliceTokenId,
             WAVAX,
-            this.auctionDuration,
-            this.englishAuctionStartPrice
+            auctionDuration,
+            englishAuctionStartPrice
           )
       ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
     });
 
     it("successfully starts auction", async function () {
-      await this.erc721Token
-        .connect(this.alice)
-        .approve(this.auctionHouse.address, this.aliceTokenId);
-      await this.auctionHouse
-        .connect(this.alice)
-        .startEnglishAuction(
-          this.erc721Token.address,
-          this.aliceTokenId,
-          WAVAX,
-          this.auctionDuration,
-          this.englishAuctionStartPrice
-        );
+      await startEnglishAuctionAlice();
 
       const startTime = await latest();
       const auction = await this.auctionHouse.englishAuctions(
         this.erc721Token.address,
-        this.aliceTokenId
+        aliceTokenId
       );
       expect(auction.creator).to.be.equal(this.alice.address);
       expect(auction.currency).to.be.equal(WAVAX);
       expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
-      expect(auction.endTime).to.be.equal(startTime.add(this.auctionDuration));
+      expect(auction.endTime).to.be.equal(startTime.add(auctionDuration));
       expect(auction.lastBidPrice).to.be.equal(0);
-      expect(auction.startPrice).to.be.equal(this.englishAuctionStartPrice);
+      expect(auction.startPrice).to.be.equal(englishAuctionStartPrice);
+    });
+  });
+
+  describe("placeEnglishAuctionBid", function () {
+    it("cannot bid on nonexistent auction", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__NoAuctionExists");
+    });
+
+    it("cannot bid without WAVAX approval", async function () {
+      await startEnglishAuctionAlice();
+
+      await this.wavax
+        .connect(this.bob)
+        .deposit({ value: englishAuctionStartPrice });
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith("SafeERC20: low-level call failed");
+    });
+
+    it("cannot bid with insufficient WAVAX approval amount", async function () {
+      await startEnglishAuctionAlice();
+
+      await this.wavax
+        .connect(this.bob)
+        .deposit({ value: englishAuctionStartPrice });
+
+      await this.wavax
+        .connect(this.bob)
+        .approve(this.auctionHouse.address, englishAuctionStartPrice.sub(1));
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith("SafeERC20: low-level call failed");
     });
   });
 
