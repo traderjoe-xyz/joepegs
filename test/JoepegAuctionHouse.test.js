@@ -74,11 +74,65 @@ describe("JoepegAuctionHouse", function () {
       this.protocolFeeRecipient
     );
 
+    // Mint
+    await this.erc721Token.mint(this.alice.address);
+
     await this.currencyManager.addCurrency(WAVAX);
   });
 
-  describe("test", function () {
-    it("should not test", async function () {});
+  describe("startEnglishAuction", function () {
+    it("unsupported currency", async function () {
+      const joe = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
+      await expect(
+        this.auctionHouse.startEnglishAuction(
+          this.erc721Token.address,
+          1,
+          joe,
+          600,
+          ethers.utils.parseEther("1")
+        )
+      ).to.be.revertedWith("JoepegAuctionHouse__UnsupportedCurrency");
+    });
+
+    it("zero duration", async function () {
+      await expect(
+        this.auctionHouse.startEnglishAuction(
+          this.erc721Token.address,
+          1,
+          WAVAX,
+          0,
+          ethers.utils.parseEther("1")
+        )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidDuration");
+    });
+
+    it("existing auction", async function () {
+      // Approve auction house to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.auctionHouse.address, 1);
+
+      await this.auctionHouse
+        .connect(this.alice)
+        .startEnglishAuction(
+          this.erc721Token.address,
+          1,
+          WAVAX,
+          600,
+          ethers.utils.parseEther("1")
+        );
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .startEnglishAuction(
+            this.erc721Token.address,
+            1,
+            WAVAX,
+            600,
+            ethers.utils.parseEther("1")
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__AuctionAlreadyExists");
+    });
   });
 
   after(async function () {

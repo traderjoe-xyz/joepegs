@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -42,7 +43,8 @@ error JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
 contract JoepegAuctionHouse is
     Initializable,
     OwnableUpgradeable,
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    IERC721Receiver
 {
     using SafeCast for uint256;
     using SafeERC20 for IERC20;
@@ -602,6 +604,16 @@ contract JoepegAuctionHouse is
         _updateEnglishAuctionMinBidIncrementPct(
             _englishAuctionMinBidIncrementPct
         );
+    }
+
+    /// @notice Required implementation for IERC721Receiver
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 
     /// @notice Update `englishAuctionMinBidIncrementPct`
