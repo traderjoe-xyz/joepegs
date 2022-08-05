@@ -18,7 +18,9 @@ error JoepegAuctionHouse__AuctionAlreadyExists();
 error JoepegAuctionHouse__CurrencyMismatch();
 error JoepegAuctionHouse__ExpectedNonNullAddress();
 error JoepegAuctionHouse__ExpectedNonZeroFinalSellerAmount();
+error JoepegAuctionHouse__FeesHigherThanExpected();
 error JoepegAuctionHouse__InvalidDuration();
+error JoepegAuctionHouse__InvalidMinPercentageToAsk();
 error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
 error JoepegAuctionHouse__UnsupportedCurrency();
@@ -57,6 +59,7 @@ contract JoepegAuctionHouse is
         uint256 startPrice;
         uint256 endPrice;
         uint256 dropInterval;
+        uint256 minPercentageToAsk;
     }
 
     struct EnglishAuction {
@@ -66,6 +69,7 @@ contract JoepegAuctionHouse is
         uint96 endTime;
         uint256 lastBidPrice;
         uint256 startPrice;
+        uint256 minPercentageToAsk;
     }
 
     uint256 public constant PERCENTAGE_PRECISION = 10000;
@@ -106,7 +110,8 @@ contract JoepegAuctionHouse is
         uint256 endPrice,
         uint96 startTime,
         uint96 endTime,
-        uint256 dropInterval
+        uint256 dropInterval,
+        uint256 minPercentageToAsk
     );
     event DutchAuctionSettle(
         address indexed creator,
@@ -129,7 +134,8 @@ contract JoepegAuctionHouse is
         uint256 indexed tokenId,
         uint256 startPrice,
         uint96 startTime,
-        uint96 endTime
+        uint96 endTime,
+        uint256 minPercentageToAsk
     );
     event EnglishAuctionPlaceBid(
         address indexed creator,
@@ -196,6 +202,17 @@ contract JoepegAuctionHouse is
         }
     }
 
+    modifier isValidMinPercentageToAsk(uint256 _minPercentageToAsk) {
+        if (
+            _minPercentageToAsk == 0 ||
+            _minPercentageToAsk > PERCENTAGE_PRECISION
+        ) {
+            revert JoepegAuctionHouse__InvalidMinPercentageToAsk();
+        } else {
+            _;
+        }
+    }
+
     ///  @notice Constructor
     ///  @param _wavax address of WAVAX
     constructor(address _wavax) {
@@ -237,13 +254,20 @@ contract JoepegAuctionHouse is
     /// @param _currency address of currency to sell ERC721 token for
     /// @param _duration number of seconds for English Auction to run
     /// @param _startPrice minimum starting bid price
+    /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
     function startEnglishAuction(
         IERC721 _collection,
         uint256 _tokenId,
         IERC20 _currency,
         uint96 _duration,
-        uint256 _startPrice
-    ) external isSupportedCurrency(_currency) nonReentrant {
+        uint256 _startPrice,
+        uint256 _minPercentageToAsk
+    )
+        external
+        isSupportedCurrency(_currency)
+        isValidMinPercentageToAsk(_minPercentageToAsk)
+        nonReentrant
+    {
         if (_duration == 0) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -261,7 +285,8 @@ contract JoepegAuctionHouse is
             lastBidder: address(0),
             lastBidPrice: 0,
             endTime: timestamp + _duration,
-            startPrice: _startPrice
+            startPrice: _startPrice,
+            minPercentageToAsk: _minPercentageToAsk
         });
         englishAuctions[collectionAddress][_tokenId] = auction;
 
@@ -275,7 +300,8 @@ contract JoepegAuctionHouse is
             _tokenId,
             auction.startPrice,
             timestamp,
-            auction.endTime
+            auction.endTime,
+            auction.minPercentageToAsk
         );
     }
 
@@ -373,7 +399,8 @@ contract JoepegAuctionHouse is
                 collectionAddress,
                 _tokenId,
                 auction.creator,
-                auction.lastBidPrice
+                auction.lastBidPrice,
+                auction.minPercentageToAsk
             );
         } else {
             _transferFeesAndFunds(
@@ -382,7 +409,8 @@ contract JoepegAuctionHouse is
                 IERC20(auction.currency),
                 address(this),
                 auction.creator,
-                auction.lastBidPrice
+                auction.lastBidPrice,
+                auction.minPercentageToAsk
             );
         }
 
@@ -481,6 +509,7 @@ contract JoepegAuctionHouse is
     /// @param _dropInterval number of seconds between each drop in price
     /// @param _startPrice starting sell price
     /// @param _endPrice ending sell price
+    /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
     function startDutchAuction(
         IERC721 _collection,
         uint256 _tokenId,
@@ -488,8 +517,14 @@ contract JoepegAuctionHouse is
         uint96 _duration,
         uint256 _dropInterval,
         uint256 _startPrice,
-        uint256 _endPrice
-    ) external isSupportedCurrency(_currency) nonReentrant {
+        uint256 _endPrice,
+        uint256 _minPercentageToAsk
+    )
+        external
+        isSupportedCurrency(_currency)
+        isValidMinPercentageToAsk(_minPercentageToAsk)
+        nonReentrant
+    {
         if (_duration == 0 || _duration < _dropInterval) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -509,7 +544,8 @@ contract JoepegAuctionHouse is
             endPrice: _endPrice,
             startTime: timestamp,
             endTime: timestamp + _duration,
-            dropInterval: _dropInterval
+            dropInterval: _dropInterval,
+            minPercentageToAsk: _minPercentageToAsk
         });
         dutchAuctions[collectionAddress][_tokenId] = auction;
 
@@ -524,7 +560,8 @@ contract JoepegAuctionHouse is
             auction.endPrice,
             auction.startTime,
             auction.endTime,
-            auction.dropInterval
+            auction.dropInterval,
+            auction.minPercentageToAsk
         );
     }
 
@@ -890,7 +927,8 @@ contract JoepegAuctionHouse is
                 collectionAddress,
                 _tokenId,
                 auction.creator,
-                salePrice
+                salePrice,
+                auction.minPercentageToAsk
             );
         } else {
             _transferFeesAndFunds(
@@ -899,7 +937,8 @@ contract JoepegAuctionHouse is
                 IERC20(auction.currency),
                 msg.sender,
                 auction.creator,
-                salePrice
+                salePrice,
+                auction.minPercentageToAsk
             );
         }
 
@@ -922,13 +961,15 @@ contract JoepegAuctionHouse is
     /// @param _from sender of the funds
     /// @param _to seller's recipient
     /// @param _amount amount being transferred (in currency)
+    /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
     function _transferFeesAndFunds(
         address _collection,
         uint256 _tokenId,
         IERC20 _currency,
         address _from,
         address _to,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _minPercentageToAsk
     ) internal {
         // Initialize the final amount that is transferred to seller
         uint256 finalSellerAmount = _amount;
@@ -987,8 +1028,12 @@ contract JoepegAuctionHouse is
             }
         }
 
-        if (finalSellerAmount == 0) {
-            revert JoepegAuctionHouse__ExpectedNonZeroFinalSellerAmount();
+        // Ensure seller gets minimum expected fees
+        if (
+            finalSellerAmount * PERCENTAGE_PRECISION <
+            _minPercentageToAsk * _amount
+        ) {
+            revert JoepegAuctionHouse__FeesHigherThanExpected();
         }
 
         // 3. Transfer final amount (post-fees) to seller
@@ -1003,11 +1048,13 @@ contract JoepegAuctionHouse is
     /// @param _tokenId token id of ERC721 token
     /// @param _to seller's recipient
     /// @param _amount amount of WAVAX being transferred
+    /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
     function _transferFeesAndFundsWithWAVAX(
         address _collection,
         uint256 _tokenId,
         address _to,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _minPercentageToAsk
     ) internal {
         // Initialize the final amount that is transferred to seller
         uint256 finalSellerAmount = _amount;
@@ -1064,8 +1111,12 @@ contract JoepegAuctionHouse is
             }
         }
 
-        if (finalSellerAmount == 0) {
-            revert JoepegAuctionHouse__ExpectedNonZeroFinalSellerAmount();
+        // Ensure seller gets minimum expected fees
+        if (
+            finalSellerAmount * PERCENTAGE_PRECISION <
+            _minPercentageToAsk * _amount
+        ) {
+            revert JoepegAuctionHouse__FeesHigherThanExpected();
         }
 
         // 3. Transfer final amount (post-fees) to seller
