@@ -17,6 +17,7 @@ describe("JoepegAuctionHouse", function () {
   const englishAuctionStartPrice = ethers.utils.parseEther("1");
   const englishAuctionMinBidIncrementPct = 500; // 500 = 5%
   const englishAuctionRefreshTime = 300; // 300 = 5 minutes
+  const minPercentageToAsk = 8500; // 8500 = 85%
 
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
@@ -109,7 +110,8 @@ describe("JoepegAuctionHouse", function () {
         tokenId,
         WAVAX,
         auctionDuration,
-        startPrice
+        startPrice,
+        minPercentageToAsk
       );
   };
 
@@ -140,7 +142,8 @@ describe("JoepegAuctionHouse", function () {
             aliceTokenId,
             joe,
             auctionDuration,
-            englishAuctionStartPrice
+            englishAuctionStartPrice,
+            minPercentageToAsk
           )
       ).to.be.revertedWith("JoepegAuctionHouse__UnsupportedCurrency");
     });
@@ -154,7 +157,8 @@ describe("JoepegAuctionHouse", function () {
             aliceTokenId,
             WAVAX,
             0,
-            englishAuctionStartPrice
+            englishAuctionStartPrice,
+            minPercentageToAsk
           )
       ).to.be.revertedWith("JoepegAuctionHouse__InvalidDuration");
     });
@@ -169,7 +173,8 @@ describe("JoepegAuctionHouse", function () {
             aliceTokenId,
             WAVAX,
             auctionDuration,
-            englishAuctionStartPrice
+            englishAuctionStartPrice,
+            minPercentageToAsk
           )
       ).to.be.revertedWith("JoepegAuctionHouse__AuctionAlreadyExists");
     });
@@ -183,7 +188,8 @@ describe("JoepegAuctionHouse", function () {
             aliceTokenId,
             WAVAX,
             auctionDuration,
-            englishAuctionStartPrice
+            englishAuctionStartPrice,
+            minPercentageToAsk
           )
       ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
     });
@@ -456,40 +462,41 @@ describe("JoepegAuctionHouse", function () {
       expect(auction.lastBidder).to.be.equal(this.carol.address);
       expect(auction.lastBidPrice).to.be.equal(followUpBidPrice);
     });
+  });
 
-    describe("settleEnglishAuction", function () {
-      it("cannot settle nonexistent auction", async function () {
-        await expect(
-          this.auctionHouse
-            .connect(this.alice)
-            .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
-        ).to.be.revertedWith("JoepegAuctionHouse__NoAuctionExists");
-      });
+  describe("settleEnglishAuction", function () {
+    it("cannot settle nonexistent auction", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("JoepegAuctionHouse__NoAuctionExists");
+    });
 
-      it("cannot settle auction with no bids", async function () {
-        await startEnglishAuction();
-        await advanceTimeAndBlock(duration.seconds(auctionDuration));
-        await expect(
-          this.auctionHouse
-            .connect(this.alice)
-            .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
-        ).to.be.revertedWith(
-          "JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid"
-        );
-      });
+    it("cannot settle auction with no bids", async function () {
+      await startEnglishAuction();
+      await advanceTimeAndBlock(duration.seconds(auctionDuration));
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid"
+      );
+    });
 
-      it("cannot settle auction before endTime if not creator", async function () {
-        await startEnglishAuction();
+    it("cannot settle auction before endTime if not creator", async function () {
+      await startEnglishAuction();
+      await placeEnglishAuctionBid();
+      await advanceTimeAndBlock(duration.seconds(auctionDuration / 2));
 
-        await advanceTimeAndBlock(duration.seconds(auctionDuration));
-        await expect(
-          this.auctionHouse
-            .connect(this.alice)
-            .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
-        ).to.be.revertedWith(
-          "JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid"
-        );
-      });
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime"
+      );
     });
   });
 
