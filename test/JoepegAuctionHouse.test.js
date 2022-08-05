@@ -448,6 +448,48 @@ describe("JoepegAuctionHouse", function () {
         englishAuctionStartPrice.add(followUpMinBidPrice)
       );
     });
+
+    it("follow up bid correctly refunds last bid to last bidder and updates lastBidder + lastBidPrice", async function () {
+      await startEnglishAuctionAlice();
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          englishAuctionStartPrice
+        );
+
+      const bobWAVAXBalanceBeforeRefund = await this.wavax.balanceOf(
+        this.bob.address
+      );
+
+      const followUpBidPrice = englishAuctionStartPrice
+        .mul(englishAuctionMinBidIncrementPct + 10_000)
+        .div(10_000);
+      await depositAndApproveWAVAX(this.carol, followUpBidPrice);
+      await this.auctionHouse
+        .connect(this.carol)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          followUpBidPrice
+        );
+
+      const bobWAVAXBalanceAfterRefund = await this.wavax.balanceOf(
+        this.bob.address
+      );
+      expect(
+        bobWAVAXBalanceAfterRefund.sub(bobWAVAXBalanceBeforeRefund)
+      ).to.be.equal(englishAuctionStartPrice);
+
+      const auction = await this.auctionHouse.englishAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(auction.lastBidder).to.be.equal(this.carol.address);
+      expect(auction.lastBidPrice).to.be.equal(followUpBidPrice);
+    });
   });
 
   after(async function () {
