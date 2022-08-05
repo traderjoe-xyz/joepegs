@@ -40,6 +40,7 @@ describe("JoepegAuctionHouse", function () {
     this.bob = this.signers[2];
     bob = this.bob;
     this.carol = this.signers[3];
+    this.david = this.signers[4];
 
     await network.provider.request({
       method: "hardhat_reset",
@@ -65,10 +66,11 @@ describe("JoepegAuctionHouse", function () {
     this.currencyManager = await this.CurrencyManagerCF.deploy();
     await this.currencyManager.initialize();
 
-    this.protocolFeePct = 100; // 100 = 1%
+    this.protocolFeePct = 200; // 200 = 2%
     this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy();
     await this.protocolFeeManager.initialize(this.protocolFeePct);
 
+    this.royaltyFeePct = 100; // 100 = 1%
     this.royaltyFeeLimit = 1000; // 1000 = 10%
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy();
     await this.royaltyFeeRegistry.initialize(this.royaltyFeeLimit);
@@ -90,8 +92,10 @@ describe("JoepegAuctionHouse", function () {
       this.royaltyFeeManager.address,
       this.protocolFeeRecipient
     );
-
     await this.currencyManager.addCurrency(WAVAX);
+
+    await this.erc721Token.transferOwnership(this.david.address);
+    this.royaltyFeeRecipient = this.david.address;
 
     // Mint
     await this.erc721Token.mint(this.alice.address);
@@ -497,7 +501,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
+  xdescribe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
     it("cannot bid on nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -783,7 +787,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("settleEnglishAuction", function () {
+  describe("settleEnglishAuction", function () {
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -816,6 +820,77 @@ describe("JoepegAuctionHouse", function () {
       ).to.be.revertedWith(
         "JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime"
       );
+    });
+
+    it("creator can settle auction before end time", async function () {
+      await startEnglishAuction();
+      await placeEnglishAuctionBid();
+      await advanceTimeAndBlock(duration.seconds(auctionDuration / 2));
+
+      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const beforeAliceWAVAXBalance = await this.wavax.balanceOf(
+        this.alice.address
+      );
+
+      await this.auctionHouse
+        .connect(this.alice)
+        .settleEnglishAuction(this.erc721Token.address, aliceTokenId);
+
+      // Check englishAuction data is deleted
+      const auction = await this.auctionHouse.englishAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(auction.creator).to.be.equal(ZERO_ADDRESS);
+      expect(auction.currency).to.be.equal(ZERO_ADDRESS);
+      expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
+      expect(auction.endTime).to.be.equal(0);
+      expect(auction.lastBidPrice).to.be.equal(0);
+      expect(auction.startPrice).to.be.equal(0);
+      expect(auction.minPercentageToAsk).to.be.equal(0);
+
+      // Confirm royalty fee recipient received royalty fee
+      const afterRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      expect(
+        afterRoyaltyFeeRecipientWAVAXBalance.sub(
+          beforeRoyaltyFeeRecipientWAVAXBalance
+        )
+      ).to.be.equal(
+        englishAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+      );
+
+      // Confirm protocol fee recipient received royalty fee
+      const afterProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      expect(
+        afterProtocolRecipientWAVAXBalance.sub(
+          beforeProtocolRecipientWAVAXBalance
+        )
+      ).to.be.equal(
+        englishAuctionStartPrice.mul(this.protocolFeePct).div(10_000)
+      );
+
+      // Confirm seller received remaining fees
+      const afterAliceWAVAXBalance = await this.wavax.balanceOf(
+        this.alice.address
+      );
+      expect(afterAliceWAVAXBalance.sub(beforeAliceWAVAXBalance)).to.be.equal(
+        englishAuctionStartPrice
+          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .div(10_000)
+      );
+
+      // Check NFT is transferred to bidder
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.bob.address);
     });
   });
 
