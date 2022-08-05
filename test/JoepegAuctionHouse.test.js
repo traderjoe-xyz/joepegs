@@ -148,6 +148,36 @@ describe("JoepegAuctionHouse", function () {
       ).to.be.revertedWith("JoepegAuctionHouse__UnsupportedCurrency");
     });
 
+    it("cannot start with minPercentageAsk of zero", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .startEnglishAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            auctionDuration,
+            englishAuctionStartPrice,
+            0
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidMinPercentageToAsk");
+    });
+
+    it("cannot start with minPercentageAsk greater than 10_000", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .startEnglishAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            auctionDuration,
+            englishAuctionStartPrice,
+            10_001
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidMinPercentageToAsk");
+    });
+
     it("cannot start with zero duration", async function () {
       await expect(
         this.auctionHouse
@@ -208,6 +238,7 @@ describe("JoepegAuctionHouse", function () {
       expect(auction.endTime).to.be.equal(startTime.add(auctionDuration));
       expect(auction.lastBidPrice).to.be.equal(0);
       expect(auction.startPrice).to.be.equal(englishAuctionStartPrice);
+      expect(auction.minPercentageToAsk).to.be.equal(minPercentageToAsk);
     });
   });
 
