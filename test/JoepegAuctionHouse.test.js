@@ -116,7 +116,7 @@ describe("JoepegAuctionHouse", function () {
     await wavax.connect(account).approve(auctionHouse.address, value);
   };
 
-  describe("startEnglishAuction", function () {
+  xdescribe("startEnglishAuction", function () {
     it("cannot start with unsupported currency", async function () {
       const joe = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
       await expect(
@@ -353,6 +353,99 @@ describe("JoepegAuctionHouse", function () {
           )
       ).to.be.revertedWith(
         "JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount"
+      );
+    });
+
+    it("bid in last englishAuctionRefreshTime extends auction end time", async function () {
+      await startEnglishAuctionAlice();
+      const beforeEndTime = (
+        await this.auctionHouse.englishAuctions(
+          this.erc721Token.address,
+          aliceTokenId
+        )
+      ).endTime;
+
+      await advanceTimeAndBlock(
+        duration.seconds(auctionDuration - englishAuctionRefreshTime)
+      );
+
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          englishAuctionStartPrice
+        );
+
+      const afterEndTime = (
+        await this.auctionHouse.englishAuctions(
+          this.erc721Token.address,
+          aliceTokenId
+        )
+      ).endTime;
+      expect(afterEndTime).to.be.equal(
+        beforeEndTime.add(englishAuctionRefreshTime)
+      );
+    });
+
+    it("first bid correctly records lastBidder and lastBidPrice", async function () {
+      await startEnglishAuctionAlice();
+
+      const beforeAuction = await this.auctionHouse.englishAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(beforeAuction.lastBidder).to.be.equal(ZERO_ADDRESS);
+      expect(beforeAuction.lastBidPrice).to.be.equal(0);
+
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          englishAuctionStartPrice
+        );
+
+      const afterAuction = await this.auctionHouse.englishAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(afterAuction.lastBidder).to.be.equal(this.bob.address);
+      expect(afterAuction.lastBidPrice).to.be.equal(englishAuctionStartPrice);
+    });
+
+    it("follow up bid from same bidder correctly records lastBidder and lastBidPrice", async function () {
+      await startEnglishAuctionAlice();
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          englishAuctionStartPrice
+        );
+
+      const followUpMinBidPrice = englishAuctionStartPrice
+        .mul(englishAuctionMinBidIncrementPct)
+        .div(10_000);
+      await depositAndApproveWAVAX(this.bob, followUpMinBidPrice);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          followUpMinBidPrice
+        );
+
+      const afterAuction = await this.auctionHouse.englishAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(afterAuction.lastBidder).to.be.equal(this.bob.address);
+      expect(afterAuction.lastBidPrice).to.be.equal(
+        englishAuctionStartPrice.add(followUpMinBidPrice)
       );
     });
   });
