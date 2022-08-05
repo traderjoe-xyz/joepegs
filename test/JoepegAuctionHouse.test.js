@@ -96,18 +96,20 @@ describe("JoepegAuctionHouse", function () {
     await this.erc721Token.mint(this.alice.address);
   });
 
-  const startEnglishAuctionAlice = async () => {
-    await erc721Token
-      .connect(alice)
-      .approve(auctionHouse.address, aliceTokenId);
+  const startEnglishAuction = async (
+    account = alice,
+    startPrice = englishAuctionStartPrice,
+    tokenId = aliceTokenId
+  ) => {
+    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
     await auctionHouse
-      .connect(alice)
+      .connect(account)
       .startEnglishAuction(
         erc721Token.address,
-        aliceTokenId,
+        tokenId,
         WAVAX,
         auctionDuration,
-        englishAuctionStartPrice
+        startPrice
       );
   };
 
@@ -116,7 +118,18 @@ describe("JoepegAuctionHouse", function () {
     await wavax.connect(account).approve(auctionHouse.address, value);
   };
 
-  xdescribe("startEnglishAuction", function () {
+  const placeEnglishAuctionBid = async (
+    account = bob,
+    value = englishAuctionStartPrice,
+    tokenId = aliceTokenId
+  ) => {
+    await depositAndApproveWAVAX(account, value);
+    await auctionHouse
+      .connect(account)
+      .placeEnglishAuctionBid(erc721Token.address, tokenId, value);
+  };
+
+  describe("startEnglishAuction", function () {
     it("cannot start with unsupported currency", async function () {
       const joe = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
       await expect(
@@ -147,7 +160,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot start with existing auction", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       await expect(
         this.auctionHouse
           .connect(this.alice)
@@ -176,7 +189,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully starts auction", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
 
       const startTime = await latest();
       const auction = await this.auctionHouse.englishAuctions(
@@ -206,7 +219,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid without WAVAX approval", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
 
       await this.wavax
         .connect(this.bob)
@@ -224,7 +237,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid with insufficient WAVAX approval amount", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice.sub(1));
       await expect(
         this.auctionHouse
@@ -238,7 +251,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid zero amount", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
 
       await expect(
         this.auctionHouse
@@ -250,7 +263,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("creator cannot bid", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       await depositAndApproveWAVAX(this.alice, englishAuctionStartPrice);
       await expect(
         this.auctionHouse
@@ -266,7 +279,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid on ended auction", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
       await advanceTimeAndBlock(duration.seconds(auctionDuration));
       await expect(
@@ -283,7 +296,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid less than start price", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice.sub(1));
       await expect(
         this.auctionHouse
@@ -299,15 +312,9 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid less than englishAuctionMinBidIncrementPct of last bid if same bidder", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
-      await this.auctionHouse
-        .connect(this.bob)
-        .placeEnglishAuctionBid(
-          this.erc721Token.address,
-          aliceTokenId,
-          englishAuctionStartPrice
-        );
+      await placeEnglishAuctionBid();
 
       const followUpInsufficientBidPrice = englishAuctionStartPrice
         .mul(englishAuctionMinBidIncrementPct)
@@ -328,15 +335,9 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid less than englishAuctionMinBidIncrementPct greater than last bid", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
-      await this.auctionHouse
-        .connect(this.bob)
-        .placeEnglishAuctionBid(
-          this.erc721Token.address,
-          aliceTokenId,
-          englishAuctionStartPrice
-        );
+      await placeEnglishAuctionBid();
 
       const followUpInsufficientBidPrice = englishAuctionStartPrice
         .mul(englishAuctionMinBidIncrementPct + 10_000)
@@ -357,7 +358,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("bid in last englishAuctionRefreshTime extends auction end time", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
       const beforeEndTime = (
         await this.auctionHouse.englishAuctions(
           this.erc721Token.address,
@@ -369,14 +370,7 @@ describe("JoepegAuctionHouse", function () {
         duration.seconds(auctionDuration - englishAuctionRefreshTime)
       );
 
-      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
-      await this.auctionHouse
-        .connect(this.bob)
-        .placeEnglishAuctionBid(
-          this.erc721Token.address,
-          aliceTokenId,
-          englishAuctionStartPrice
-        );
+      await placeEnglishAuctionBid();
 
       const afterEndTime = (
         await this.auctionHouse.englishAuctions(
@@ -390,7 +384,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("first bid correctly records lastBidder and lastBidPrice", async function () {
-      await startEnglishAuctionAlice();
+      await startEnglishAuction();
 
       const beforeAuction = await this.auctionHouse.englishAuctions(
         this.erc721Token.address,
@@ -399,14 +393,7 @@ describe("JoepegAuctionHouse", function () {
       expect(beforeAuction.lastBidder).to.be.equal(ZERO_ADDRESS);
       expect(beforeAuction.lastBidPrice).to.be.equal(0);
 
-      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
-      await this.auctionHouse
-        .connect(this.bob)
-        .placeEnglishAuctionBid(
-          this.erc721Token.address,
-          aliceTokenId,
-          englishAuctionStartPrice
-        );
+      await placeEnglishAuctionBid();
 
       const afterAuction = await this.auctionHouse.englishAuctions(
         this.erc721Token.address,
@@ -417,15 +404,8 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("follow up bid from same bidder correctly records lastBidder and lastBidPrice", async function () {
-      await startEnglishAuctionAlice();
-      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
-      await this.auctionHouse
-        .connect(this.bob)
-        .placeEnglishAuctionBid(
-          this.erc721Token.address,
-          aliceTokenId,
-          englishAuctionStartPrice
-        );
+      await startEnglishAuction();
+      await placeEnglishAuctionBid();
 
       const followUpMinBidPrice = englishAuctionStartPrice
         .mul(englishAuctionMinBidIncrementPct)
@@ -450,15 +430,8 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("follow up bid correctly refunds last bid to last bidder and updates lastBidder + lastBidPrice", async function () {
-      await startEnglishAuctionAlice();
-      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
-      await this.auctionHouse
-        .connect(this.bob)
-        .placeEnglishAuctionBid(
-          this.erc721Token.address,
-          aliceTokenId,
-          englishAuctionStartPrice
-        );
+      await startEnglishAuction();
+      await placeEnglishAuctionBid();
 
       const bobWAVAXBalanceBeforeRefund = await this.wavax.balanceOf(
         this.bob.address
@@ -467,14 +440,7 @@ describe("JoepegAuctionHouse", function () {
       const followUpBidPrice = englishAuctionStartPrice
         .mul(englishAuctionMinBidIncrementPct + 10_000)
         .div(10_000);
-      await depositAndApproveWAVAX(this.carol, followUpBidPrice);
-      await this.auctionHouse
-        .connect(this.carol)
-        .placeEnglishAuctionBid(
-          this.erc721Token.address,
-          aliceTokenId,
-          followUpBidPrice
-        );
+      await placeEnglishAuctionBid(this.carol, followUpBidPrice);
 
       const bobWAVAXBalanceAfterRefund = await this.wavax.balanceOf(
         this.bob.address
@@ -489,6 +455,41 @@ describe("JoepegAuctionHouse", function () {
       );
       expect(auction.lastBidder).to.be.equal(this.carol.address);
       expect(auction.lastBidPrice).to.be.equal(followUpBidPrice);
+    });
+
+    describe("settleEnglishAuction", function () {
+      it("cannot settle nonexistent auction", async function () {
+        await expect(
+          this.auctionHouse
+            .connect(this.alice)
+            .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
+        ).to.be.revertedWith("JoepegAuctionHouse__NoAuctionExists");
+      });
+
+      it("cannot settle auction with no bids", async function () {
+        await startEnglishAuction();
+        await advanceTimeAndBlock(duration.seconds(auctionDuration));
+        await expect(
+          this.auctionHouse
+            .connect(this.alice)
+            .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
+        ).to.be.revertedWith(
+          "JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid"
+        );
+      });
+
+      it("cannot settle auction before endTime if not creator", async function () {
+        await startEnglishAuction();
+
+        await advanceTimeAndBlock(duration.seconds(auctionDuration));
+        await expect(
+          this.auctionHouse
+            .connect(this.alice)
+            .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
+        ).to.be.revertedWith(
+          "JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid"
+        );
+      });
     });
   });
 
