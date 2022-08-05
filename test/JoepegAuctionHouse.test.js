@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { describe } = require("mocha");
 
 const { WAVAX, ZERO_ADDRESS } = require("./utils/constants");
-const { latest } = require("./utils/time");
+const { advanceTimeAndBlock, duration, latest } = require("./utils/time");
 
 describe("JoepegAuctionHouse", function () {
   let alice;
@@ -262,6 +262,97 @@ describe("JoepegAuctionHouse", function () {
           )
       ).to.be.revertedWith(
         "JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid"
+      );
+    });
+
+    it("cannot bid on ended auction", async function () {
+      await startEnglishAuctionAlice();
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await advanceTimeAndBlock(duration.seconds(auctionDuration));
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction"
+      );
+    });
+
+    it("cannot bid less than start price", async function () {
+      await startEnglishAuctionAlice();
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice.sub(1));
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice.sub(1)
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount"
+      );
+    });
+
+    it("cannot bid less than englishAuctionMinBidIncrementPct of last bid if same bidder", async function () {
+      await startEnglishAuctionAlice();
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          englishAuctionStartPrice
+        );
+
+      const followUpInsufficientBidPrice = englishAuctionStartPrice
+        .mul(englishAuctionMinBidIncrementPct)
+        .div(10_000)
+        .sub(1);
+      await depositAndApproveWAVAX(this.bob, followUpInsufficientBidPrice);
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            followUpInsufficientBidPrice
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount"
+      );
+    });
+
+    it("cannot bid less than englishAuctionMinBidIncrementPct greater than last bid", async function () {
+      await startEnglishAuctionAlice();
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBid(
+          this.erc721Token.address,
+          aliceTokenId,
+          englishAuctionStartPrice
+        );
+
+      const followUpInsufficientBidPrice = englishAuctionStartPrice
+        .mul(englishAuctionMinBidIncrementPct + 10_000)
+        .div(10_000)
+        .sub(1);
+      await depositAndApproveWAVAX(this.carol, followUpInsufficientBidPrice);
+      await expect(
+        this.auctionHouse
+          .connect(this.carol)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            followUpInsufficientBidPrice
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount"
       );
     });
   });
