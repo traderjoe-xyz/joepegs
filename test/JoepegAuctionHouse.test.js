@@ -2,7 +2,7 @@ const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 const { describe } = require("mocha");
 
-const { WAVAX, ZERO_ADDRESS } = require("./utils/constants");
+const { JOE, WAVAX, ZERO_ADDRESS } = require("./utils/constants");
 const { advanceTimeAndBlock, duration, latest } = require("./utils/time");
 
 describe("JoepegAuctionHouse", function () {
@@ -133,14 +133,13 @@ describe("JoepegAuctionHouse", function () {
 
   describe("startEnglishAuction", function () {
     it("cannot start with unsupported currency", async function () {
-      const joe = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
       await expect(
         this.auctionHouse
           .connect(this.alice)
           .startEnglishAuction(
             this.erc721Token.address,
             aliceTokenId,
-            joe,
+            JOE,
             auctionDuration,
             englishAuctionStartPrice,
             minPercentageToAsk
@@ -492,6 +491,46 @@ describe("JoepegAuctionHouse", function () {
       );
       expect(auction.lastBidder).to.be.equal(this.carol.address);
       expect(auction.lastBidPrice).to.be.equal(followUpBidPrice);
+    });
+  });
+
+  describe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
+    it("cannot bid on nonexistent auction", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBidWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__CurrencyMismatch");
+    });
+
+    it("cannot bid on non-WAVAX currency auction", async function () {
+      await this.currencyManager.addCurrency(JOE);
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.auctionHouse.address, aliceTokenId);
+      await this.auctionHouse
+        .connect(this.alice)
+        .startEnglishAuction(
+          this.erc721Token.address,
+          aliceTokenId,
+          JOE,
+          auctionDuration,
+          englishAuctionStartPrice,
+          minPercentageToAsk
+        );
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBidWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__CurrencyMismatch");
     });
   });
 
