@@ -147,6 +147,15 @@ describe("JoepegAuctionHouse", function () {
       });
   };
 
+  const assertWAVAXBalanceIncrease = async (
+    address,
+    balanceBefore,
+    increaseAmount
+  ) => {
+    const currWAVAXBalance = await wavax.balanceOf(address);
+    expect(currWAVAXBalance.sub(balanceBefore)).to.be.equal(increaseAmount);
+  };
+
   xdescribe("startEnglishAuction", function () {
     it("cannot start with unsupported currency", async function () {
       await expect(
@@ -855,34 +864,23 @@ describe("JoepegAuctionHouse", function () {
       expect(auction.minPercentageToAsk).to.be.equal(0);
 
       // Confirm royalty fee recipient received royalty fee
-      const afterRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
-      );
-      expect(
-        afterRoyaltyFeeRecipientWAVAXBalance.sub(
-          beforeRoyaltyFeeRecipientWAVAXBalance
-        )
-      ).to.be.equal(
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient,
+        beforeRoyaltyFeeRecipientWAVAXBalance,
         englishAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
-      const afterProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.protocolFeeRecipient
-      );
-      expect(
-        afterProtocolRecipientWAVAXBalance.sub(
-          beforeProtocolRecipientWAVAXBalance
-        )
-      ).to.be.equal(
+      await assertWAVAXBalanceIncrease(
+        this.protocolFeeRecipient,
+        beforeProtocolRecipientWAVAXBalance,
         englishAuctionStartPrice.mul(this.protocolFeePct).div(10_000)
       );
 
       // Confirm seller received remaining fees
-      const afterAliceWAVAXBalance = await this.wavax.balanceOf(
-        this.alice.address
-      );
-      expect(afterAliceWAVAXBalance.sub(beforeAliceWAVAXBalance)).to.be.equal(
+      await assertWAVAXBalanceIncrease(
+        this.alice.address,
+        beforeAliceWAVAXBalance,
         englishAuctionStartPrice
           .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
           .div(10_000)
