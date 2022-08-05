@@ -10,6 +10,7 @@ describe("JoepegAuctionHouse", function () {
   let bob;
   let auctionHouse;
   let erc721Token;
+  let wavax;
 
   const aliceTokenId = 1;
   const auctionDuration = 6000;
@@ -56,6 +57,7 @@ describe("JoepegAuctionHouse", function () {
 
   beforeEach(async function () {
     this.wavax = await ethers.getContractAt("IWAVAX", WAVAX);
+    wavax = this.wavax;
     this.erc721Token = await this.ERC721TokenCF.deploy();
     erc721Token = this.erc721Token;
 
@@ -107,6 +109,11 @@ describe("JoepegAuctionHouse", function () {
         auctionDuration,
         englishAuctionStartPrice
       );
+  };
+
+  const depositAndApproveWAVAX = async (account, value) => {
+    await wavax.connect(account).deposit({ value });
+    await wavax.connect(account).approve(auctionHouse.address, value);
   };
 
   describe("startEnglishAuction", function () {
@@ -218,15 +225,7 @@ describe("JoepegAuctionHouse", function () {
 
     it("cannot bid with insufficient WAVAX approval amount", async function () {
       await startEnglishAuctionAlice();
-
-      await this.wavax
-        .connect(this.bob)
-        .deposit({ value: englishAuctionStartPrice });
-
-      await this.wavax
-        .connect(this.bob)
-        .approve(this.auctionHouse.address, englishAuctionStartPrice.sub(1));
-
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice.sub(1));
       await expect(
         this.auctionHouse
           .connect(this.bob)
@@ -236,6 +235,34 @@ describe("JoepegAuctionHouse", function () {
             englishAuctionStartPrice
           )
       ).to.be.revertedWith("SafeERC20: low-level call failed");
+    });
+
+    it("cannot bid zero amount", async function () {
+      await startEnglishAuctionAlice();
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(this.erc721Token.address, aliceTokenId, 0)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount"
+      );
+    });
+
+    it("creator cannot bid", async function () {
+      await startEnglishAuctionAlice();
+      await depositAndApproveWAVAX(this.alice, englishAuctionStartPrice);
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid"
+      );
     });
   });
 
