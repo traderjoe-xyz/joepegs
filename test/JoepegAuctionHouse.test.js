@@ -758,6 +758,29 @@ describe("JoepegAuctionHouse", function () {
       expect(auction.lastBidder).to.be.equal(this.carol.address);
       expect(auction.lastBidPrice).to.be.equal(followUpBidPrice);
     });
+
+    it("successfully bids with AVAX and WAVAX", async function () {
+      await startEnglishAuction();
+
+      const avaxAmount = englishAuctionStartPrice.div(2);
+      const wavaxAmount = englishAuctionStartPrice.div(2);
+      await depositAndApproveWAVAX(this.bob, wavaxAmount);
+      await this.auctionHouse
+        .connect(this.bob)
+        .placeEnglishAuctionBidWithAVAXAndWAVAX(
+          this.erc721Token.address,
+          aliceTokenId,
+          wavaxAmount,
+          { value: avaxAmount }
+        );
+
+      const auction = await this.auctionHouse.englishAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(auction.lastBidder).to.be.equal(this.bob.address);
+      expect(auction.lastBidPrice).to.be.equal(avaxAmount.add(wavaxAmount));
+    });
   });
 
   xdescribe("settleEnglishAuction", function () {
