@@ -985,8 +985,72 @@ describe("JoepegAuctionHouse", function () {
       // Check englishAuction data is deleted
       await assertEnglishAuctionIsDeleted();
 
+      // Check NFT is returned to seller
       const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
       expect(erc721TokenOwner).to.be.equal(this.alice.address);
+    });
+  });
+
+  describe("emergencyCancelEnglishAuction", function () {
+    it("non-contract owner cannot cancel auction", async function () {
+      await startEnglishAuction();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .emergencyCancelEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot cancel non-existent auction", async function () {
+      await expect(
+        this.auctionHouse.emergencyCancelEnglishAuction(
+          this.erc721Token.address,
+          aliceTokenId
+        )
+      ).to.be.revertedWith("JoepegAuctionHouse__NoAuctionExists");
+    });
+
+    it("sucessfully cancels auction with no existing bid", async function () {
+      await startEnglishAuction();
+      await this.auctionHouse.emergencyCancelEnglishAuction(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+
+      // Check englishAuction data is deleted
+      await assertEnglishAuctionIsDeleted();
+
+      // Check NFT is returned to seller
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.alice.address);
+    });
+
+    it("sucessfully cancels auction with existing bid", async function () {
+      await startEnglishAuction();
+      await placeEnglishAuctionBid();
+
+      const beforeBobWAVAXBalance = await this.wavax.balanceOf(
+        this.bob.address
+      );
+
+      await this.auctionHouse.emergencyCancelEnglishAuction(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+
+      // Check englishAuction data is deleted
+      await assertEnglishAuctionIsDeleted();
+
+      // Check NFT is returned to seller
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.alice.address);
+
+      // Check last bid is returned to bidder
+      await assertWAVAXBalanceIncrease(
+        this.bob.address,
+        beforeBobWAVAXBalance,
+        englishAuctionStartPrice
+      );
     });
   });
 
