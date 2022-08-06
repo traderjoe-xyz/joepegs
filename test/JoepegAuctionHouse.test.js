@@ -156,6 +156,20 @@ describe("JoepegAuctionHouse", function () {
     expect(currWAVAXBalance.sub(balanceBefore)).to.be.equal(increaseAmount);
   };
 
+  const assertEnglishAuctionIsDeleted = async () => {
+    const auction = await auctionHouse.englishAuctions(
+      erc721Token.address,
+      aliceTokenId
+    );
+    expect(auction.creator).to.be.equal(ZERO_ADDRESS);
+    expect(auction.currency).to.be.equal(ZERO_ADDRESS);
+    expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
+    expect(auction.endTime).to.be.equal(0);
+    expect(auction.lastBidPrice).to.be.equal(0);
+    expect(auction.startPrice).to.be.equal(0);
+    expect(auction.minPercentageToAsk).to.be.equal(0);
+  };
+
   xdescribe("startEnglishAuction", function () {
     it("cannot start with unsupported currency", async function () {
       await expect(
@@ -796,7 +810,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("settleEnglishAuction", function () {
+  xdescribe("settleEnglishAuction", function () {
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -851,17 +865,7 @@ describe("JoepegAuctionHouse", function () {
         .settleEnglishAuction(this.erc721Token.address, aliceTokenId);
 
       // Check englishAuction data is deleted
-      const auction = await this.auctionHouse.englishAuctions(
-        this.erc721Token.address,
-        aliceTokenId
-      );
-      expect(auction.creator).to.be.equal(ZERO_ADDRESS);
-      expect(auction.currency).to.be.equal(ZERO_ADDRESS);
-      expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
-      expect(auction.endTime).to.be.equal(0);
-      expect(auction.lastBidPrice).to.be.equal(0);
-      expect(auction.startPrice).to.be.equal(0);
-      expect(auction.minPercentageToAsk).to.be.equal(0);
+      await assertEnglishAuctionIsDeleted();
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
@@ -911,17 +915,7 @@ describe("JoepegAuctionHouse", function () {
         .settleEnglishAuction(this.erc721Token.address, aliceTokenId);
 
       // Check englishAuction data is deleted
-      const auction = await this.auctionHouse.englishAuctions(
-        this.erc721Token.address,
-        aliceTokenId
-      );
-      expect(auction.creator).to.be.equal(ZERO_ADDRESS);
-      expect(auction.currency).to.be.equal(ZERO_ADDRESS);
-      expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
-      expect(auction.endTime).to.be.equal(0);
-      expect(auction.lastBidPrice).to.be.equal(0);
-      expect(auction.startPrice).to.be.equal(0);
-      expect(auction.minPercentageToAsk).to.be.equal(0);
+      await assertEnglishAuctionIsDeleted();
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
@@ -949,6 +943,50 @@ describe("JoepegAuctionHouse", function () {
       // Check NFT is transferred to bidder
       const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
       expect(erc721TokenOwner).to.be.equal(this.bob.address);
+    });
+  });
+
+  describe("cancelEnglishAuction", function () {
+    it("cannot cancel non-existent auction", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .cancelEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("JoepegAuctionHouse__OnlyAuctionCreatorCanCancel");
+    });
+
+    it("non-owner cannot cancel auction", async function () {
+      await startEnglishAuction();
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .cancelEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("JoepegAuctionHouse__OnlyAuctionCreatorCanCancel");
+    });
+
+    it("cannot cancel auction with existing bid", async function () {
+      await startEnglishAuction();
+      await placeEnglishAuctionBid();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .cancelEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid"
+      );
+    });
+
+    it("sucessfully cancels auction", async function () {
+      await startEnglishAuction();
+      await this.auctionHouse
+        .connect(this.alice)
+        .cancelEnglishAuction(this.erc721Token.address, aliceTokenId);
+
+      // Check englishAuction data is deleted
+      await assertEnglishAuctionIsDeleted();
+
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.alice.address);
     });
   });
 
