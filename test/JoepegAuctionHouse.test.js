@@ -1290,7 +1290,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("settleDutchAuction", function () {
+  xdescribe("settleDutchAuction", function () {
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1426,6 +1426,316 @@ describe("JoepegAuctionHouse", function () {
         dutchAuctionEndPrice
           .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
           .div(10_000)
+      );
+
+      // Check NFT is transferred to bidder
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.bob.address);
+    });
+  });
+
+  describe("settleDutchAuctionWithAVAXAndWAVAX", function () {
+    it("cannot settle nonexistent auction", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .settleDutchAuctionWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__CurrencyMismatch");
+    });
+
+    it("cannot settle non-WAVAX currency auction", async function () {
+      await this.currencyManager.addCurrency(JOE);
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.auctionHouse.address, aliceTokenId);
+      await this.auctionHouse
+        .connect(this.alice)
+        .startDutchAuction(
+          this.erc721Token.address,
+          aliceTokenId,
+          JOE,
+          auctionDuration,
+          dutchAuctionDropInterval,
+          dutchAuctionStartPrice,
+          dutchAuctionEndPrice,
+          minPercentageToAsk
+        );
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .settleDutchAuctionWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            { value: dutchAuctionStartPrice }
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__CurrencyMismatch");
+    });
+
+    it("creator cannot settle auction", async function () {
+      await startDutchAuction();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .settleDutchAuctionWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__DutchAuctionCreatorCannotSettle"
+      );
+    });
+
+    it("cannot settle with insufficient AVAX", async function () {
+      await startDutchAuction();
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .settleDutchAuctionWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            {
+              value: dutchAuctionStartPrice.sub(1),
+            }
+          )
+      ).to.be.revertedWith("SafeERC20: low-level call failed");
+    });
+
+    it("can successfully settle auction", async function () {
+      await startDutchAuction();
+
+      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const beforeAliceWAVAXBalance = await this.wavax.balanceOf(
+        this.alice.address
+      );
+
+      await this.auctionHouse
+        .connect(this.bob)
+        .settleDutchAuctionWithAVAXAndWAVAX(
+          this.erc721Token.address,
+          aliceTokenId,
+          {
+            value: dutchAuctionStartPrice,
+          }
+        );
+
+      // Check dutchAuction data is deleted
+      await assertDutchAuctionIsDeleted();
+
+      // Confirm royalty fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient,
+        beforeRoyaltyFeeRecipientWAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+      );
+
+      // Confirm protocol fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.protocolFeeRecipient,
+        beforeProtocolRecipientWAVAXBalance,
+        dutchAuctionStartPrice.mul(this.protocolFeePct).div(10_000)
+      );
+
+      // Confirm seller received remaining fees
+      await assertWAVAXBalanceIncrease(
+        this.alice.address,
+        beforeAliceWAVAXBalance,
+        dutchAuctionStartPrice
+          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .div(10_000)
+      );
+
+      // Check NFT is transferred to bidder
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.bob.address);
+    });
+
+    it("can settle auction past end time", async function () {
+      await startDutchAuction();
+      await advanceTimeAndBlock(duration.seconds(auctionDuration));
+
+      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const beforeAliceWAVAXBalance = await this.wavax.balanceOf(
+        this.alice.address
+      );
+
+      await this.auctionHouse
+        .connect(this.bob)
+        .settleDutchAuctionWithAVAXAndWAVAX(
+          this.erc721Token.address,
+          aliceTokenId,
+          {
+            value: dutchAuctionEndPrice,
+          }
+        );
+
+      // Check dutchAuction data is deleted
+      await assertDutchAuctionIsDeleted();
+
+      // Confirm royalty fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient,
+        beforeRoyaltyFeeRecipientWAVAXBalance,
+        dutchAuctionEndPrice.mul(this.royaltyFeePct).div(10_000)
+      );
+
+      // Confirm protocol fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.protocolFeeRecipient,
+        beforeProtocolRecipientWAVAXBalance,
+        dutchAuctionEndPrice.mul(this.protocolFeePct).div(10_000)
+      );
+
+      // Confirm seller received remaining fees
+      await assertWAVAXBalanceIncrease(
+        this.alice.address,
+        beforeAliceWAVAXBalance,
+        dutchAuctionEndPrice
+          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .div(10_000)
+      );
+
+      // Check NFT is transferred to bidder
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.bob.address);
+    });
+
+    it("can settle auction with refund when excess AVAX amount is provided", async function () {
+      await startDutchAuction();
+
+      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const beforeAliceWAVAXBalance = await this.wavax.balanceOf(
+        this.alice.address
+      );
+      const beforeBobWAVAXBalance = await this.wavax.balanceOf(
+        this.bob.address
+      );
+
+      const extraAVAXAmount = ethers.utils.parseEther("3");
+
+      await this.auctionHouse
+        .connect(this.bob)
+        .settleDutchAuctionWithAVAXAndWAVAX(
+          this.erc721Token.address,
+          aliceTokenId,
+          {
+            value: dutchAuctionStartPrice.add(extraAVAXAmount),
+          }
+        );
+
+      // Check dutchAuction data is deleted
+      await assertDutchAuctionIsDeleted();
+
+      // Confirm royalty fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient,
+        beforeRoyaltyFeeRecipientWAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+      );
+
+      // Confirm protocol fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.protocolFeeRecipient,
+        beforeProtocolRecipientWAVAXBalance,
+        dutchAuctionStartPrice.mul(this.protocolFeePct).div(10_000)
+      );
+
+      // Confirm seller received remaining fees
+      await assertWAVAXBalanceIncrease(
+        this.alice.address,
+        beforeAliceWAVAXBalance,
+        dutchAuctionStartPrice
+          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .div(10_000)
+      );
+
+      // Confirm buyer received appropriate refund amount
+      await assertWAVAXBalanceIncrease(
+        this.bob.address,
+        beforeBobWAVAXBalance,
+        extraAVAXAmount
+      );
+
+      // Check NFT is transferred to bidder
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.bob.address);
+    });
+
+    it("can settle auction with AVAX and WAVAX", async function () {
+      await startDutchAuction();
+
+      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient
+      );
+      const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
+        this.protocolFeeRecipient
+      );
+      const beforeAliceWAVAXBalance = await this.wavax.balanceOf(
+        this.alice.address
+      );
+
+      const avaxAmount = dutchAuctionStartPrice.div(2);
+      const wavaxAmount = dutchAuctionStartPrice.div(2);
+      await depositAndApproveWAVAX(this.bob, wavaxAmount);
+      const beforeBobWAVAXBalance = await this.wavax.balanceOf(
+        this.bob.address
+      );
+
+      await this.auctionHouse
+        .connect(this.bob)
+        .settleDutchAuctionWithAVAXAndWAVAX(
+          this.erc721Token.address,
+          aliceTokenId,
+          { value: avaxAmount }
+        );
+
+      // Check dutchAuction data is deleted
+      await assertDutchAuctionIsDeleted();
+
+      // Confirm royalty fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient,
+        beforeRoyaltyFeeRecipientWAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+      );
+
+      // Confirm protocol fee recipient received royalty fee
+      await assertWAVAXBalanceIncrease(
+        this.protocolFeeRecipient,
+        beforeProtocolRecipientWAVAXBalance,
+        dutchAuctionStartPrice.mul(this.protocolFeePct).div(10_000)
+      );
+
+      // Confirm seller received remaining fees
+      await assertWAVAXBalanceIncrease(
+        this.alice.address,
+        beforeAliceWAVAXBalance,
+        dutchAuctionStartPrice
+          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .div(10_000)
+      );
+
+      // Confirm buyer lost `wavaxAmount`
+      const afterBobWAVAXBalance = await this.wavax.balanceOf(this.bob.address);
+      expect(beforeBobWAVAXBalance.sub(afterBobWAVAXBalance)).to.be.equal(
+        wavaxAmount
       );
 
       // Check NFT is transferred to bidder

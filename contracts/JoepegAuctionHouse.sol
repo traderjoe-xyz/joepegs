@@ -582,6 +582,14 @@ contract JoepegAuctionHouse is
         IERC721 _collection,
         uint256 _tokenId
     ) external payable nonReentrant {
+        DutchAuction memory auction = dutchAuctions[address(_collection)][
+            _tokenId
+        ];
+        address currency = auction.currency;
+        if (currency != WAVAX) {
+            revert JoepegAuctionHouse__CurrencyMismatch();
+        }
+
         _settleDutchAuction(_collection, _tokenId);
     }
 
