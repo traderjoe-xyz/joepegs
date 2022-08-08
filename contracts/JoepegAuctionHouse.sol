@@ -213,6 +213,16 @@ contract JoepegAuctionHouse is
         }
     }
 
+    /// @notice Required implementation for IERC721Receiver
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
     ///  @notice Constructor
     ///  @param _wavax address of WAVAX
     constructor(address _wavax) {
@@ -649,16 +659,6 @@ contract JoepegAuctionHouse is
         _updateEnglishAuctionMinBidIncrementPct(
             _englishAuctionMinBidIncrementPct
         );
-    }
-
-    /// @notice Required implementation for IERC721Receiver
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
     }
 
     /// @notice Update `englishAuctionMinBidIncrementPct`
