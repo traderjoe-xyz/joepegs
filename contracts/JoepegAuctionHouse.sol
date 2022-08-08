@@ -166,12 +166,12 @@ contract JoepegAuctionHouse is
         address indexed newCurrencyManager
     );
     event EnglishAuctionMinBidIncrementPctSet(
-        uint256 oldEnglishAuctionMinBidIncrementPct,
-        uint256 newEnglishAuctionMinBidIncrementPct
+        uint256 indexed oldEnglishAuctionMinBidIncrementPct,
+        uint256 indexed newEnglishAuctionMinBidIncrementPct
     );
     event EnglishAuctionRefreshTimeSet(
-        uint96 oldEnglishAuctionRefreshTime,
-        uint96 newEnglishAuctionRefreshTime
+        uint96 indexed oldEnglishAuctionRefreshTime,
+        uint96 indexed newEnglishAuctionRefreshTime
     );
     event ProtocolFeeManagerSet(
         address indexed oldProtocolFeeManager,
