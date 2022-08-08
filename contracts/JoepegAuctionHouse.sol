@@ -582,7 +582,10 @@ contract JoepegAuctionHouse is
         external
         nonReentrant
     {
-        _settleDutchAuction(_collection, _tokenId);
+        DutchAuction memory auction = dutchAuctions[address(_collection)][
+            _tokenId
+        ];
+        _settleDutchAuction(_collection, _tokenId, auction);
     }
 
     /// @notice Settles a Dutch Auction with AVAX and/or WAVAX
@@ -600,7 +603,7 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__CurrencyMismatch();
         }
 
-        _settleDutchAuction(_collection, _tokenId);
+        _settleDutchAuction(_collection, _tokenId, auction);
     }
 
     /// @notice Calculates current Dutch Auction sale price for an ERC721 token
@@ -892,21 +895,20 @@ contract JoepegAuctionHouse is
     /// - Transfers ERC721 token to buyer
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
-    function _settleDutchAuction(IERC721 _collection, uint256 _tokenId)
-        internal
-    {
-        address collectionAddress = address(_collection);
-        DutchAuction memory auction = dutchAuctions[collectionAddress][
-            _tokenId
-        ];
-        if (auction.creator == address(0)) {
+    function _settleDutchAuction(
+        IERC721 _collection,
+        uint256 _tokenId,
+        DutchAuction memory _auction
+    ) internal {
+        if (_auction.creator == address(0)) {
             revert JoepegAuctionHouse__NoAuctionExists();
         }
-        if (msg.sender == auction.creator) {
+        if (msg.sender == _auction.creator) {
             revert JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
         }
 
         // Get auction sale price
+        address collectionAddress = address(_collection);
         uint256 salePrice = getDutchAuctionSalePrice(
             collectionAddress,
             _tokenId
@@ -914,7 +916,7 @@ contract JoepegAuctionHouse is
 
         delete dutchAuctions[collectionAddress][_tokenId];
 
-        if (auction.currency == WAVAX) {
+        if (_auction.currency == WAVAX) {
             // Transfer WAVAX if needed
             if (salePrice > msg.value) {
                 IERC20(WAVAX).safeTransferFrom(
@@ -937,28 +939,28 @@ contract JoepegAuctionHouse is
             _transferFeesAndFundsWithWAVAX(
                 collectionAddress,
                 _tokenId,
-                auction.creator,
+                _auction.creator,
                 salePrice,
-                auction.minPercentageToAsk
+                _auction.minPercentageToAsk
             );
         } else {
             _transferFeesAndFunds(
                 collectionAddress,
                 _tokenId,
-                IERC20(auction.currency),
+                IERC20(_auction.currency),
                 msg.sender,
-                auction.creator,
+                _auction.creator,
                 salePrice,
-                auction.minPercentageToAsk
+                _auction.minPercentageToAsk
             );
         }
 
         _collection.safeTransferFrom(address(this), msg.sender, _tokenId);
 
         emit DutchAuctionSettle(
-            auction.creator,
+            _auction.creator,
             msg.sender,
-            auction.currency,
+            _auction.currency,
             collectionAddress,
             _tokenId,
             salePrice
