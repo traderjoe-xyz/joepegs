@@ -209,7 +209,7 @@ describe("JoepegAuctionHouse", function () {
     expect(auction.minPercentageToAsk).to.be.equal(0);
   };
 
-  xdescribe("startEnglishAuction", function () {
+  describe("startEnglishAuction", function () {
     it("cannot start with unsupported currency", async function () {
       await expect(
         this.auctionHouse
@@ -319,7 +319,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("placeEnglishAuctionBid", function () {
+  describe("placeEnglishAuctionBid", function () {
     it("cannot bid on nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -563,7 +563,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
+  describe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
     it("cannot bid on nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -849,7 +849,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("settleEnglishAuction", function () {
+  describe("settleEnglishAuction", function () {
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -985,7 +985,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("cancelEnglishAuction", function () {
+  describe("cancelEnglishAuction", function () {
     it("cannot cancel non-existent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1030,7 +1030,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("emergencyCancelEnglishAuction", function () {
+  describe("emergencyCancelEnglishAuction", function () {
     it("non-contract owner cannot cancel auction", async function () {
       await startEnglishAuction();
       await expect(
@@ -1093,7 +1093,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("startDutchAuction", function () {
+  describe("startDutchAuction", function () {
     it("cannot start with unsupported currency", async function () {
       await expect(
         this.auctionHouse
@@ -1290,7 +1290,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("settleDutchAuction", function () {
+  describe("settleDutchAuction", function () {
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1434,7 +1434,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("settleDutchAuctionWithAVAXAndWAVAX", function () {
+  describe("settleDutchAuctionWithAVAXAndWAVAX", function () {
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1744,7 +1744,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("cancelDutchAuction", function () {
+  describe("cancelDutchAuction", function () {
     it("cannot cancel non-existent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1777,7 +1777,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("getDutchAuctionSalePrice", function () {
+  describe("getDutchAuctionSalePrice", function () {
     it("sale price is zero for non-existent auction", async function () {
       const salePrice = await this.auctionHouse.getDutchAuctionSalePrice(
         this.erc721Token.address,
@@ -1835,7 +1835,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("updateEnglishAuctionMinBidIncrementPct", function () {
+  describe("updateEnglishAuctionMinBidIncrementPct", function () {
     it("non-owner cannot update", async function () {
       await expect(
         this.auctionHouse
@@ -1876,7 +1876,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  xdescribe("updateEnglishAuctionRefreshTime", function () {
+  describe("updateEnglishAuctionRefreshTime", function () {
     it("non-owner cannot update", async function () {
       await expect(
         this.auctionHouse
@@ -1903,6 +1903,109 @@ describe("JoepegAuctionHouse", function () {
       expect(updatedEnglishAuctionRefreshTime).to.be.equal(
         newEnglishAuctionRefreshTime
       );
+    });
+  });
+
+  describe("updateCurrencyManager", function () {
+    it("non-owner cannot update", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .updateCurrencyManager("0x0000000000000000000000000000000000000001")
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot update to zero address", async function () {
+      await expect(
+        this.auctionHouse.updateCurrencyManager(ZERO_ADDRESS)
+      ).to.be.revertedWith("JoepegAuctionHouse__ExpectedNonNullAddress");
+    });
+
+    it("can successfully update", async function () {
+      const newCurrencyManager = "0x0000000000000000000000000000000000000001";
+      await this.auctionHouse.updateCurrencyManager(newCurrencyManager);
+      const updatedCurrencyManager = await this.auctionHouse.currencyManager();
+      expect(updatedCurrencyManager).to.be.equal(newCurrencyManager);
+    });
+  });
+
+  describe("updateProtocolFeeManager", function () {
+    it("non-owner cannot update", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .updateProtocolFeeManager(
+            "0x0000000000000000000000000000000000000001"
+          )
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot update to zero address", async function () {
+      await expect(
+        this.auctionHouse.updateProtocolFeeManager(ZERO_ADDRESS)
+      ).to.be.revertedWith("JoepegAuctionHouse__ExpectedNonNullAddress");
+    });
+
+    it("can successfully update", async function () {
+      const newProtocolFeeManager =
+        "0x0000000000000000000000000000000000000001";
+      await this.auctionHouse.updateProtocolFeeManager(newProtocolFeeManager);
+      const updatedProtocolFeeManager =
+        await this.auctionHouse.protocolFeeManager();
+      expect(updatedProtocolFeeManager).to.be.equal(newProtocolFeeManager);
+    });
+  });
+
+  describe("updateProtocolFeeRecipient", function () {
+    it("non-owner cannot update", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .updateProtocolFeeRecipient(
+            "0x0000000000000000000000000000000000000001"
+          )
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot update to zero address", async function () {
+      await expect(
+        this.auctionHouse.updateProtocolFeeRecipient(ZERO_ADDRESS)
+      ).to.be.revertedWith("JoepegAuctionHouse__ExpectedNonNullAddress");
+    });
+
+    it("can successfully update", async function () {
+      const newProtocolFeeRecipient =
+        "0x0000000000000000000000000000000000000001";
+      await this.auctionHouse.updateProtocolFeeRecipient(
+        newProtocolFeeRecipient
+      );
+      const updatedProtocolFeeRecipient =
+        await this.auctionHouse.protocolFeeRecipient();
+      expect(updatedProtocolFeeRecipient).to.be.equal(newProtocolFeeRecipient);
+    });
+  });
+
+  describe("updateRoyaltyFeeManager", function () {
+    it("non-owner cannot update", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .updateRoyaltyFeeManager("0x0000000000000000000000000000000000000001")
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot update to zero address", async function () {
+      await expect(
+        this.auctionHouse.updateRoyaltyFeeManager(ZERO_ADDRESS)
+      ).to.be.revertedWith("JoepegAuctionHouse__ExpectedNonNullAddress");
+    });
+
+    it("can successfully update", async function () {
+      const newRoyaltyFeeManager = "0x0000000000000000000000000000000000000001";
+      await this.auctionHouse.updateRoyaltyFeeManager(newRoyaltyFeeManager);
+      const updatedRoyaltyFeeManager =
+        await this.auctionHouse.royaltyFeeManager();
+      expect(updatedRoyaltyFeeManager).to.be.equal(newRoyaltyFeeManager);
     });
   });
 

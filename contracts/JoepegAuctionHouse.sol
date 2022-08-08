@@ -763,6 +763,9 @@ contract JoepegAuctionHouse is
     function _updateProtocolFeeRecipient(address _protocolFeeRecipient)
         internal
     {
+        if (_protocolFeeRecipient == address(0)) {
+            revert JoepegAuctionHouse__ExpectedNonNullAddress();
+        }
         address oldProtocolFeeRecipient = protocolFeeRecipient;
         protocolFeeRecipient = _protocolFeeRecipient;
         emit ProtocolFeeRecipientSet(

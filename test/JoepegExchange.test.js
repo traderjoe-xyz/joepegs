@@ -6,7 +6,7 @@ const {
   buildMakerAskOrderAndTakerBidOrder,
 } = require("./utils/maker-order.js");
 
-xdescribe("JoepegExchange", function () {
+describe("JoepegExchange", function () {
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.CurrencyManagerCF = await ethers.getContractFactory("CurrencyManager");

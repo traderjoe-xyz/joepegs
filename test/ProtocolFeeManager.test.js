@@ -3,7 +3,7 @@ const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 const { describe } = require("mocha");
 
-xdescribe("ProtocolFeeManager", function () {
+describe("ProtocolFeeManager", function () {
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.ProtocolFeeManagerCF = await ethers.getContractFactory(

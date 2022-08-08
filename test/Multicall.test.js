@@ -1,7 +1,7 @@
 const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
 
-xdescribe("Multicall", function () {
+describe("Multicall", function () {
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
     this.ERC1155TokenCF = await ethers.getContractFactory("ERC1155Token");
