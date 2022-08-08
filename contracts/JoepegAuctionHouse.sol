@@ -115,10 +115,10 @@ contract JoepegAuctionHouse is
     );
     event DutchAuctionSettle(
         address indexed creator,
-        address indexed buyer,
-        address indexed currency,
-        address collection,
-        uint256 tokenId,
+        address buyer,
+        address currency,
+        address indexed collection,
+        uint256 indexed tokenId,
         uint256 price
     );
     event DutchAuctionCancel(
@@ -139,26 +139,26 @@ contract JoepegAuctionHouse is
     );
     event EnglishAuctionPlaceBid(
         address indexed creator,
-        address indexed bidder,
-        address indexed currency,
-        address collection,
-        uint256 tokenId,
+        address bidder,
+        address currency,
+        address indexed collection,
+        uint256 indexed tokenId,
         uint256 bidAmount,
         uint96 endTime
     );
     event EnglishAuctionSettle(
         address indexed creator,
-        address indexed bidder,
-        address indexed currency,
-        address collection,
-        uint256 tokenId,
+        address bidder,
+        address currency,
+        address indexed collection,
+        uint256 indexed tokenId,
         uint256 price
     );
     event EnglishAuctionCancel(
         address indexed caller,
-        address indexed creator,
+        address creator,
         address indexed collection,
-        uint256 tokenId
+        uint256 indexed tokenId
     );
 
     event CurrencyManagerSet(
