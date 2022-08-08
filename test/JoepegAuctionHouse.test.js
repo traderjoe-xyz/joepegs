@@ -1434,7 +1434,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("settleDutchAuctionWithAVAXAndWAVAX", function () {
+  xdescribe("settleDutchAuctionWithAVAXAndWAVAX", function () {
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1741,6 +1741,39 @@ describe("JoepegAuctionHouse", function () {
       // Check NFT is transferred to bidder
       const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
       expect(erc721TokenOwner).to.be.equal(this.bob.address);
+    });
+  });
+
+  describe("cancelDutchAuction", function () {
+    it("cannot cancel non-existent auction", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .cancelDutchAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("JoepegAuctionHouse__OnlyAuctionCreatorCanCancel");
+    });
+
+    it("non-owner cannot cancel auction", async function () {
+      await startDutchAuction();
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .cancelDutchAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("JoepegAuctionHouse__OnlyAuctionCreatorCanCancel");
+    });
+
+    it("sucessfully cancels auction", async function () {
+      await startDutchAuction();
+      await this.auctionHouse
+        .connect(this.alice)
+        .cancelDutchAuction(this.erc721Token.address, aliceTokenId);
+
+      // Check dutchAuction data is deleted
+      await assertDutchAuctionIsDeleted();
+
+      // Check NFT is returned to seller
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.alice.address);
     });
   });
 
