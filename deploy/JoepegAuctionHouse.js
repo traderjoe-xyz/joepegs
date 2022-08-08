@@ -48,9 +48,6 @@ module.exports = async function ({
     royaltyFeeManager.address,
     proxyOwner,
   ];
-  // NOTE: We need to remember to call `updateTransferSelectorNFT` after deploy.
-  // We cannot simply do that in this deploy script to avoid circular dependency
-  // issue with `TransferSelectorNFT`
   await catchUnknownSigner(async () => {
     proxyContract = await deploy("JoepegAuctionHouse", {
       from: deployer,
