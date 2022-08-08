@@ -1777,7 +1777,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("getDutchAuctionSalePrice", function () {
+  xdescribe("getDutchAuctionSalePrice", function () {
     it("sale price is zero for non-existent auction", async function () {
       const salePrice = await this.auctionHouse.getDutchAuctionSalePrice(
         this.erc721Token.address,
@@ -1832,6 +1832,77 @@ describe("JoepegAuctionHouse", function () {
         aliceTokenId
       );
       expect(salePrice).to.be.equal(dutchAuctionEndPrice);
+    });
+  });
+
+  xdescribe("updateEnglishAuctionMinBidIncrementPct", function () {
+    it("non-owner cannot update", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .updateEnglishAuctionMinBidIncrementPct(
+            englishAuctionMinBidIncrementPct * 2
+          )
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot update to zero", async function () {
+      await expect(
+        this.auctionHouse.updateEnglishAuctionMinBidIncrementPct(0)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct"
+      );
+    });
+
+    it("cannot update to greater than 10_000", async function () {
+      await expect(
+        this.auctionHouse.updateEnglishAuctionMinBidIncrementPct(10_001)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct"
+      );
+    });
+
+    it("can successfully update", async function () {
+      const newEnglishAuctionMinBidIncrementPct =
+        englishAuctionMinBidIncrementPct * 2;
+      await this.auctionHouse.updateEnglishAuctionMinBidIncrementPct(
+        newEnglishAuctionMinBidIncrementPct
+      );
+      const updatedEnglishAuctionMinBidIncrementPct =
+        await this.auctionHouse.englishAuctionMinBidIncrementPct();
+      expect(updatedEnglishAuctionMinBidIncrementPct).to.be.equal(
+        newEnglishAuctionMinBidIncrementPct
+      );
+    });
+  });
+
+  xdescribe("updateEnglishAuctionRefreshTime", function () {
+    it("non-owner cannot update", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .updateEnglishAuctionRefreshTime(englishAuctionRefreshTime * 2)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot update to zero", async function () {
+      await expect(
+        this.auctionHouse.updateEnglishAuctionRefreshTime(0)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime"
+      );
+    });
+
+    it("can successfully update", async function () {
+      const newEnglishAuctionRefreshTime = englishAuctionRefreshTime * 2;
+      await this.auctionHouse.updateEnglishAuctionRefreshTime(
+        newEnglishAuctionRefreshTime
+      );
+      const updatedEnglishAuctionRefreshTime =
+        await this.auctionHouse.englishAuctionRefreshTime();
+      expect(updatedEnglishAuctionRefreshTime).to.be.equal(
+        newEnglishAuctionRefreshTime
+      );
     });
   });
 
