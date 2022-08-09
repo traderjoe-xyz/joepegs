@@ -56,6 +56,7 @@ contract JoepegAuctionHouse is
         uint96 startTime;
         address currency;
         uint96 endTime;
+        uint256 nonce;
         uint256 startPrice;
         uint256 endPrice;
         uint256 dropInterval;
@@ -67,6 +68,7 @@ contract JoepegAuctionHouse is
         address currency;
         address lastBidder;
         uint96 endTime;
+        uint256 nonce;
         uint256 lastBidPrice;
         uint256 startPrice;
         uint256 minPercentageToAsk;
@@ -81,6 +83,10 @@ contract JoepegAuctionHouse is
     IRoyaltyFeeManager public royaltyFeeManager;
 
     address public protocolFeeRecipient;
+
+    /// @notice Stores latest auction nonce per user
+    /// @dev (user address => latest nonce)
+    mapping(address => uint256) public userLatestAuctionNonce;
 
     /// @notice Stores Dutch Auction data for NFTs
     /// @dev (collection address => token id => dutch auction)
@@ -106,6 +112,7 @@ contract JoepegAuctionHouse is
         address currency,
         address indexed collection,
         uint256 indexed tokenId,
+        uint256 nonce,
         uint256 startPrice,
         uint256 endPrice,
         uint96 startTime,
@@ -119,12 +126,14 @@ contract JoepegAuctionHouse is
         address currency,
         address indexed collection,
         uint256 indexed tokenId,
+        uint256 nonce,
         uint256 price
     );
     event DutchAuctionCancel(
         address indexed creator,
         address indexed collection,
-        uint256 indexed tokenId
+        uint256 indexed tokenId,
+        uint256 nonce
     );
 
     event EnglishAuctionStart(
@@ -132,6 +141,7 @@ contract JoepegAuctionHouse is
         address currency,
         address indexed collection,
         uint256 indexed tokenId,
+        uint256 nonce,
         uint256 startPrice,
         uint96 startTime,
         uint96 endTime,
@@ -143,6 +153,7 @@ contract JoepegAuctionHouse is
         address currency,
         address indexed collection,
         uint256 indexed tokenId,
+        uint256 nonce,
         uint256 bidAmount,
         uint96 endTime
     );
@@ -152,13 +163,15 @@ contract JoepegAuctionHouse is
         address currency,
         address indexed collection,
         uint256 indexed tokenId,
+        uint256 nonce,
         uint256 price
     );
     event EnglishAuctionCancel(
         address indexed caller,
         address creator,
         address indexed collection,
-        uint256 indexed tokenId
+        uint256 indexed tokenId,
+        uint256 nonce
     );
 
     event CurrencyManagerSet(
@@ -288,9 +301,11 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__AuctionAlreadyExists();
         }
 
+        uint256 nonce = userLatestAuctionNonce[msg.sender];
         uint96 timestamp = block.timestamp.toUint96();
         EnglishAuction memory auction = EnglishAuction({
             creator: msg.sender,
+            nonce: nonce,
             currency: address(_currency),
             lastBidder: address(0),
             lastBidPrice: 0,
@@ -299,6 +314,7 @@ contract JoepegAuctionHouse is
             minPercentageToAsk: _minPercentageToAsk
         });
         englishAuctions[collectionAddress][_tokenId] = auction;
+        userLatestAuctionNonce[msg.sender] = nonce + 1;
 
         // Hold ERC721 token in escrow
         _collection.safeTransferFrom(msg.sender, address(this), _tokenId);
@@ -308,6 +324,7 @@ contract JoepegAuctionHouse is
             auction.currency,
             collectionAddress,
             _tokenId,
+            auction.nonce,
             auction.startPrice,
             timestamp,
             auction.endTime,
@@ -436,6 +453,7 @@ contract JoepegAuctionHouse is
             auction.currency,
             collectionAddress,
             _tokenId,
+            auction.nonce,
             auction.lastBidPrice
         );
     }
@@ -469,7 +487,8 @@ contract JoepegAuctionHouse is
             msg.sender,
             auction.creator,
             collectionAddress,
-            _tokenId
+            _tokenId,
+            auction.nonce
         );
     }
 
@@ -503,7 +522,8 @@ contract JoepegAuctionHouse is
             msg.sender,
             auction.creator,
             collectionAddress,
-            _tokenId
+            _tokenId,
+            auction.nonce
         );
     }
 
@@ -549,6 +569,7 @@ contract JoepegAuctionHouse is
         uint96 timestamp = block.timestamp.toUint96();
         DutchAuction memory auction = DutchAuction({
             creator: msg.sender,
+            nonce: userLatestAuctionNonce[msg.sender],
             currency: address(_currency),
             startPrice: _startPrice,
             endPrice: _endPrice,
@@ -558,6 +579,7 @@ contract JoepegAuctionHouse is
             minPercentageToAsk: _minPercentageToAsk
         });
         dutchAuctions[collectionAddress][_tokenId] = auction;
+        userLatestAuctionNonce[msg.sender] += 1;
 
         _collection.safeTransferFrom(msg.sender, address(this), _tokenId);
 
@@ -566,6 +588,7 @@ contract JoepegAuctionHouse is
             auction.currency,
             collectionAddress,
             _tokenId,
+            auction.nonce,
             auction.startPrice,
             auction.endPrice,
             auction.startTime,
@@ -651,7 +674,12 @@ contract JoepegAuctionHouse is
 
         _collection.safeTransferFrom(address(this), auction.creator, _tokenId);
 
-        emit DutchAuctionCancel(auction.creator, collectionAddress, _tokenId);
+        emit DutchAuctionCancel(
+            auction.creator,
+            collectionAddress,
+            _tokenId,
+            auction.nonce
+        );
     }
 
     /// @notice Update `englishAuctionMinBidIncrementPct`
@@ -884,6 +912,7 @@ contract JoepegAuctionHouse is
             auction.currency,
             collectionAddress,
             _tokenId,
+            auction.nonce,
             auction.lastBidPrice,
             auction.endTime
         );
@@ -963,6 +992,7 @@ contract JoepegAuctionHouse is
             _auction.currency,
             collectionAddress,
             _tokenId,
+            _auction.nonce,
             salePrice
         );
     }

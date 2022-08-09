@@ -310,12 +310,17 @@ describe("JoepegAuctionHouse", function () {
         aliceTokenId
       );
       expect(auction.creator).to.be.equal(this.alice.address);
+      expect(auction.nonce).to.be.equal(0);
       expect(auction.currency).to.be.equal(WAVAX);
       expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
       expect(auction.endTime).to.be.equal(startTime.add(auctionDuration));
       expect(auction.lastBidPrice).to.be.equal(0);
       expect(auction.startPrice).to.be.equal(englishAuctionStartPrice);
       expect(auction.minPercentageToAsk).to.be.equal(minPercentageToAsk);
+
+      const userLatestAuctionNonce =
+        await this.auctionHouse.userLatestAuctionNonce(this.alice.address);
+      expect(userLatestAuctionNonce).to.be.equal(1);
     });
   });
 
@@ -1280,6 +1285,7 @@ describe("JoepegAuctionHouse", function () {
         aliceTokenId
       );
       expect(auction.creator).to.be.equal(this.alice.address);
+      expect(auction.nonce).to.be.equal(0);
       expect(auction.currency).to.be.equal(WAVAX);
       expect(auction.startPrice).to.be.equal(dutchAuctionStartPrice);
       expect(auction.endPrice).to.be.equal(dutchAuctionEndPrice);
@@ -1287,6 +1293,10 @@ describe("JoepegAuctionHouse", function () {
       expect(auction.endTime).to.be.equal(startTime.add(auctionDuration));
       expect(auction.dropInterval).to.be.equal(dutchAuctionDropInterval);
       expect(auction.minPercentageToAsk).to.be.equal(minPercentageToAsk);
+
+      const userLatestAuctionNonce =
+        await this.auctionHouse.userLatestAuctionNonce(this.alice.address);
+      expect(userLatestAuctionNonce).to.be.equal(1);
     });
   });
 
