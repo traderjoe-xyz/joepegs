@@ -159,7 +159,7 @@ contract JoepegAuctionHouse is
     );
     event EnglishAuctionSettle(
         address indexed creator,
-        address bidder,
+        address buyer,
         address currency,
         address indexed collection,
         uint256 indexed tokenId,
