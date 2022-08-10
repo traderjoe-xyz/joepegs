@@ -226,16 +226,6 @@ contract JoepegAuctionHouse is
         }
     }
 
-    /// @notice Required implementation for IERC721Receiver
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
-
     ///  @notice Constructor
     ///  @param _wavax address of WAVAX
     constructor(address _wavax) {
@@ -268,6 +258,16 @@ contract JoepegAuctionHouse is
         _updateProtocolFeeManager(_protocolFeeManager);
         _updateRoyaltyFeeManager(_royaltyFeeManager);
         _updateProtocolFeeRecipient(_protocolFeeRecipient);
+    }
+
+    /// @notice Required implementation for IERC721Receiver
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 
     /// @notice Starts an English Auction for an ERC721 token
@@ -421,25 +421,15 @@ contract JoepegAuctionHouse is
         delete englishAuctions[collectionAddress][_tokenId];
 
         // Settle auction using latest bid
-        if (auction.currency == WAVAX) {
-            _transferFeesAndFundsWithWAVAX(
-                collectionAddress,
-                _tokenId,
-                auction.creator,
-                auction.lastBidPrice,
-                auction.minPercentageToAsk
-            );
-        } else {
-            _transferFeesAndFunds(
-                collectionAddress,
-                _tokenId,
-                IERC20(auction.currency),
-                address(this),
-                auction.creator,
-                auction.lastBidPrice,
-                auction.minPercentageToAsk
-            );
-        }
+        _transferFeesAndFunds(
+            collectionAddress,
+            _tokenId,
+            IERC20(auction.currency),
+            address(this),
+            auction.creator,
+            auction.lastBidPrice,
+            auction.minPercentageToAsk
+        );
 
         _collection.safeTransferFrom(
             address(this),
@@ -965,9 +955,11 @@ contract JoepegAuctionHouse is
                 IERC20(WAVAX).safeTransfer(msg.sender, msg.value - salePrice);
             }
 
-            _transferFeesAndFundsWithWAVAX(
+            _transferFeesAndFunds(
                 collectionAddress,
                 _tokenId,
+                IERC20(WAVAX),
+                address(this),
                 _auction.creator,
                 salePrice,
                 _auction.minPercentageToAsk
@@ -1082,89 +1074,6 @@ contract JoepegAuctionHouse is
         // 3. Transfer final amount (post-fees) to seller
         {
             _currency.safeTransferFrom(_from, _to, finalSellerAmount);
-        }
-    }
-
-    /// @notice Transfer fees and funds in AVAX using WAVAX to royalty recipient,
-    /// protocol, and seller
-    /// @param _collection address of ERC721 token
-    /// @param _tokenId token id of ERC721 token
-    /// @param _to seller's recipient
-    /// @param _amount amount of WAVAX being transferred
-    /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
-    function _transferFeesAndFundsWithWAVAX(
-        address _collection,
-        uint256 _tokenId,
-        address _to,
-        uint256 _amount,
-        uint256 _minPercentageToAsk
-    ) internal {
-        // Initialize the final amount that is transferred to seller
-        uint256 finalSellerAmount = _amount;
-
-        // 1. Protocol fee
-        {
-            uint256 protocolFeeAmount = _calculateProtocolFee(
-                _collection,
-                _amount
-            );
-            address _protocolFeeRecipient = protocolFeeRecipient;
-
-            // Check if the protocol fee is different than 0 for this strategy
-            if (
-                (_protocolFeeRecipient != address(0)) &&
-                (protocolFeeAmount != 0)
-            ) {
-                IERC20(WAVAX).safeTransfer(
-                    protocolFeeRecipient,
-                    protocolFeeAmount
-                );
-                finalSellerAmount -= protocolFeeAmount;
-            }
-        }
-
-        // 2. Royalty fee
-        {
-            (
-                address royaltyFeeRecipient,
-                uint256 royaltyFeeAmount
-            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
-                    _collection,
-                    _tokenId,
-                    _amount
-                );
-
-            // Check if there is a royalty fee and that it is different to 0
-            if (
-                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
-            ) {
-                IERC20(WAVAX).safeTransfer(
-                    royaltyFeeRecipient,
-                    royaltyFeeAmount
-                );
-                finalSellerAmount -= royaltyFeeAmount;
-
-                emit RoyaltyPayment(
-                    _collection,
-                    _tokenId,
-                    royaltyFeeRecipient,
-                    address(WAVAX),
-                    royaltyFeeAmount
-                );
-            }
-        }
-
-        // Ensure seller gets minimum expected fees
-        if (
-            finalSellerAmount * PERCENTAGE_PRECISION <
-            _minPercentageToAsk * _amount
-        ) {
-            revert JoepegAuctionHouse__FeesHigherThanExpected();
-        }
-
-        // 3. Transfer final amount (post-fees) to seller
-        {
-            IERC20(WAVAX).safeTransfer(_to, finalSellerAmount);
         }
     }
 
