@@ -43,7 +43,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc721Token.address,
         recipient: recipient,
         tokenId: 1,
-        quantity: 0,
+        amount: 0,
       },
     ];
 
@@ -58,7 +58,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc1155Token.address,
         recipient: recipient,
         tokenId: token.id,
-        quantity: token.amount,
+        amount: token.amount,
       },
     ];
 
@@ -84,7 +84,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc721Token.address,
         recipient: recipient,
         tokenId: 1,
-        quantity: 0,
+        amount: 0,
       },
     ];
 
@@ -99,7 +99,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc1155Token.address,
         recipient: recipient,
         tokenId: token.id,
-        quantity: token.amount,
+        amount: token.amount,
       },
     ];
 
@@ -127,7 +127,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc721Token.address,
         recipient: recipient,
         tokenId: tokenId,
-        quantity: 0,
+        amount: 0,
       };
     });
 
@@ -163,7 +163,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc1155Token.address,
         recipient: recipient,
         tokenId: token.id,
-        quantity: token.amount,
+        amount: token.amount,
       };
     });
 
@@ -198,7 +198,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc1155Token.address,
         recipient: recipient,
         tokenId: token.id,
-        quantity: token.amount,
+        amount: token.amount,
       };
     });
     const transfersERC721 = tokenIds.map((tokenId) => {
@@ -206,7 +206,7 @@ describe("BatchTransferNFT", function () {
         nft: this.erc721Token.address,
         recipient: recipient,
         tokenId: tokenId,
-        quantity: 0,
+        amount: 0,
       };
     });
 

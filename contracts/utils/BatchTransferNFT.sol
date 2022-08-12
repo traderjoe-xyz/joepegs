@@ -13,22 +13,22 @@ contract BatchTransferNFT {
         address nft;
         address recipient;
         uint256 tokenId;
-        uint256 quantity;
+        uint256 amount;
     }
 
     /**
      * @notice Batch transfer different NFT in a single call
      * @param _transfers The list of transfer.
-     * The quantity defines the type of NFT:
-     *  - quantity = 0: ERC721
-     *  - quantity > 0: ERC1155
+     * The amount defines the type of NFT:
+     *  - amount = 0: ERC721
+     *  - amount > 0: ERC1155
      */
     function batchTransfer(Transfer[] calldata _transfers) external {
         uint256 _length = _transfers.length;
         unchecked {
             for (uint256 i; i < _length; ++i) {
                 Transfer memory _transfer = _transfers[i];
-                if (_transfer.quantity == 0) {
+                if (_transfer.amount == 0) {
                     IERC721(_transfer.nft).safeTransferFrom(
                         msg.sender,
                         _transfer.recipient,
@@ -40,7 +40,7 @@ contract BatchTransferNFT {
                         msg.sender,
                         _transfer.recipient,
                         _transfer.tokenId,
-                        _transfer.quantity,
+                        _transfer.amount,
                         ""
                     );
                 }
