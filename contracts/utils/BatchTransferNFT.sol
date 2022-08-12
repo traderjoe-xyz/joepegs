@@ -32,8 +32,7 @@ contract BatchTransferNFT {
                     IERC721(_transfer.nft).safeTransferFrom(
                         msg.sender,
                         _transfer.recipient,
-                        _transfer.tokenId,
-                        ""
+                        _transfer.tokenId
                     );
                 } else {
                     IERC1155(_transfer.nft).safeTransferFrom(
