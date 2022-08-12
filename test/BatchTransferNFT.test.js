@@ -35,6 +35,7 @@ describe("BatchTransferNFT", function () {
       )
     );
   });
+
   it("Should revert if the contract isn't approved", async function () {
     const recipient = this.bob.address;
 
@@ -65,6 +66,56 @@ describe("BatchTransferNFT", function () {
     await expect(
       this.batchTransferNFT.connect(this.alice).batchTransfer(transfersERC1155)
     ).to.be.revertedWith("ERC1155: caller is not owner nor approved");
+  });
+
+  it("Should revert if the contract is paused, and pass when unpaused", async function () {
+    const recipient = this.bob.address;
+
+    const transfersERC721 = [
+      {
+        nft: this.erc721Token.address,
+        recipient: recipient,
+        tokenId: 1,
+        amount: 0,
+      },
+    ];
+
+    await this.erc721Token
+      .connect(this.alice)
+      .setApprovalForAll(this.batchTransferNFT.address, true);
+
+    await this.batchTransferNFT.pause();
+
+    await expect(
+      this.batchTransferNFT.connect(this.alice).batchTransfer(transfersERC721)
+    ).to.be.revertedWith("Pausable: paused");
+
+    await this.batchTransferNFT.unpause();
+
+    await this.batchTransferNFT
+      .connect(this.alice)
+      .batchTransfer(transfersERC721);
+  });
+
+  it("Should revert if the contract doesn't support IERC721 or IERC1155", async function () {
+    const recipient = this.bob.address;
+
+    const transfersERC721 = [
+      {
+        nft: this.batchTransferNFT.address,
+        recipient: recipient,
+        tokenId: 1,
+        amount: 0,
+      },
+    ];
+
+    await this.erc721Token
+      .connect(this.alice)
+      .setApprovalForAll(this.batchTransferNFT.address, true);
+
+    await expect(
+      this.batchTransferNFT.connect(this.alice).batchTransfer(transfersERC721)
+    ).to.be.revertedWith("BatchTransferNFT__UnsupportedContract");
   });
 
   it("Should revert if another user tries to transfer NFTs even if the user has approved the contract", async function () {
