@@ -1870,7 +1870,7 @@ describe("JoepegAuctionHouse", function () {
 
   describe("cancelDutchAuction", function () {
     it("cannot cancel when paused", async function () {
-      await this.startDutchAuction();
+      await startDutchAuction();
       await this.auctionHouse.pause();
 
       await expect(
