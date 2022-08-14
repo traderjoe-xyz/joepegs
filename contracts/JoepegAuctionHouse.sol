@@ -155,7 +155,7 @@ contract JoepegAuctionHouse is
         uint256 indexed tokenId,
         uint256 nonce,
         uint256 bidAmount,
-        uint96 endTime
+        uint96 endTimeExtension
     );
     event EnglishAuctionSettle(
         address indexed creator,
@@ -846,8 +846,10 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
         }
 
+        uint96 endTimeExtension;
         if (auction.endTime - block.timestamp <= englishAuctionRefreshTime) {
-            auction.endTime += englishAuctionRefreshTime;
+            endTimeExtension = englishAuctionRefreshTime;
+            auction.endTime += endTimeExtension;
         }
 
         if (auction.lastBidPrice == 0) {
@@ -904,7 +906,7 @@ contract JoepegAuctionHouse is
             _tokenId,
             auction.nonce,
             auction.lastBidPrice,
-            auction.endTime
+            endTimeExtension
         );
     }
 
