@@ -130,7 +130,8 @@ contract JoepegAuctionHouse is
         uint256 price
     );
     event DutchAuctionCancel(
-        address indexed creator,
+        address indexed caller,
+        address creator,
         address indexed collection,
         uint256 indexed tokenId,
         uint256 nonce
@@ -665,6 +666,36 @@ contract JoepegAuctionHouse is
         _collection.safeTransferFrom(address(this), auction.creator, _tokenId);
 
         emit DutchAuctionCancel(
+            msg.sender,
+            auction.creator,
+            collectionAddress,
+            _tokenId,
+            auction.nonce
+        );
+    }
+
+    /// @notice Only owner function to cancel a Dutch Auction in case of emergencies
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    function emergencyCancelDutchAuction(IERC721 _collection, uint256 _tokenId)
+        external
+        nonReentrant
+        onlyOwner
+    {
+        address collectionAddress = address(_collection);
+        DutchAuction memory auction = dutchAuctions[collectionAddress][
+            _tokenId
+        ];
+        if (auction.creator == address(0)) {
+            revert JoepegAuctionHouse__NoAuctionExists();
+        }
+
+        delete dutchAuctions[collectionAddress][_tokenId];
+
+        _collection.safeTransferFrom(address(this), auction.creator, _tokenId);
+
+        emit DutchAuctionCancel(
+            msg.sender,
             auction.creator,
             collectionAddress,
             _tokenId,

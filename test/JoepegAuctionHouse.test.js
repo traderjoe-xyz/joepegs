@@ -1787,6 +1787,41 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
+  describe("emergencyCancelDutchAuction", function () {
+    it("non-contract owner cannot cancel auction", async function () {
+      await startDutchAuction();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .emergencyCancelDutchAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("cannot cancel non-existent auction", async function () {
+      await expect(
+        this.auctionHouse.emergencyCancelDutchAuction(
+          this.erc721Token.address,
+          aliceTokenId
+        )
+      ).to.be.revertedWith("JoepegAuctionHouse__NoAuctionExists");
+    });
+
+    it("sucessfully cancels auction", async function () {
+      await startDutchAuction();
+      await this.auctionHouse.emergencyCancelDutchAuction(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+
+      // Check dutchAuction data is deleted
+      await assertDutchAuctionIsDeleted();
+
+      // Check NFT is returned to seller
+      const erc721TokenOwner = await this.erc721Token.ownerOf(aliceTokenId);
+      expect(erc721TokenOwner).to.be.equal(this.alice.address);
+    });
+  });
+
   describe("getDutchAuctionSalePrice", function () {
     it("sale price is zero for non-existent auction", async function () {
       const salePrice = await this.auctionHouse.getDutchAuctionSalePrice(
