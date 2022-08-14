@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -14,6 +15,8 @@ import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
+error JoepegAuctionHouse__AlreadyPaused();
+error JoepegAuctionHouse__AlreadyUnpaused();
 error JoepegAuctionHouse__AuctionAlreadyExists();
 error JoepegAuctionHouse__CurrencyMismatch();
 error JoepegAuctionHouse__ExpectedNonNullAddress();
@@ -45,6 +48,7 @@ error JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
 contract JoepegAuctionHouse is
     Initializable,
     OwnableUpgradeable,
+    PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     IERC721Receiver
 {
@@ -249,6 +253,7 @@ contract JoepegAuctionHouse is
         address _protocolFeeRecipient
     ) public initializer {
         __Ownable_init();
+        __Pausable_init();
         __ReentrancyGuard_init();
 
         _updateEnglishAuctionMinBidIncrementPct(
@@ -288,6 +293,7 @@ contract JoepegAuctionHouse is
         uint256 _minPercentageToAsk
     )
         external
+        whenNotPaused
         isSupportedCurrency(_currency)
         isValidMinPercentageToAsk(_minPercentageToAsk)
         nonReentrant
@@ -341,7 +347,7 @@ contract JoepegAuctionHouse is
         IERC721 _collection,
         uint256 _tokenId,
         uint256 _amount
-    ) external nonReentrant {
+    ) external whenNotPaused nonReentrant {
         EnglishAuction memory auction = englishAuctions[address(_collection)][
             _tokenId
         ];
@@ -362,7 +368,7 @@ contract JoepegAuctionHouse is
         IERC721 _collection,
         uint256 _tokenId,
         uint256 _wavaxAmount
-    ) external payable nonReentrant {
+    ) external payable whenNotPaused nonReentrant {
         EnglishAuction memory auction = englishAuctions[address(_collection)][
             _tokenId
         ];
@@ -401,6 +407,7 @@ contract JoepegAuctionHouse is
     /// @param _tokenId token id of ERC721 token
     function settleEnglishAuction(IERC721 _collection, uint256 _tokenId)
         external
+        whenNotPaused
         nonReentrant
     {
         address collectionAddress = address(_collection);
@@ -457,6 +464,7 @@ contract JoepegAuctionHouse is
     /// @param _tokenId token id of ERC721 token
     function cancelEnglishAuction(IERC721 _collection, uint256 _tokenId)
         external
+        whenNotPaused
         nonReentrant
     {
         address collectionAddress = address(_collection);
@@ -542,6 +550,7 @@ contract JoepegAuctionHouse is
         uint256 _minPercentageToAsk
     )
         external
+        whenNotPaused
         isSupportedCurrency(_currency)
         isValidMinPercentageToAsk(_minPercentageToAsk)
         nonReentrant
@@ -594,6 +603,7 @@ contract JoepegAuctionHouse is
     /// @param _tokenId token id of ERC721 token
     function settleDutchAuction(IERC721 _collection, uint256 _tokenId)
         external
+        whenNotPaused
         nonReentrant
     {
         DutchAuction memory auction = dutchAuctions[address(_collection)][
@@ -608,7 +618,7 @@ contract JoepegAuctionHouse is
     function settleDutchAuctionWithAVAXAndWAVAX(
         IERC721 _collection,
         uint256 _tokenId
-    ) external payable nonReentrant {
+    ) external payable whenNotPaused nonReentrant {
         DutchAuction memory auction = dutchAuctions[address(_collection)][
             _tokenId
         ];
@@ -651,6 +661,7 @@ contract JoepegAuctionHouse is
     /// @param _tokenId token id of ERC721 token
     function cancelDutchAuction(IERC721 _collection, uint256 _tokenId)
         external
+        whenNotPaused
         nonReentrant
     {
         address collectionAddress = address(_collection);
@@ -701,6 +712,24 @@ contract JoepegAuctionHouse is
             _tokenId,
             auction.nonce
         );
+    }
+
+    ///  @notice Function to pause the contract
+    ///  @dev Only callable by owner
+    function pause() external onlyOwner {
+        if (paused()) {
+            revert JoepegAuctionHouse__AlreadyPaused();
+        }
+        _pause();
+    }
+
+    /// @notice Function to unpause the contract
+    /// @dev Only callable by owner
+    function unpause() external onlyOwner {
+        if (!paused()) {
+            revert JoepegAuctionHouse__AlreadyUnpaused();
+        }
+        _unpause();
     }
 
     /// @notice Update `englishAuctionMinBidIncrementPct`

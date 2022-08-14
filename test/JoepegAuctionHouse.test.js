@@ -210,6 +210,22 @@ describe("JoepegAuctionHouse", function () {
   };
 
   describe("startEnglishAuction", function () {
+    it("cannot start when paused", async function () {
+      await this.auctionHouse.pause();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .startEnglishAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            auctionDuration,
+            englishAuctionStartPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot start with unsupported currency", async function () {
       await expect(
         this.auctionHouse
@@ -325,6 +341,20 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("placeEnglishAuctionBid", function () {
+    it("cannot bid when paused", async function () {
+      await startEnglishAuction();
+      await this.auctionHouse.pause();
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot bid on nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -569,6 +599,22 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
+    it("cannot bid when paused", async function () {
+      await startEnglishAuction();
+      await this.auctionHouse.pause();
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBidWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            0,
+            { value: englishAuctionStartPrice }
+          )
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot bid on nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -855,6 +901,18 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("settleEnglishAuction", function () {
+    it("cannot settle when paused", async function () {
+      await startEnglishAuction();
+      await placeEnglishAuctionBid();
+      await this.auctionHouse.pause();
+
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .settleEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -991,6 +1049,17 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("cancelEnglishAuction", function () {
+    it("cannot cancel when paused", async function () {
+      await startEnglishAuction();
+      await this.auctionHouse.pause();
+
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .cancelEnglishAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot cancel non-existent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1099,6 +1168,24 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("startDutchAuction", function () {
+    it("cannot start when paused", async function () {
+      await this.auctionHouse.pause();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .startDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot start with unsupported currency", async function () {
       await expect(
         this.auctionHouse
@@ -1301,6 +1388,18 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("settleDutchAuction", function () {
+    it("cannot settle when paused", async function () {
+      await startDutchAuction();
+      await depositAndApproveWAVAX(this.bob, dutchAuctionStartPrice);
+      await this.auctionHouse.pause();
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .settleDutchAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1445,6 +1544,21 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("settleDutchAuctionWithAVAXAndWAVAX", function () {
+    it("cannot settle when paused", async function () {
+      await startDutchAuction();
+      await this.auctionHouse.pause();
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .settleDutchAuctionWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            { value: dutchAuctionStartPrice }
+          )
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot settle nonexistent auction", async function () {
       await expect(
         this.auctionHouse
@@ -1755,6 +1869,17 @@ describe("JoepegAuctionHouse", function () {
   });
 
   describe("cancelDutchAuction", function () {
+    it("cannot cancel when paused", async function () {
+      await this.startDutchAuction();
+      await this.auctionHouse.pause();
+
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .cancelDutchAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
     it("cannot cancel non-existent auction", async function () {
       await expect(
         this.auctionHouse
