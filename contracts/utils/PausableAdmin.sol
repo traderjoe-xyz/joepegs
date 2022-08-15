@@ -51,6 +51,15 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
     }
 
     /**
+     * @notice View function to check whether an user is an admin (true) or not (false)
+     * @param _user The address of the user
+     * @return Whether the user is an admin (true) or not (false)
+     */
+    function isPauseAdmin(address _user) external view override returns (bool) {
+        return _pauseAdmins.contains(_user);
+    }
+
+    /**
      * @dev Returns true if this contract implements the interface defined by
      * `interfaceId`. See the corresponding
      * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]

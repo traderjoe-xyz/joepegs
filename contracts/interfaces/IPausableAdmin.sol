@@ -9,6 +9,8 @@ interface IPausableAdmin {
 
     function getPauseAdminAt(uint256 _index) external view returns (address);
 
+    function isPauseAdmin(address _user) external view returns (bool);
+
     function getNumberOfPauseAdmin() external view returns (uint256);
 
     function addPauseAdmin(address _newAdmin) external;
