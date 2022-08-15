@@ -60,7 +60,7 @@ contract PendingOwnable is IERC165, IPendingOwnable {
      * @notice Returns the address of the current owner
      * @return The address of the current owner
      */
-    function owner() public view override returns (address) {
+    function owner() public view virtual override returns (address) {
         return _owner;
     }
 
@@ -68,7 +68,7 @@ contract PendingOwnable is IERC165, IPendingOwnable {
      * @notice Returns the address of the current pending owner
      * @return The address of the current pending owner
      */
-    function pendingOwner() public view override returns (address) {
+    function pendingOwner() public view virtual override returns (address) {
         return _pendingOwner;
     }
 
@@ -76,7 +76,12 @@ contract PendingOwnable is IERC165, IPendingOwnable {
      * @notice Sets the pending owner address. This address will be able to become
      * the owner of this contract by calling {becomeOwner}
      */
-    function setPendingOwner(address pendingOwner_) public override onlyOwner {
+    function setPendingOwner(address pendingOwner_)
+        public
+        virtual
+        override
+        onlyOwner
+    {
         if (_pendingOwner != address(0))
             revert PendingOwnable__PendingOwnerAlreadySet();
         _setPendingOwner(pendingOwner_);
@@ -87,7 +92,7 @@ contract PendingOwnable is IERC165, IPendingOwnable {
      * call {becomeOwner} to become the owner anymore.
      * Can only be called by the owner
      */
-    function revokePendingOwner() public override onlyOwner {
+    function revokePendingOwner() public virtual override onlyOwner {
         if (_pendingOwner == address(0))
             revert PendingOwnable__NoPendingOwner();
         _setPendingOwner(address(0));
@@ -97,7 +102,7 @@ contract PendingOwnable is IERC165, IPendingOwnable {
      * @notice Transfers the ownership to the new owner (`pendingOwner).
      * Can only be called by the pending owner
      */
-    function becomeOwner() public override onlyPendingOwner {
+    function becomeOwner() public virtual override onlyPendingOwner {
         _transferOwnership(msg.sender);
     }
 
@@ -108,7 +113,7 @@ contract PendingOwnable is IERC165, IPendingOwnable {
      * NOTE: Renouncing ownership will leave the contract without an owner,
      * thereby removing any functionality that is only available to the owner.
      */
-    function renounceOwnership() public override onlyOwner {
+    function renounceOwnership() public virtual override onlyOwner {
         _transferOwnership(address(0));
     }
 
