@@ -56,9 +56,9 @@ describe("BatchTransferNFT", function () {
       this.pausableAdmin.connect(this.alice).unpause()
     ).to.be.revertedWith("PendingOwnable__NotOwner");
 
-    await this.pausableAdmin.revokePauseAdmin();
+    await this.pausableAdmin.renouncePauseAdmin();
 
-    await expect(this.pausableAdmin.revokePauseAdmin()).to.be.revertedWith(
+    await expect(this.pausableAdmin.renouncePauseAdmin()).to.be.revertedWith(
       "PausableAdmin__AddressIsNotPauseAdmin"
     );
   });

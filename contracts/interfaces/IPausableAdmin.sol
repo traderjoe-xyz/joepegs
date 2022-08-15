@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 interface IPausableAdmin {
     event PauseAdminAdded(address newAdmin);
     event PauseAdminRemoved(address sender, address removedAdmin);
-    event PauseAdminRevoked(address revokedAdmin);
 
     function getPauseAdminAt(uint256 _index) external view returns (address);
 
@@ -17,5 +16,5 @@ interface IPausableAdmin {
 
     function removePauseAdmin(address _admin) external;
 
-    function revokePauseAdmin() external;
+    function renouncePauseAdmin() external;
 }
