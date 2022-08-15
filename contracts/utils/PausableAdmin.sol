@@ -98,11 +98,11 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
     }
 
     /**
-     * @notice Function callable by any admin to revoke their role
+     * @notice Function callable by any admin to renounce their role
      * @dev Only callable by the admin himself
      */
-    function revokePauseAdmin() external override {
-        _revokePauseAdmin(msg.sender);
+    function renouncePauseAdmin() external override {
+        _removePauseAdmin(msg.sender);
     }
 
     /**
@@ -141,14 +141,5 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
         if (!_pauseAdmins.remove(_admin))
             revert PausableAdmin__AddressIsNotPauseAdmin(_admin);
         emit PauseAdminRemoved(msg.sender, _admin);
-    }
-
-    /**
-     * @notice Internal function to revoke the role of an admin
-     */
-    function _revokePauseAdmin(address _revokedAdmin) internal {
-        if (!_pauseAdmins.remove(_revokedAdmin))
-            revert PausableAdmin__AddressIsNotPauseAdmin(_revokedAdmin);
-        emit PauseAdminRevoked(_revokedAdmin);
     }
 }
