@@ -80,6 +80,23 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
     }
 
     /**
+     * @notice Transfers the ownership to the new owner (`pendingOwner).
+     * This will also remove the previousOwner of PauseAdmin and add the new owner.
+     * Can only be called by the pending owner (checked within the `super.becomeOwner()`)
+     */
+    function becomeOwner() public virtual override {
+        address _previousOwner = owner();
+
+        if (!_pauseAdmins.contains(msg.sender)) {
+            _addPauseAdmin(msg.sender);
+        }
+        if (_pauseAdmins.contains(_previousOwner)) {
+            _removePauseAdmin(_previousOwner);
+        }
+        super.becomeOwner();
+    }
+
+    /**
      * @notice Function to add a pause admin
      * @dev Only callable by the owner
      * @param _newAdmin The address of the new admin to add
