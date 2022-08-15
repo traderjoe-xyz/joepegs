@@ -15,8 +15,6 @@ import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
-error JoepegAuctionHouse__AlreadyPaused();
-error JoepegAuctionHouse__AlreadyUnpaused();
 error JoepegAuctionHouse__AuctionAlreadyExists();
 error JoepegAuctionHouse__CurrencyMismatch();
 error JoepegAuctionHouse__ExpectedNonNullAddress();
