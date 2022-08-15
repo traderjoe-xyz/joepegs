@@ -117,7 +117,7 @@ describe("BatchTransferNFT", function () {
     this.pausableAdmin.connect(this.alice).removePauseAdmin(this.bob.address);
   });
 
-  it.only("Should transfer ownership, add the new owner and remove the previous one in all cases", async function () {
+  it("Should transfer ownership, add the new owner and remove the previous one in all cases", async function () {
     // new owner isn't admin, previous owner is admin (0,1)
     await transferOwnershipAndChecks(this.pausableAdmin, this.alice, this.dev);
 
