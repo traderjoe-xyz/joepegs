@@ -2179,6 +2179,31 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
+  describe("pause/unpause", function () {
+    it("non-owner cannot pause", async function () {
+      await expect(
+        this.auctionHouse.connect(this.alice).pause()
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("non-owner cannot unpause", async function () {
+      await this.auctionHouse.pause();
+      await expect(
+        this.auctionHouse.connect(this.alice).unpause()
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("can successfully pause and unpause", async function () {
+      expect(await this.auctionHouse.paused()).to.be.equal(false);
+      await this.auctionHouse.pause();
+      expect(await this.auctionHouse.paused()).to.be.equal(true);
+      await this.auctionHouse.unpause();
+      expect(await this.auctionHouse.paused()).to.be.equal(false);
+
+      await startDutchAuction();
+    });
+  });
+
   after(async function () {
     await network.provider.request({
       method: "hardhat_reset",

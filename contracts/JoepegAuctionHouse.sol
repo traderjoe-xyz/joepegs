@@ -717,18 +717,12 @@ contract JoepegAuctionHouse is
     ///  @notice Function to pause the contract
     ///  @dev Only callable by owner
     function pause() external onlyOwner {
-        if (paused()) {
-            revert JoepegAuctionHouse__AlreadyPaused();
-        }
         _pause();
     }
 
     /// @notice Function to unpause the contract
     /// @dev Only callable by owner
     function unpause() external onlyOwner {
-        if (!paused()) {
-            revert JoepegAuctionHouse__AlreadyUnpaused();
-        }
         _unpause();
     }
 
