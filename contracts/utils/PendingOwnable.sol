@@ -99,7 +99,7 @@ contract PendingOwnable is IERC165, IPendingOwnable {
     }
 
     /**
-     * @notice Transfers the ownership to the new owner (`pendingOwner).
+     * @notice Transfers the ownership to the new owner (`pendingOwner`).
      * Can only be called by the pending owner
      */
     function becomeOwner() public virtual override onlyPendingOwner {

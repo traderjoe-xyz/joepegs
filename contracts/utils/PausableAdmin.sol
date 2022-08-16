@@ -51,7 +51,7 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
     }
 
     /**
-     * @notice View function to check whether an user is an admin (true) or not (false)
+     * @notice View function to check whether a user is an admin (true) or not (false)
      * @param _user The address of the user
      * @return Whether the user is an admin (true) or not (false)
      */
@@ -80,7 +80,7 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
     }
 
     /**
-     * @notice Transfers the ownership to the new owner (`pendingOwner).
+     * @notice Transfers the ownership to the new owner (`pendingOwner`).
      * This will also remove the previousOwner of PauseAdmin and add the new owner.
      * Can only be called by the pending owner (checked within the `super.becomeOwner()`)
      */
