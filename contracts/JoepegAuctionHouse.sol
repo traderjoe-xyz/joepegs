@@ -20,6 +20,7 @@ error JoepegAuctionHouse__CurrencyMismatch();
 error JoepegAuctionHouse__ExpectedNonNullAddress();
 error JoepegAuctionHouse__ExpectedNonZeroFinalSellerAmount();
 error JoepegAuctionHouse__FeesHigherThanExpected();
+error JoepegAuctionHouse__InvalidDropInterval();
 error JoepegAuctionHouse__InvalidDuration();
 error JoepegAuctionHouse__InvalidMinPercentageToAsk();
 error JoepegAuctionHouse__NoAuctionExists();
@@ -555,6 +556,9 @@ contract JoepegAuctionHouse is
     {
         if (_duration == 0 || _duration < _dropInterval) {
             revert JoepegAuctionHouse__InvalidDuration();
+        }
+        if (_dropInterval == 0) {
+            revert JoepegAuctionHouse__InvalidDropInterval();
         }
         address collectionAddress = address(_collection);
         if (dutchAuctions[collectionAddress][_tokenId].creator != address(0)) {

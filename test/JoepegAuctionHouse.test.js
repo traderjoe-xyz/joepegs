@@ -1271,6 +1271,23 @@ describe("JoepegAuctionHouse", function () {
       ).to.be.revertedWith("JoepegAuctionHouse__InvalidDuration");
     });
 
+    it("cannot start with zero dropInterval", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .startDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            auctionDuration,
+            0,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidDropInterval");
+    });
+
     it("cannot start with existing auction", async function () {
       await startDutchAuction();
       await expect(
