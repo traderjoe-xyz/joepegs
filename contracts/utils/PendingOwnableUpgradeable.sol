@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "../interfaces/IPendingOwnable.sol";
 import "./PendingOwnableErrors.sol";
