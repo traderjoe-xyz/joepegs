@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "../interfaces/IPendingOwnable.sol";
 import "./PendingOwnableErrors.sol";
@@ -25,7 +26,7 @@ import "./PendingOwnableErrors.sol";
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner
  */
-contract PendingOwnable is IERC165, IPendingOwnable {
+contract PendingOwnableUpgradeable is Initializable, IERC165, IPendingOwnable {
     address private _owner;
     address private _pendingOwner;
 
@@ -47,9 +48,9 @@ contract PendingOwnable is IERC165, IPendingOwnable {
     }
 
     /**
-     * @notice Initializes the contract setting the deployer as the initial owner
+     * @dev Initializes the contract setting `msg.sender` as the initial owner
      */
-    constructor() {
+    function __PendingOwnable_init() internal onlyInitializing {
         _transferOwnership(msg.sender);
     }
 
