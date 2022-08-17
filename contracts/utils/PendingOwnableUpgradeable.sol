@@ -26,7 +26,11 @@ import "./PendingOwnableErrors.sol";
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner
  */
-contract PendingOwnableUpgradeable is Initializable, IERC165, IPendingOwnable {
+abstract contract PendingOwnableUpgradeable is
+    Initializable,
+    IERC165,
+    IPendingOwnable
+{
     address private _owner;
     address private _pendingOwner;
 

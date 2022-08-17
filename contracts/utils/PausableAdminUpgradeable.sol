@@ -8,7 +8,7 @@ import "../interfaces/IPausableAdmin.sol";
 import "./PausableAdminErrors.sol";
 import "./PendingOwnableUpgradeable.sol";
 
-contract PausableAdminUpgradeable is
+abstract contract PausableAdminUpgradeable is
     PendingOwnableUpgradeable,
     PausableUpgradeable,
     IPausableAdmin
