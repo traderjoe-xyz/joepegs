@@ -2,13 +2,17 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import "./PausableAdminErrors.sol";
-import "./PendingOwnable.sol";
 import "../interfaces/IPausableAdmin.sol";
+import "./PausableAdminErrors.sol";
+import "./PendingOwnableUpgradeable.sol";
 
-contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
+contract PausableAdminUpgradeable is
+    PendingOwnableUpgradeable,
+    PausableUpgradeable,
+    IPausableAdmin
+{
     using EnumerableSet for EnumerableSet.AddressSet;
 
     EnumerableSet.AddressSet private _pauseAdmins;
@@ -19,7 +23,13 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
         _;
     }
 
-    constructor() {
+    /**
+     * @dev Initializes the contract adding `msg.sender` as a pause admin
+     */
+    function __PausableAdmin_init() internal onlyInitializing {
+        __PendingOwnable_init();
+        __Pausable_init();
+
         _addPauseAdmin(msg.sender);
     }
 
