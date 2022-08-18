@@ -30,6 +30,7 @@ error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
 error JoepegAuctionHouse__UnsupportedCurrency();
 
+error JoepegAuctionHouse__EnglishAuctionCannotBidOnUnstartedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
 error JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
@@ -39,6 +40,7 @@ error JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
 error JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
 error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
 
+error JoepegAuctionHouse__DutchAuctionCannotSettleUnstartedAuction();
 error JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
 error JoepegAuctionHouse__DutchAuctionInsufficientAmountToSettle();
 error JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
@@ -619,6 +621,74 @@ contract JoepegAuctionHouse is
         isValidMinPercentageToAsk(_minPercentageToAsk)
         nonReentrant
     {
+        _addDutchAuction(
+            _collection,
+            _tokenId,
+            _currency,
+            block.timestamp.toUint96(),
+            _duration,
+            _dropInterval,
+            _startPrice,
+            _endPrice,
+            _minPercentageToAsk
+        );
+    }
+
+    /// @notice Schedules a Dutch Auction for an ERC721 token
+    /// @dev Note:
+    /// - Requires the auction house to hold the ERC721 token in escrow
+    /// - Drops in price every `dutchAuctionDropInterval` seconds in equal
+    ///   amounts
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to sell ERC721 token for
+    /// @param _duration number of seconds for Dutch Auction to run
+    /// @param _dropInterval number of seconds between each drop in price
+    /// @param _startPrice starting sell price
+    /// @param _endPrice ending sell price
+    /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
+    function scheduleDutchAuction(
+        IERC721 _collection,
+        uint256 _tokenId,
+        IERC20 _currency,
+        uint96 _startTime,
+        uint96 _duration,
+        uint256 _dropInterval,
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _minPercentageToAsk
+    )
+        external
+        whenNotPaused
+        isSupportedCurrency(_currency)
+        isValidStartTime(_startTime)
+        isValidMinPercentageToAsk(_minPercentageToAsk)
+        nonReentrant
+    {
+        _addDutchAuction(
+            _collection,
+            _tokenId,
+            _currency,
+            _startTime,
+            _duration,
+            _dropInterval,
+            _startPrice,
+            _endPrice,
+            _minPercentageToAsk
+        );
+    }
+
+    function _addDutchAuction(
+        IERC721 _collection,
+        uint256 _tokenId,
+        IERC20 _currency,
+        uint96 _startTime,
+        uint96 _duration,
+        uint256 _dropInterval,
+        uint256 _startPrice,
+        uint256 _endPrice,
+        uint256 _minPercentageToAsk
+    ) internal {
         if (_duration == 0 || _duration < _dropInterval) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -633,15 +703,14 @@ contract JoepegAuctionHouse is
             revert JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
         }
 
-        uint96 timestamp = block.timestamp.toUint96();
         DutchAuction memory auction = DutchAuction({
             creator: msg.sender,
             nonce: userLatestAuctionNonce[msg.sender],
             currency: address(_currency),
             startPrice: _startPrice,
             endPrice: _endPrice,
-            startTime: timestamp,
-            endTime: timestamp + _duration,
+            startTime: _startTime,
+            endTime: _startTime + _duration,
             dropInterval: _dropInterval,
             minPercentageToAsk: _minPercentageToAsk
         });
@@ -980,6 +1049,9 @@ contract JoepegAuctionHouse is
         if (msg.sender == auction.creator) {
             revert JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
         }
+        if (block.timestamp < auction.startTime) {
+            revert JoepegAuctionHouse__EnglishAuctionCannotBidOnUnstartedAuction();
+        }
         if (block.timestamp >= auction.endTime) {
             revert JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
         }
@@ -1064,6 +1136,9 @@ contract JoepegAuctionHouse is
         }
         if (msg.sender == _auction.creator) {
             revert JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
+        }
+        if (block.timestamp < _auction.startTime) {
+            revert JoepegAuctionHouse__DutchAuctionCannotSettleUnstartedAuction();
         }
 
         // Get auction sale price
