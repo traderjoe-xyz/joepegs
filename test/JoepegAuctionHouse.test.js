@@ -209,6 +209,21 @@ describe("JoepegAuctionHouse", function () {
     expect(auction.minPercentageToAsk).to.be.equal(0);
   };
 
+  describe("initialize", function () {
+    it("cannot initialize multiple times", async function () {
+      await expect(
+        this.auctionHouse.initialize(
+          englishAuctionMinBidIncrementPct,
+          englishAuctionRefreshTime,
+          this.currencyManager.address,
+          this.protocolFeeManager.address,
+          this.royaltyFeeManager.address,
+          this.protocolFeeRecipient
+        )
+      ).to.be.revertedWith("Initializable: contract is already initialized");
+    });
+  });
+
   describe("startEnglishAuction", function () {
     it("cannot start when paused", async function () {
       await this.auctionHouse.pause();
