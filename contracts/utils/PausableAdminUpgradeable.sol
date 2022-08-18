@@ -29,7 +29,10 @@ abstract contract PausableAdminUpgradeable is
     function __PausableAdmin_init() internal onlyInitializing {
         __PendingOwnable_init();
         __Pausable_init();
+        __PausableAdmin_init_unchained();
+    }
 
+    function __PausableAdmin_init_unchained() internal onlyInitializing {
         _addPauseAdmin(msg.sender);
     }
 

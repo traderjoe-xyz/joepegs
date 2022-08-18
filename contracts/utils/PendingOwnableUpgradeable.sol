@@ -55,6 +55,10 @@ abstract contract PendingOwnableUpgradeable is
      * @dev Initializes the contract setting `msg.sender` as the initial owner
      */
     function __PendingOwnable_init() internal onlyInitializing {
+        __PendingOwnable_init_unchained();
+    }
+
+    function __PendingOwnable_init_unchained() internal onlyInitializing {
         _transferOwnership(msg.sender);
     }
 
