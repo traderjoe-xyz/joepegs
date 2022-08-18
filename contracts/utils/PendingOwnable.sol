@@ -129,7 +129,7 @@ contract PendingOwnable is IERC165, IPendingOwnable {
         returns (bool)
     {
         return
-            interfaceId == this.supportsInterface.selector ||
+            interfaceId == type(IERC165).interfaceId ||
             interfaceId == type(IPendingOwnable).interfaceId;
     }
 
