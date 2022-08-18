@@ -1126,7 +1126,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .emergencyCancelEnglishAuction(this.erc721Token.address, aliceTokenId)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot cancel non-existent auction", async function () {
@@ -1951,7 +1951,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .emergencyCancelDutchAuction(this.erc721Token.address, aliceTokenId)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot cancel non-existent auction", async function () {
@@ -2045,7 +2045,7 @@ describe("JoepegAuctionHouse", function () {
           .updateEnglishAuctionMinBidIncrementPct(
             englishAuctionMinBidIncrementPct * 2
           )
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot update to zero", async function () {
@@ -2084,7 +2084,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .updateEnglishAuctionRefreshTime(englishAuctionRefreshTime * 2)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot update to zero", async function () {
@@ -2114,7 +2114,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .updateCurrencyManager("0x0000000000000000000000000000000000000001")
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
@@ -2139,7 +2139,7 @@ describe("JoepegAuctionHouse", function () {
           .updateProtocolFeeManager(
             "0x0000000000000000000000000000000000000001"
           )
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
@@ -2166,7 +2166,7 @@ describe("JoepegAuctionHouse", function () {
           .updateProtocolFeeRecipient(
             "0x0000000000000000000000000000000000000001"
           )
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
@@ -2193,7 +2193,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .updateRoyaltyFeeManager("0x0000000000000000000000000000000000000001")
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
@@ -2215,14 +2215,16 @@ describe("JoepegAuctionHouse", function () {
     it("non-owner cannot pause", async function () {
       await expect(
         this.auctionHouse.connect(this.alice).pause()
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith(
+        `PausableAdmin__OnlyPauseAdmin("${this.alice.address}")`
+      );
     });
 
     it("non-owner cannot unpause", async function () {
       await this.auctionHouse.pause();
       await expect(
         this.auctionHouse.connect(this.alice).unpause()
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
     it("can successfully pause and unpause", async function () {

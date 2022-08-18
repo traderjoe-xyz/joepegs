@@ -850,18 +850,6 @@ contract JoepegAuctionHouse is
         );
     }
 
-    ///  @notice Function to pause the contract
-    ///  @dev Only callable by owner
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    /// @notice Function to unpause the contract
-    /// @dev Only callable by owner
-    function unpause() external onlyOwner {
-        _unpause();
-    }
-
     /// @notice Update `englishAuctionMinBidIncrementPct`
     /// @param _englishAuctionMinBidIncrementPct new minimum bid increment percetange for English auctions
     function updateEnglishAuctionMinBidIncrementPct(
