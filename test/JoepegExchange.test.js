@@ -968,7 +968,6 @@ describe("JoepegExchange", function () {
           const bobWavaxBalanceBefore = await this.wavax.balanceOf(
             this.bob.address
           );
-          expect(bobWavaxBalanceBefore).to.be.eq(total);
 
           // Batch buy
           await this.exchange
@@ -1014,7 +1013,6 @@ describe("JoepegExchange", function () {
           const bobWavaxBalanceBefore = await this.wavax.balanceOf(
             this.bob.address
           );
-          expect(bobWavaxBalanceBefore).to.be.eq(depositAmount);
 
           // Batch buy: Bob wants to pay with 1.5 WAVAX and 1.5 AVAX
           await this.exchange
