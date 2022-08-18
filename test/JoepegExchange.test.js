@@ -771,7 +771,7 @@ describe("JoepegExchange", function () {
         )
       );
 
-      // Approve exchange to transfer WAVAX
+      // Calculate total cost
       const total = price.mul(tokens.length);
 
       // Batch buy
@@ -784,17 +784,10 @@ describe("JoepegExchange", function () {
         expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
       }
     });
-  });
 
-  describe("can buy batch with one expired ask and two valid asks", function () {
-    var tokens;
-    var trades;
-    var price;
-    var total;
-
-    beforeEach(async function () {
+    it("can buy multiple ERC721 tokens with AVAX and WAVAX", async function () {
       // Check that alice indeed owns the NFT
-      tokens = [
+      const tokens = [
         [1, this.erc721Token],
         [2, this.erc721Token],
         [1, this.erc721TokenB],
@@ -814,8 +807,8 @@ describe("JoepegExchange", function () {
         .setApprovalForAll(this.transferManagerERC721.address, true);
 
       // Create maker ask order
-      price = ethers.utils.parseEther("1");
-      trades = await Promise.all(
+      const price = ethers.utils.parseEther("1");
+      const trades = await Promise.all(
         tokens.map(async (token, i) =>
           buildMakerAskOrderAndTakerBidOrder(
             this.DOMAIN,
@@ -832,60 +825,281 @@ describe("JoepegExchange", function () {
       );
 
       // Approve exchange to transfer WAVAX
-      total = price.mul(tokens.length);
-
-      // Carol buys one of the token first
-      await this.exchange
-        .connect(this.carol)
-        .matchAskWithTakerBidUsingAVAXAndWAVAX(
-          { ...trades[1].takerBid, taker: this.carol.address },
-          trades[1].makerAsk,
-          { value: price }
-        );
-      expect(await tokens[1][1].ownerOf(tokens[1][0])).to.be.equal(
-        this.carol.address
+      await this.wavax
+        .connect(this.bob)
+        .deposit({ value: ethers.utils.parseEther("5") });
+      await this.wavax
+        .connect(this.bob)
+        .approve(this.exchange.address, ethers.utils.parseEther("5"));
+      const bobWavaxBalanceBefore = await this.wavax.balanceOf(
+        this.bob.address
       );
-    });
-
-    it("can buy multiple ERC721 tokens even when a maker ask has expired", async function () {
-      // Get Bob's AVAX balance
       const bobAvaxBalanceBefore = await this.bob.getBalance();
 
-      // Batch buy
+      // Batch buy: Bob wants to pay with 1 AVAX and 2 WAVAX
       await this.exchange
         .connect(this.bob)
-        .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades, { value: total });
+        .batchBuyWithAVAXAndWAVAX(trades, { value: price });
 
-      // Check that Bob bought item 0 and 2, but not 1 because Carol bought it first
-      for (const token of [tokens[0], tokens[2]]) {
+      // Check that Bob bought the items
+      for (const token of tokens) {
         expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
       }
 
-      // Check that Bob only paid for two items
-      const expectedAvaxSpentAmount = bobAvaxBalanceBefore.sub(price.mul(2));
-      expect(await this.bob.getBalance()).to.be.closeTo(
-        expectedAvaxSpentAmount,
+      // Check that Bob spent 1 AVAX and 2 WAVAX
+      const bobWavaxBalanceAfter = await this.wavax.balanceOf(this.bob.address);
+      expect(bobWavaxBalanceAfter).to.be.eq(
+        bobWavaxBalanceBefore.sub(price.mul(2))
+      );
+      const bobAvaxBalanceAfter = await this.bob.getBalance();
+      expect(bobAvaxBalanceAfter).to.be.closeTo(
+        bobAvaxBalanceBefore.sub(price),
         ethers.utils.parseEther("0.001")
       );
 
-      // The exchange shouldn't have any AVAX/WAVAX left
-      expect(await ethers.provider.getBalance(this.exchange.address)).to.be.eq(0);
-      expect(await this.wavax.balanceOf(this.exchange.address)).to.be.eq(0);
+      // Reset
+      await this.wavax.connect(this.bob).withdraw(ethers.utils.parseEther("3"));
     });
 
-    it("batchBuyWithAVAXAndWAVAX should revert when a maker ask has expired", async function () {
-      await expect(
-        this.exchange
-          .connect(this.bob)
-          .batchBuyWithAVAXAndWAVAX(trades, { value: total })
-      ).to.be.revertedWith("Order: Matching order expired");
-    });
-  });
+    describe("can buy batch with one expired ask and two valid asks", function () {
+      var tokens;
+      var trades;
+      var price;
+      var total;
 
-  after(async function () {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [],
+      beforeEach(async function () {
+        // Check that alice indeed owns the NFT
+        tokens = [
+          [1, this.erc721Token],
+          [2, this.erc721Token],
+          [1, this.erc721TokenB],
+        ];
+        for (const token of tokens) {
+          expect(await token[1].ownerOf(token[0])).to.be.equal(
+            this.alice.address
+          );
+        }
+
+        // Approve transferManagerERC721 to transfer NFT
+        await this.erc721Token
+          .connect(this.alice)
+          .setApprovalForAll(this.transferManagerERC721.address, true);
+        await this.erc721TokenB
+          .connect(this.alice)
+          .setApprovalForAll(this.transferManagerERC721.address, true);
+
+        // Create maker ask order
+        price = ethers.utils.parseEther("1");
+        trades = await Promise.all(
+          tokens.map(async (token, i) =>
+            buildMakerAskOrderAndTakerBidOrder(
+              this.DOMAIN,
+              this.alice,
+              this.bob,
+              token[1].address,
+              price,
+              token[0],
+              this.strategyStandardSaleForFixedPrice.address,
+              WAVAX,
+              i
+            )
+          )
+        );
+
+        // Approve exchange to transfer WAVAX
+        total = price.mul(tokens.length);
+
+        // Carol buys one of the token first
+        await this.exchange
+          .connect(this.carol)
+          .matchAskWithTakerBidUsingAVAXAndWAVAX(
+            { ...trades[1].takerBid, taker: this.carol.address },
+            trades[1].makerAsk,
+            { value: price }
+          );
+        expect(await tokens[1][1].ownerOf(tokens[1][0])).to.be.equal(
+          this.carol.address
+        );
+      });
+
+      describe("batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks with an expired maker ask", function () {
+        it("can buy multiple ERC721 tokens with AVAX", async function () {
+          // Get Bob's AVAX balance
+          const bobAvaxBalanceBefore = await this.bob.getBalance();
+
+          // Batch buy
+          await this.exchange
+            .connect(this.bob)
+            .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades, {
+              value: total,
+            });
+
+          // Check that Bob bought item 0 and 2, but not 1 because Carol bought it first
+          for (const token of [tokens[0], tokens[2]]) {
+            expect(await token[1].ownerOf(token[0])).to.be.equal(
+              this.bob.address
+            );
+          }
+
+          // Check that Bob only paid for two items
+          const expectedAvaxSpentAmount = bobAvaxBalanceBefore.sub(
+            price.mul(2)
+          );
+          expect(await this.bob.getBalance()).to.be.closeTo(
+            expectedAvaxSpentAmount,
+            ethers.utils.parseEther("0.001")
+          );
+
+          // The exchange shouldn't have any AVAX/WAVAX left
+          expect(
+            await ethers.provider.getBalance(this.exchange.address)
+          ).to.be.eq(0);
+          expect(await this.wavax.balanceOf(this.exchange.address)).to.be.eq(0);
+        });
+
+        it("can buy multiple ERC721 tokens with WAVAX", async function () {
+          // Prepare WAVAX for payment
+          await this.wavax.connect(this.bob).deposit({ value: total });
+          await this.wavax
+            .connect(this.bob)
+            .approve(this.exchange.address, total);
+
+          // Get Bob's WAVAX balance
+          const bobWavaxBalanceBefore = await this.wavax.balanceOf(
+            this.bob.address
+          );
+          expect(bobWavaxBalanceBefore).to.be.eq(total);
+
+          // Batch buy
+          await this.exchange
+            .connect(this.bob)
+            .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades);
+
+          // Check that Bob bought item 0 and 2, but not 1 because Carol bought it first
+          for (const token of [tokens[0], tokens[2]]) {
+            expect(await token[1].ownerOf(token[0])).to.be.equal(
+              this.bob.address
+            );
+          }
+
+          // Check that Bob only paid for two items
+          const bobWavaxBalanceAfter = await this.wavax.balanceOf(
+            this.bob.address
+          );
+          const expectedWavaxSpentAmount = bobWavaxBalanceBefore.sub(
+            price.mul(2)
+          );
+          expect(bobWavaxBalanceAfter).to.be.eq(expectedWavaxSpentAmount);
+          await this.wavax.connect(this.bob).withdraw(price);
+
+          // The exchange shouldn't have any AVAX/WAVAX left
+          expect(
+            await ethers.provider.getBalance(this.exchange.address)
+          ).to.be.eq(0);
+          expect(await this.wavax.balanceOf(this.exchange.address)).to.be.eq(0);
+        });
+
+        it("can buy multiple ERC721 tokens with WAVAX and AVAX", async function () {
+          // Prepare WAVAX for payment
+          const depositAmount = ethers.utils.parseEther("10");
+          await this.wavax.connect(this.bob).deposit({ value: depositAmount });
+          await this.wavax
+            .connect(this.bob)
+            .approve(this.exchange.address, depositAmount);
+
+          // Get Bob's AVAX balance
+          const bobAvaxBalanceBefore = await this.bob.getBalance();
+
+          // Get Bob's WAVAX balance
+          const bobWavaxBalanceBefore = await this.wavax.balanceOf(
+            this.bob.address
+          );
+          expect(bobWavaxBalanceBefore).to.be.eq(depositAmount);
+
+          // Batch buy: Bob wants to pay with 1.5 WAVAX and 1.5 AVAX
+          await this.exchange
+            .connect(this.bob)
+            .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades, {
+              value: ethers.utils.parseEther("1.5"),
+            });
+
+          // Check that Bob bought item 0 and 2, but not 1 because Carol bought it first
+          for (const token of [tokens[0], tokens[2]]) {
+            expect(await token[1].ownerOf(token[0])).to.be.equal(
+              this.bob.address
+            );
+          }
+
+          // Check that Bob only spent 0.5 WAVAX and 1.5 AVAX
+          const bobWavaxBalanceAfter = await this.wavax.balanceOf(
+            this.bob.address
+          );
+          expect(bobWavaxBalanceAfter).to.be.eq(
+            bobWavaxBalanceBefore.sub(ethers.utils.parseEther("0.5"))
+          );
+          const bobAvaxBalanceAfter = await this.bob.getBalance();
+          expect(bobAvaxBalanceAfter).to.be.closeTo(
+            bobAvaxBalanceBefore.sub(ethers.utils.parseEther("1.5")),
+            ethers.utils.parseEther("0.001")
+          );
+
+          // The exchange shouldn't have any AVAX/WAVAX left
+          expect(
+            await ethers.provider.getBalance(this.exchange.address)
+          ).to.be.eq(0);
+          expect(await this.wavax.balanceOf(this.exchange.address)).to.be.eq(0);
+        });
+
+        it("should revert when not enough AVAX", async function () {
+          // Carol sends only 1 AVAX but the total cost is 2 AVAX
+          await expect(
+            this.exchange
+              .connect(this.carol)
+              .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades, {
+                value: price,
+              })
+          ).to.be.revertedWith("SafeERC20: low-level call failed");
+        });
+
+        it("should revert when not enough WAVAX", async function () {
+          // Carol has 1 WAVAX but the total cost is 2 AVAX
+          this.wavax.connect(this.carol).deposit({ value: price });
+          await expect(
+            this.exchange
+              .connect(this.carol)
+              .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades)
+          ).to.be.revertedWith("SafeERC20: low-level call failed");
+        });
+
+        it("should revert when not enough AVAX/WAVAX", async function () {
+          // Carol has 1 WAVAX and 0.5 AVAX but the total cost is 2 AVAX
+          this.wavax.connect(this.carol).deposit({ value: price });
+          await expect(
+            this.exchange
+              .connect(this.carol)
+              .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades, {
+                value: ethers.utils.parseEther("0.5"),
+              })
+          ).to.be.revertedWith("SafeERC20: low-level call failed");
+        });
+      });
+
+      describe("batchBuyWithAVAXAndWAVAX", function () {
+        it("should revert when a maker ask has expired", async function () {
+          await expect(
+            this.exchange
+              .connect(this.bob)
+              .batchBuyWithAVAXAndWAVAX(trades, { value: total })
+          ).to.be.revertedWith("Order: Matching order expired");
+        });
+      });
+    });
+
+    after(async function () {
+      await network.provider.request({
+        method: "hardhat_reset",
+        params: [],
+      });
     });
   });
 });

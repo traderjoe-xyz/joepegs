@@ -636,8 +636,8 @@ contract JoepegExchange is
         }
 
         // Return remaining AVAX (if any)
-        uint256 remainingAVAX = msg.value - totalCost;
-        if (remainingAVAX > 0) {
+        if (msg.value > totalCost) {
+            uint256 remainingAVAX = msg.value - totalCost;
             (bool sent, ) = msg.sender.call{value: remainingAVAX}("");
             require(sent, "Batch Buy: Failed to return remaining AVAX");
         }
