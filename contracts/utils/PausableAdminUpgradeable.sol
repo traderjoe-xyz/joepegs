@@ -11,7 +11,7 @@ import "./PendingOwnableUpgradeable.sol";
 abstract contract PausableAdminUpgradeable is
     PendingOwnableUpgradeable,
     PausableUpgradeable,
-    IPausableAdmin
+    IPausableAdminUpgradeable
 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -77,13 +77,13 @@ abstract contract PausableAdminUpgradeable is
      */
     function supportsInterface(bytes4 interfaceId)
         public
-        pure
+        view
         virtual
         override
         returns (bool)
     {
         return
-            interfaceId == type(IPausableAdmin).interfaceId ||
+            interfaceId == type(IPausableAdminUpgradeable).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 

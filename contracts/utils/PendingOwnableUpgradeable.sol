@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "../interfaces/IPendingOwnable.sol";
@@ -28,8 +28,8 @@ import "./PendingOwnableErrors.sol";
  */
 abstract contract PendingOwnableUpgradeable is
     Initializable,
-    IERC165,
-    IPendingOwnable
+    ERC165Upgradeable,
+    IPendingOwnableUpgradeable
 {
     address private _owner;
     address private _pendingOwner;
@@ -55,6 +55,7 @@ abstract contract PendingOwnableUpgradeable is
      * @dev Initializes the contract setting `msg.sender` as the initial owner
      */
     function __PendingOwnable_init() internal onlyInitializing {
+        __ERC165_init();
         __PendingOwnable_init_unchained();
     }
 
@@ -133,13 +134,14 @@ abstract contract PendingOwnableUpgradeable is
      */
     function supportsInterface(bytes4 interfaceId)
         public
-        pure
+        view
         virtual
+        override
         returns (bool)
     {
         return
-            interfaceId == this.supportsInterface.selector ||
-            interfaceId == type(IPendingOwnable).interfaceId;
+            interfaceId == type(IPendingOwnableUpgradeable).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**

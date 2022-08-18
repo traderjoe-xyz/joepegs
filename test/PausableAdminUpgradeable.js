@@ -68,7 +68,7 @@ describe("MockPausableAdminUpgradeable", function () {
   });
 
   it("Should only allow admin to add or remove admin", async function () {
-    this.mockPausableAdminUpgradeable
+    await this.mockPausableAdminUpgradeable
       .connect(this.dev)
       .addPauseAdmin(this.alice.address);
 
@@ -98,7 +98,7 @@ describe("MockPausableAdminUpgradeable", function () {
   });
 
   it("Should add new owner to admin and remove the privilege of the previous one", async function () {
-    this.mockPausableAdminUpgradeable
+    await this.mockPausableAdminUpgradeable
       .connect(this.dev)
       .setPendingOwner(this.alice.address);
 

@@ -64,7 +64,9 @@ describe("BatchTransferNFT", function () {
   });
 
   it("Should only allow admin to add or remove admin", async function () {
-    this.pausableAdmin.connect(this.dev).addPauseAdmin(this.alice.address);
+    await this.pausableAdmin
+      .connect(this.dev)
+      .addPauseAdmin(this.alice.address);
 
     await expect(
       this.pausableAdmin.connect(this.bob).addPauseAdmin(this.bob.address)
@@ -84,7 +86,9 @@ describe("BatchTransferNFT", function () {
   });
 
   it("Should add new owner to admin and remove the privilege of the previous one", async function () {
-    this.pausableAdmin.connect(this.dev).setPendingOwner(this.alice.address);
+    await this.pausableAdmin
+      .connect(this.dev)
+      .setPendingOwner(this.alice.address);
 
     await expect(
       this.pausableAdmin.connect(this.dev).becomeOwner()
