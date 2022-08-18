@@ -13,6 +13,10 @@ interface IJoepegBuyBatcher {
     }
 
     function batchBuyWithAVAXAndWAVAX(Trade[] calldata trades) external payable;
+
+    function batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(
+        Trade[] calldata trades
+    ) external payable;
 }
 
 interface IJoepegExchange is IJoepegBuyBatcher {

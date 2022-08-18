@@ -632,6 +632,42 @@ describe("JoepegExchange", function () {
         protocolRecipientWavaxBalanceBefore.add(customProtocolFee)
       );
     });
+
+    it("matchAskWithTakerBidUsingAVAXAndWAVAX should revert when maker ask expired", async function () {
+      // Approve transferManagerERC721 to transfer NFT
+      const tokenId = 1;
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.transferManagerERC721.address, tokenId);
+
+      // Create maker ask order
+      const price = ethers.utils.parseEther("1");
+      const { makerAsk, takerBid } = await buildMakerAskOrderAndTakerBidOrder(
+        this.DOMAIN,
+        this.alice,
+        this.bob,
+        this.erc721Token.address,
+        price,
+        tokenId,
+        this.strategyStandardSaleForFixedPrice.address,
+        WAVAX,
+        1
+      );
+
+      // Approve exchange to transfer WAVAX
+      await this.wavax.connect(this.bob).deposit({ value: price });
+      await this.wavax.connect(this.bob).approve(this.exchange.address, price);
+
+      // Alice cancels the order
+      await this.exchange.connect(this.alice).cancelAllOrdersForSender(2);
+
+      // Bob shouldn't be able to buy it
+      await expect(
+        this.exchange
+          .connect(this.bob)
+          .matchAskWithTakerBidUsingAVAXAndWAVAX(takerBid, makerAsk)
+      ).to.be.revertedWith("Order: Matching order expired");
+    });
   });
 
   describe("can batch buy NFTs", function () {
@@ -747,6 +783,102 @@ describe("JoepegExchange", function () {
       for (const token of tokens) {
         expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
       }
+    });
+  });
+
+  describe("can buy batch with one expired ask and two valid asks", function () {
+    var tokens;
+    var trades;
+    var price;
+    var total;
+
+    beforeEach(async function () {
+      // Check that alice indeed owns the NFT
+      tokens = [
+        [1, this.erc721Token],
+        [2, this.erc721Token],
+        [1, this.erc721TokenB],
+      ];
+      for (const token of tokens) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(
+          this.alice.address
+        );
+      }
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+      await this.erc721TokenB
+        .connect(this.alice)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+
+      // Create maker ask order
+      price = ethers.utils.parseEther("1");
+      trades = await Promise.all(
+        tokens.map(async (token, i) =>
+          buildMakerAskOrderAndTakerBidOrder(
+            this.DOMAIN,
+            this.alice,
+            this.bob,
+            token[1].address,
+            price,
+            token[0],
+            this.strategyStandardSaleForFixedPrice.address,
+            WAVAX,
+            i
+          )
+        )
+      );
+
+      // Approve exchange to transfer WAVAX
+      total = price.mul(tokens.length);
+
+      // Carol buys one of the token first
+      await this.exchange
+        .connect(this.carol)
+        .matchAskWithTakerBidUsingAVAXAndWAVAX(
+          { ...trades[1].takerBid, taker: this.carol.address },
+          trades[1].makerAsk,
+          { value: price }
+        );
+      expect(await tokens[1][1].ownerOf(tokens[1][0])).to.be.equal(
+        this.carol.address
+      );
+    });
+
+    it("can buy multiple ERC721 tokens even when a maker ask has expired", async function () {
+      // Get Bob's AVAX balance
+      const bobAvaxBalanceBefore = await this.bob.getBalance();
+
+      // Batch buy
+      await this.exchange
+        .connect(this.bob)
+        .batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(trades, { value: total });
+
+      // Check that Bob bought item 0 and 2, but not 1 because Carol bought it first
+      for (const token of [tokens[0], tokens[2]]) {
+        expect(await token[1].ownerOf(token[0])).to.be.equal(this.bob.address);
+      }
+
+      // Check that Bob only paid for two items
+      const expectedAvaxSpentAmount = bobAvaxBalanceBefore.sub(price.mul(2));
+      expect(await this.bob.getBalance()).to.be.closeTo(
+        expectedAvaxSpentAmount,
+        ethers.utils.parseEther("0.001")
+      );
+
+      // The exchange shouldn't have any AVAX/WAVAX left
+      expect(await ethers.provider.getBalance(this.exchange.address)).to.be.eq(0);
+      expect(await this.wavax.balanceOf(this.exchange.address)).to.be.eq(0);
+    });
+
+    it("batchBuyWithAVAXAndWAVAX should revert when a maker ask has expired", async function () {
+      await expect(
+        this.exchange
+          .connect(this.bob)
+          .batchBuyWithAVAXAndWAVAX(trades, { value: total })
+      ).to.be.revertedWith("Order: Matching order expired");
     });
   });
 
