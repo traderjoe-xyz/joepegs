@@ -20,6 +20,12 @@ describe("MockPendingOwnableUpgradeable", function () {
     await this.mockPendingOwnableUpgradeable.initialize();
   });
 
+  it("Should not allow multiple initialization", async function () {
+    await expect(
+      this.mockPendingOwnableUpgradeable.initialize()
+    ).to.be.revertedWith("Initializable: contract is already initialized");
+  });
+
   it("Should revert if a non owner tries to use owner function", async function () {
     await expect(
       this.mockPendingOwnableUpgradeable

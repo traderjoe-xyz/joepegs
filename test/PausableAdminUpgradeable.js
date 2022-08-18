@@ -20,6 +20,12 @@ describe("MockPausableAdminUpgradeable", function () {
     await this.mockPausableAdminUpgradeable.initialize();
   });
 
+  it("Should not allow multiple initialization", async function () {
+    await expect(
+      this.mockPausableAdminUpgradeable.initialize()
+    ).to.be.revertedWith("Initializable: contract is already initialized");
+  });
+
   it("Should allow owner to pause and unpause the contract", async function () {
     await this.mockPausableAdminUpgradeable.pause();
 
