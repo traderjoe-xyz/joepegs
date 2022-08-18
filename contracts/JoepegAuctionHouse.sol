@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -49,6 +50,7 @@ contract JoepegAuctionHouse is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
+    ERC165Upgradeable,
     IERC721Receiver
 {
     using SafeCast for uint256;
@@ -872,6 +874,23 @@ contract JoepegAuctionHouse is
             oldRoyaltyFeeManagerAddress,
             _royaltyFeeManager
         );
+    }
+
+    /// @dev Returns true if this contract implements the interface defined by
+    /// `interfaceId`. See the corresponding
+    /// https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
+    /// to learn more about how these ids are created.
+    /// This function call must use less than 30 000 gas.
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return
+            interfaceId == type(IERC721Receiver).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /// @notice Place bid on a running English Auction
