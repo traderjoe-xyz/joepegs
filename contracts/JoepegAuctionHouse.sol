@@ -25,6 +25,7 @@ error JoepegAuctionHouse__FeesHigherThanExpected();
 error JoepegAuctionHouse__InvalidDropInterval();
 error JoepegAuctionHouse__InvalidDuration();
 error JoepegAuctionHouse__InvalidMinPercentageToAsk();
+error JoepegAuctionHouse__InvalidStartTime();
 error JoepegAuctionHouse__NoAuctionExists();
 error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
 error JoepegAuctionHouse__UnsupportedCurrency();
@@ -70,6 +71,7 @@ contract JoepegAuctionHouse is
     struct EnglishAuction {
         address creator;
         address currency;
+        uint96 startTime;
         address lastBidder;
         uint96 endTime;
         uint256 nonce;
@@ -220,6 +222,14 @@ contract JoepegAuctionHouse is
         }
     }
 
+    modifier isValidStartTime(uint256 _startTime) {
+        if (_startTime < block.timestamp) {
+            revert JoepegAuctionHouse__InvalidStartTime();
+        } else {
+            _;
+        }
+    }
+
     modifier isValidMinPercentageToAsk(uint256 _minPercentageToAsk) {
         if (
             _minPercentageToAsk == 0 ||
@@ -297,6 +307,61 @@ contract JoepegAuctionHouse is
         isValidMinPercentageToAsk(_minPercentageToAsk)
         nonReentrant
     {
+        _addEnglishAuction(
+            _collection,
+            _tokenId,
+            _currency,
+            block.timestamp.toUint96(),
+            _duration,
+            _startPrice,
+            _minPercentageToAsk
+        );
+    }
+
+    /// @notice Schedules an English Auction for an ERC721 token
+    /// @dev Note this requires the auction house to hold the ERC721 token in escrow
+    /// @param _collection address of ERC721 token
+    /// @param _tokenId token id of ERC721 token
+    /// @param _currency address of currency to sell ERC721 token for
+    /// @param _duration number of seconds for English Auction to run
+    /// @param _startPrice minimum starting bid price
+    /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
+    function scheduleEnglishAuction(
+        IERC721 _collection,
+        uint256 _tokenId,
+        IERC20 _currency,
+        uint96 _startTime,
+        uint96 _duration,
+        uint256 _startPrice,
+        uint256 _minPercentageToAsk
+    )
+        external
+        whenNotPaused
+        isSupportedCurrency(_currency)
+        isValidStartTime(_startTime)
+        isValidMinPercentageToAsk(_minPercentageToAsk)
+        nonReentrant
+    {
+        _addEnglishAuction(
+            _collection,
+            _tokenId,
+            _currency,
+            _startTime,
+            _duration,
+            _startPrice,
+            _minPercentageToAsk
+        );
+    }
+
+    function _addEnglishAuction(
+        IERC721 _collection,
+        uint256 _tokenId,
+        IERC20 _currency,
+        uint96 _startTime,
+        uint96 _duration,
+        uint256 _startPrice,
+        uint256 _minPercentageToAsk
+    ) internal {
         if (_duration == 0) {
             revert JoepegAuctionHouse__InvalidDuration();
         }
@@ -308,14 +373,14 @@ contract JoepegAuctionHouse is
         }
 
         uint256 nonce = userLatestAuctionNonce[msg.sender];
-        uint96 timestamp = block.timestamp.toUint96();
         EnglishAuction memory auction = EnglishAuction({
             creator: msg.sender,
             nonce: nonce,
             currency: address(_currency),
             lastBidder: address(0),
             lastBidPrice: 0,
-            endTime: timestamp + _duration,
+            startTime: _startTime,
+            endTime: _startTime + _duration,
             startPrice: _startPrice,
             minPercentageToAsk: _minPercentageToAsk
         });
@@ -332,7 +397,7 @@ contract JoepegAuctionHouse is
             _tokenId,
             auction.nonce,
             auction.startPrice,
-            timestamp,
+            _startTime,
             auction.endTime,
             auction.minPercentageToAsk
         );
