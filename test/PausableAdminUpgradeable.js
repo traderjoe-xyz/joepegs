@@ -110,7 +110,7 @@ describe("MockPausableAdminUpgradeable", function () {
       this.mockPausableAdminUpgradeable.connect(this.bob).becomeOwner()
     ).to.be.revertedWith("PendingOwnable__NotPendingOwner");
 
-    this.mockPausableAdminUpgradeable.connect(this.alice).becomeOwner();
+    await this.mockPausableAdminUpgradeable.connect(this.alice).becomeOwner();
 
     expect(
       await this.mockPausableAdminUpgradeable.isPauseAdmin(this.alice.address)
@@ -120,7 +120,7 @@ describe("MockPausableAdminUpgradeable", function () {
       await this.mockPausableAdminUpgradeable.isPauseAdmin(this.dev.address)
     ).to.be.equal(false);
 
-    this.mockPausableAdminUpgradeable
+    await this.mockPausableAdminUpgradeable
       .connect(this.alice)
       .addPauseAdmin(this.bob.address);
 
@@ -136,7 +136,7 @@ describe("MockPausableAdminUpgradeable", function () {
         .removePauseAdmin(this.alice.address)
     ).to.be.revertedWith("PendingOwnable__NotOwner");
 
-    this.mockPausableAdminUpgradeable
+    await this.mockPausableAdminUpgradeable
       .connect(this.alice)
       .removePauseAdmin(this.bob.address);
   });

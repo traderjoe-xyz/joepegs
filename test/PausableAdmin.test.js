@@ -94,7 +94,7 @@ describe("BatchTransferNFT", function () {
       this.pausableAdmin.connect(this.bob).becomeOwner()
     ).to.be.revertedWith("PendingOwnable__NotPendingOwner");
 
-    this.pausableAdmin.connect(this.alice).becomeOwner();
+    await this.pausableAdmin.connect(this.alice).becomeOwner();
 
     expect(
       await this.pausableAdmin.isPauseAdmin(this.alice.address)
@@ -104,7 +104,9 @@ describe("BatchTransferNFT", function () {
       false
     );
 
-    this.pausableAdmin.connect(this.alice).addPauseAdmin(this.bob.address);
+    await this.pausableAdmin
+      .connect(this.alice)
+      .addPauseAdmin(this.bob.address);
 
     await expect(
       this.pausableAdmin.connect(this.dev).addPauseAdmin(this.dev.address)
@@ -114,7 +116,9 @@ describe("BatchTransferNFT", function () {
       this.pausableAdmin.connect(this.dev).removePauseAdmin(this.alice.address)
     ).to.be.revertedWith("PendingOwnable__NotOwner");
 
-    this.pausableAdmin.connect(this.alice).removePauseAdmin(this.bob.address);
+    await this.pausableAdmin
+      .connect(this.alice)
+      .removePauseAdmin(this.bob.address);
   });
 
   it("Should transfer ownership, add the new owner and remove the previous one in all cases", async function () {
