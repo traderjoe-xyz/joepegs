@@ -583,7 +583,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe.only("placeEnglishAuctionBid", function () {
+  describe("placeEnglishAuctionBid", function () {
     it("cannot bid when paused", async function () {
       await startEnglishAuction();
       await this.auctionHouse.pause();
@@ -859,7 +859,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe.only("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
+  describe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
     it("cannot bid when paused", async function () {
       await startEnglishAuction();
       await this.auctionHouse.pause();
@@ -1975,7 +1975,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe.only("settleDutchAuction", function () {
+  describe("settleDutchAuction", function () {
     it("cannot settle when paused", async function () {
       await startDutchAuction();
       await depositAndApproveWAVAX(this.bob, dutchAuctionStartPrice);
@@ -2145,7 +2145,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe.only("settleDutchAuctionWithAVAXAndWAVAX", function () {
+  describe("settleDutchAuctionWithAVAXAndWAVAX", function () {
     it("cannot settle when paused", async function () {
       await startDutchAuction();
       await this.auctionHouse.pause();
