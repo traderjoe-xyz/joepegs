@@ -583,7 +583,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("placeEnglishAuctionBid", function () {
+  describe.only("placeEnglishAuctionBid", function () {
     it("cannot bid when paused", async function () {
       await startEnglishAuction();
       await this.auctionHouse.pause();
@@ -667,6 +667,24 @@ describe("JoepegAuctionHouse", function () {
           )
       ).to.be.revertedWith(
         "JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid"
+      );
+    });
+
+    it("cannot bid on unstarted auction", async function () {
+      const startTime = (await nextSecond()).add(300);
+      await scheduleEnglishAuction(startTime);
+
+      await depositAndApproveWAVAX(this.bob, englishAuctionStartPrice);
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBid(
+            this.erc721Token.address,
+            aliceTokenId,
+            englishAuctionStartPrice
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionCannotBidOnUnstartedAuction"
       );
     });
 
@@ -841,7 +859,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
+  describe.only("placeEnglishAuctionBidWithAVAXAndWAVAX", function () {
     it("cannot bid when paused", async function () {
       await startEnglishAuction();
       await this.auctionHouse.pause();
@@ -940,6 +958,26 @@ describe("JoepegAuctionHouse", function () {
           )
       ).to.be.revertedWith(
         "JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid"
+      );
+    });
+
+    it("cannot bid on unstarted auction", async function () {
+      const startTime = (await nextSecond()).add(300);
+      await scheduleEnglishAuction(startTime);
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .placeEnglishAuctionBidWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            0,
+            {
+              value: englishAuctionStartPrice,
+            }
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__EnglishAuctionCannotBidOnUnstartedAuction"
       );
     });
 
@@ -1937,7 +1975,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("settleDutchAuction", function () {
+  describe.only("settleDutchAuction", function () {
     it("cannot settle when paused", async function () {
       await startDutchAuction();
       await depositAndApproveWAVAX(this.bob, dutchAuctionStartPrice);
@@ -1966,6 +2004,20 @@ describe("JoepegAuctionHouse", function () {
           .settleDutchAuction(this.erc721Token.address, aliceTokenId)
       ).to.be.revertedWith(
         "JoepegAuctionHouse__DutchAuctionCreatorCannotSettle"
+      );
+    });
+
+    it("cannot settle unstarted auction", async function () {
+      const startTime = (await nextSecond()).add(300);
+      await scheduleDutchAuction(startTime);
+
+      await depositAndApproveWAVAX(this.bob, dutchAuctionStartPrice);
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .settleDutchAuction(this.erc721Token.address, aliceTokenId)
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__DutchAuctionCannotSettleUnstartedAuction"
       );
     });
 
@@ -2093,7 +2145,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("settleDutchAuctionWithAVAXAndWAVAX", function () {
+  describe.only("settleDutchAuctionWithAVAXAndWAVAX", function () {
     it("cannot settle when paused", async function () {
       await startDutchAuction();
       await this.auctionHouse.pause();
@@ -2159,6 +2211,25 @@ describe("JoepegAuctionHouse", function () {
           )
       ).to.be.revertedWith(
         "JoepegAuctionHouse__DutchAuctionCreatorCannotSettle"
+      );
+    });
+
+    it("cannot settle unstarted auction", async function () {
+      const startTime = (await nextSecond()).add(300);
+      await scheduleDutchAuction(startTime);
+
+      await expect(
+        this.auctionHouse
+          .connect(this.bob)
+          .settleDutchAuctionWithAVAXAndWAVAX(
+            this.erc721Token.address,
+            aliceTokenId,
+            {
+              value: dutchAuctionStartPrice,
+            }
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__DutchAuctionCannotSettleUnstartedAuction"
       );
     });
 
