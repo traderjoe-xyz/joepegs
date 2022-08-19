@@ -127,6 +127,26 @@ describe("JoepegAuctionHouse", function () {
       );
   };
 
+  const scheduleEnglishAuction = async (
+    startTime,
+    account = alice,
+    startPrice = englishAuctionStartPrice,
+    tokenId = aliceTokenId
+  ) => {
+    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
+    await auctionHouse
+      .connect(account)
+      .scheduleEnglishAuction(
+        erc721Token.address,
+        tokenId,
+        WAVAX,
+        startTime,
+        auctionDuration,
+        startPrice,
+        minPercentageToAsk
+      );
+  };
+
   const startDutchAuction = async (
     account = alice,
     startPrice = dutchAuctionStartPrice,
@@ -140,6 +160,29 @@ describe("JoepegAuctionHouse", function () {
         erc721Token.address,
         tokenId,
         WAVAX,
+        auctionDuration,
+        dutchAuctionDropInterval,
+        startPrice,
+        endPrice,
+        minPercentageToAsk
+      );
+  };
+
+  const scheduleDutchAuction = async (
+    startTime,
+    account = alice,
+    startPrice = dutchAuctionStartPrice,
+    endPrice = dutchAuctionEndPrice,
+    tokenId = aliceTokenId
+  ) => {
+    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
+    await auctionHouse
+      .connect(account)
+      .scheduleDutchAuction(
+        erc721Token.address,
+        tokenId,
+        WAVAX,
+        startTime,
         auctionDuration,
         dutchAuctionDropInterval,
         startPrice,
@@ -494,22 +537,8 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction in future", async function () {
-      await erc721Token
-        .connect(this.alice)
-        .approve(this.auctionHouse.address, aliceTokenId);
-
       const startTime = (await nextSecond()).add(300);
-      await this.auctionHouse
-        .connect(this.alice)
-        .scheduleEnglishAuction(
-          this.erc721Token.address,
-          aliceTokenId,
-          WAVAX,
-          startTime,
-          auctionDuration,
-          englishAuctionStartPrice,
-          minPercentageToAsk
-        );
+      await scheduleEnglishAuction(startTime);
 
       const auction = await this.auctionHouse.englishAuctions(
         this.erc721Token.address,
@@ -531,22 +560,8 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction now", async function () {
-      await erc721Token
-        .connect(this.alice)
-        .approve(this.auctionHouse.address, aliceTokenId);
-
       const startTime = await nextSecond();
-      await this.auctionHouse
-        .connect(this.alice)
-        .scheduleEnglishAuction(
-          this.erc721Token.address,
-          aliceTokenId,
-          WAVAX,
-          startTime,
-          auctionDuration,
-          englishAuctionStartPrice,
-          minPercentageToAsk
-        );
+      await scheduleEnglishAuction(startTime);
 
       const auction = await this.auctionHouse.englishAuctions(
         this.erc721Token.address,
@@ -1876,24 +1891,8 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction in future", async function () {
-      await erc721Token
-        .connect(this.alice)
-        .approve(this.auctionHouse.address, aliceTokenId);
-
       const startTime = (await nextSecond()).add(300);
-      await this.auctionHouse
-        .connect(this.alice)
-        .scheduleDutchAuction(
-          this.erc721Token.address,
-          aliceTokenId,
-          WAVAX,
-          startTime,
-          auctionDuration,
-          dutchAuctionDropInterval,
-          dutchAuctionStartPrice,
-          dutchAuctionEndPrice,
-          minPercentageToAsk
-        );
+      await scheduleDutchAuction(startTime);
 
       const auction = await this.auctionHouse.dutchAuctions(
         this.erc721Token.address,
@@ -1915,24 +1914,8 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction now", async function () {
-      await erc721Token
-        .connect(this.alice)
-        .approve(this.auctionHouse.address, aliceTokenId);
-
       const startTime = await nextSecond();
-      await this.auctionHouse
-        .connect(this.alice)
-        .scheduleDutchAuction(
-          this.erc721Token.address,
-          aliceTokenId,
-          WAVAX,
-          startTime,
-          auctionDuration,
-          dutchAuctionDropInterval,
-          dutchAuctionStartPrice,
-          dutchAuctionEndPrice,
-          minPercentageToAsk
-        );
+      await scheduleDutchAuction(startTime);
 
       const auction = await this.auctionHouse.dutchAuctions(
         this.erc721Token.address,
