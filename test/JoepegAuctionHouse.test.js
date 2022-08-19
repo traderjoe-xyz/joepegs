@@ -187,6 +187,7 @@ describe("JoepegAuctionHouse", function () {
     );
     expect(auction.creator).to.be.equal(ZERO_ADDRESS);
     expect(auction.currency).to.be.equal(ZERO_ADDRESS);
+    expect(auction.startTime).to.be.equal(0);
     expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
     expect(auction.endTime).to.be.equal(0);
     expect(auction.lastBidPrice).to.be.equal(0);
@@ -343,6 +344,7 @@ describe("JoepegAuctionHouse", function () {
       expect(auction.creator).to.be.equal(this.alice.address);
       expect(auction.nonce).to.be.equal(0);
       expect(auction.currency).to.be.equal(WAVAX);
+      expect(auction.startTime).to.be.equal(startTime);
       expect(auction.lastBidder).to.be.equal(ZERO_ADDRESS);
       expect(auction.endTime).to.be.equal(startTime.add(auctionDuration));
       expect(auction.lastBidPrice).to.be.equal(0);
