@@ -3,7 +3,12 @@ const { expect } = require("chai");
 const { describe } = require("mocha");
 
 const { JOE, WAVAX, ZERO_ADDRESS } = require("./utils/constants");
-const { advanceTimeAndBlock, duration, latest } = require("./utils/time");
+const {
+  advanceTimeAndBlock,
+  duration,
+  latest,
+  nextSecond,
+} = require("./utils/time");
 
 describe("JoepegAuctionHouse", function () {
   let alice;
@@ -367,7 +372,7 @@ describe("JoepegAuctionHouse", function () {
             this.erc721Token.address,
             aliceTokenId,
             WAVAX,
-            (await latest()).add(1),
+            await nextSecond(),
             auctionDuration,
             englishAuctionStartPrice,
             minPercentageToAsk
@@ -383,7 +388,7 @@ describe("JoepegAuctionHouse", function () {
             this.erc721Token.address,
             aliceTokenId,
             JOE,
-            (await latest()).add(1),
+            await nextSecond(),
             auctionDuration,
             englishAuctionStartPrice,
             minPercentageToAsk
@@ -415,7 +420,7 @@ describe("JoepegAuctionHouse", function () {
             this.erc721Token.address,
             aliceTokenId,
             WAVAX,
-            (await latest()).add(1),
+            await nextSecond(),
             auctionDuration,
             englishAuctionStartPrice,
             0
@@ -431,7 +436,7 @@ describe("JoepegAuctionHouse", function () {
             this.erc721Token.address,
             aliceTokenId,
             WAVAX,
-            (await latest()).add(1),
+            await nextSecond(),
             auctionDuration,
             englishAuctionStartPrice,
             10_001
@@ -447,7 +452,7 @@ describe("JoepegAuctionHouse", function () {
             this.erc721Token.address,
             aliceTokenId,
             WAVAX,
-            (await latest()).add(1),
+            await nextSecond(),
             0,
             englishAuctionStartPrice,
             minPercentageToAsk
@@ -464,7 +469,7 @@ describe("JoepegAuctionHouse", function () {
             this.erc721Token.address,
             aliceTokenId,
             WAVAX,
-            (await latest()).add(1),
+            await nextSecond(),
             auctionDuration,
             englishAuctionStartPrice,
             minPercentageToAsk
@@ -480,7 +485,7 @@ describe("JoepegAuctionHouse", function () {
             this.erc721Token.address,
             aliceTokenId,
             WAVAX,
-            (await latest()).add(1),
+            await nextSecond(),
             auctionDuration,
             englishAuctionStartPrice,
             minPercentageToAsk
@@ -493,8 +498,7 @@ describe("JoepegAuctionHouse", function () {
         .connect(this.alice)
         .approve(this.auctionHouse.address, aliceTokenId);
 
-      const now = await latest();
-      const startTime = now.add(300);
+      const startTime = (await nextSecond()).add(300);
       await this.auctionHouse
         .connect(this.alice)
         .scheduleEnglishAuction(
@@ -531,7 +535,7 @@ describe("JoepegAuctionHouse", function () {
         .connect(this.alice)
         .approve(this.auctionHouse.address, aliceTokenId);
 
-      const startTime = (await latest()).add(1);
+      const startTime = await nextSecond();
       await this.auctionHouse
         .connect(this.alice)
         .scheduleEnglishAuction(
@@ -1608,6 +1612,328 @@ describe("JoepegAuctionHouse", function () {
       await startDutchAuction();
 
       const startTime = await latest();
+      const auction = await this.auctionHouse.dutchAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(auction.creator).to.be.equal(this.alice.address);
+      expect(auction.nonce).to.be.equal(0);
+      expect(auction.currency).to.be.equal(WAVAX);
+      expect(auction.startPrice).to.be.equal(dutchAuctionStartPrice);
+      expect(auction.endPrice).to.be.equal(dutchAuctionEndPrice);
+      expect(auction.startTime).to.be.equal(startTime);
+      expect(auction.endTime).to.be.equal(startTime.add(auctionDuration));
+      expect(auction.dropInterval).to.be.equal(dutchAuctionDropInterval);
+      expect(auction.minPercentageToAsk).to.be.equal(minPercentageToAsk);
+
+      const userLatestAuctionNonce =
+        await this.auctionHouse.userLatestAuctionNonce(this.alice.address);
+      expect(userLatestAuctionNonce).to.be.equal(1);
+    });
+  });
+
+  describe("scheduleDutchAuction", function () {
+    it("cannot schedule when paused", async function () {
+      await this.auctionHouse.pause();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
+    it("cannot schedule with unsupported currency", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            JOE,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__UnsupportedCurrency");
+    });
+
+    it("cannot schedule with past startTime", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await latest(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidStartTime");
+    });
+
+    it("cannot schedule with minPercentageAsk of zero", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            0
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidMinPercentageToAsk");
+    });
+
+    it("cannot schedule with minPercentageAsk greater than 10_000", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            10_001
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidMinPercentageToAsk");
+    });
+
+    it("cannot schedule with zero duration", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            0,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidDuration");
+    });
+
+    it("cannot schedule with duration less than dropInterval", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            auctionDuration + 1,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidDuration");
+    });
+
+    it("cannot schedule with zero dropInterval", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            0,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__InvalidDropInterval");
+    });
+
+    it("cannot schedule with existing auction", async function () {
+      await startDutchAuction();
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("JoepegAuctionHouse__AuctionAlreadyExists");
+    });
+
+    it("cannot schedule with startPrice less than endPrice", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionEndPrice.sub(1),
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice"
+      );
+    });
+
+    it("cannot schedule with startPrice equal to endPrice", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionStartPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice"
+      );
+    });
+
+    it("cannot schedule with endPrice equal to zero", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            0,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith(
+        "JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice"
+      );
+    });
+
+    it("cannot schedule with missing ERC721 approval", async function () {
+      await expect(
+        this.auctionHouse
+          .connect(this.alice)
+          .scheduleDutchAuction(
+            this.erc721Token.address,
+            aliceTokenId,
+            WAVAX,
+            await nextSecond(),
+            auctionDuration,
+            dutchAuctionDropInterval,
+            dutchAuctionStartPrice,
+            dutchAuctionEndPrice,
+            minPercentageToAsk
+          )
+      ).to.be.revertedWith("ERC721: transfer caller is not owner nor approved");
+    });
+
+    it("successfully schedules auction in future", async function () {
+      await erc721Token
+        .connect(this.alice)
+        .approve(this.auctionHouse.address, aliceTokenId);
+
+      const startTime = (await nextSecond()).add(300);
+      await this.auctionHouse
+        .connect(this.alice)
+        .scheduleDutchAuction(
+          this.erc721Token.address,
+          aliceTokenId,
+          WAVAX,
+          startTime,
+          auctionDuration,
+          dutchAuctionDropInterval,
+          dutchAuctionStartPrice,
+          dutchAuctionEndPrice,
+          minPercentageToAsk
+        );
+
+      const auction = await this.auctionHouse.dutchAuctions(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(auction.creator).to.be.equal(this.alice.address);
+      expect(auction.nonce).to.be.equal(0);
+      expect(auction.currency).to.be.equal(WAVAX);
+      expect(auction.startPrice).to.be.equal(dutchAuctionStartPrice);
+      expect(auction.endPrice).to.be.equal(dutchAuctionEndPrice);
+      expect(auction.startTime).to.be.equal(startTime);
+      expect(auction.endTime).to.be.equal(startTime.add(auctionDuration));
+      expect(auction.dropInterval).to.be.equal(dutchAuctionDropInterval);
+      expect(auction.minPercentageToAsk).to.be.equal(minPercentageToAsk);
+
+      const userLatestAuctionNonce =
+        await this.auctionHouse.userLatestAuctionNonce(this.alice.address);
+      expect(userLatestAuctionNonce).to.be.equal(1);
+    });
+
+    it("successfully schedules auction now", async function () {
+      await erc721Token
+        .connect(this.alice)
+        .approve(this.auctionHouse.address, aliceTokenId);
+
+      const startTime = await nextSecond();
+      await this.auctionHouse
+        .connect(this.alice)
+        .scheduleDutchAuction(
+          this.erc721Token.address,
+          aliceTokenId,
+          WAVAX,
+          startTime,
+          auctionDuration,
+          dutchAuctionDropInterval,
+          dutchAuctionStartPrice,
+          dutchAuctionEndPrice,
+          minPercentageToAsk
+        );
+
       const auction = await this.auctionHouse.dutchAuctions(
         this.erc721Token.address,
         aliceTokenId
