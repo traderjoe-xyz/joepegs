@@ -33,6 +33,7 @@ error JoepegAuctionHouse__UnsupportedCurrency();
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnUnstartedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
+error JoepegAuctionHouse__EnglishAuctionCannotSettleUnstartedAuction();
 error JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
 error JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
 error JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
@@ -485,6 +486,9 @@ contract JoepegAuctionHouse is
         }
         if (auction.lastBidPrice == 0) {
             revert JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
+        }
+        if (block.timestamp < auction.startTime) {
+            revert JoepegAuctionHouse__EnglishAuctionCannotSettleUnstartedAuction();
         }
         if (
             msg.sender != auction.creator && block.timestamp < auction.endTime
