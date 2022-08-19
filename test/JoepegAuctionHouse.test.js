@@ -2213,8 +2213,8 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("pause/unpause", function () {
-    it("non-owner cannot pause", async function () {
+  describe("pausableAdmin", function () {
+    it("non-pause admin cannot pause", async function () {
       await expect(
         this.auctionHouse.connect(this.alice).pause()
       ).to.be.revertedWith(
@@ -2229,7 +2229,46 @@ describe("JoepegAuctionHouse", function () {
       ).to.be.revertedWith("PendingOwnable__NotOwner()");
     });
 
-    it("can successfully pause and unpause", async function () {
+    it("pause admin who is not owner cannot unpause", async function () {
+      await this.auctionHouse.addPauseAdmin(this.alice.address);
+      await this.auctionHouse.connect(this.alice).pause();
+      await expect(
+        this.auctionHouse.connect(this.alice).unpause()
+      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+    });
+
+    it("non-owner cannot add pause admin", async function () {
+      await this.auctionHouse.addPauseAdmin(this.alice.address);
+      await expect(
+        this.auctionHouse.connect(this.alice).addPauseAdmin(this.bob.address)
+      ).to.be.revertedWith("PendingOwnable__NotOwner");
+    });
+
+    it("non-owner cannot remove pause admin", async function () {
+      await this.auctionHouse.addPauseAdmin(this.alice.address);
+      await expect(
+        this.auctionHouse.connect(this.bob).removePauseAdmin(this.alice.address)
+      ).to.be.revertedWith("PendingOwnable__NotOwner");
+    });
+
+    it("owner can add and remove pause admin", async function () {
+      await this.auctionHouse.addPauseAdmin(this.alice.address);
+      expect(
+        await this.auctionHouse.isPauseAdmin(this.alice.address)
+      ).to.be.equal(true);
+      await this.auctionHouse.removePauseAdmin(this.alice.address);
+      expect(
+        await this.auctionHouse.isPauseAdmin(this.alice.address)
+      ).to.be.equal(false);
+    });
+
+    it("pause admin can pause", async function () {
+      await this.auctionHouse.addPauseAdmin(this.alice.address);
+      await this.auctionHouse.connect(this.alice).pause();
+      expect(await this.auctionHouse.paused()).to.be.equal(true);
+    });
+
+    it("owner can successfully pause and unpause", async function () {
       expect(await this.auctionHouse.paused()).to.be.equal(false);
       await this.auctionHouse.pause();
       expect(await this.auctionHouse.paused()).to.be.equal(true);
@@ -2237,6 +2276,19 @@ describe("JoepegAuctionHouse", function () {
       expect(await this.auctionHouse.paused()).to.be.equal(false);
 
       await startDutchAuction();
+    });
+
+    it("transferring ownership should add new owner to pause admin and remove privilege of previous owner", async function () {
+      await this.auctionHouse.setPendingOwner(this.alice.address);
+      await this.auctionHouse.connect(this.alice).becomeOwner();
+
+      expect(await this.auctionHouse.owner()).to.be.equal(this.alice.address);
+      expect(
+        await this.auctionHouse.isPauseAdmin(this.alice.address)
+      ).to.be.equal(true);
+      expect(
+        await this.auctionHouse.isPauseAdmin(this.dev.address)
+      ).to.be.equal(false);
     });
   });
 
