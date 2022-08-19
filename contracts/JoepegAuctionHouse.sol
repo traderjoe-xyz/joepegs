@@ -766,7 +766,8 @@ contract JoepegAuctionHouse is
         _settleDutchAuction(_collection, _tokenId, auction);
     }
 
-    /// @notice Calculates current Dutch Auction sale price for an ERC721 token
+    /// @notice Calculates current Dutch Auction sale price for an ERC721 token.
+    /// Returns 0 if the auction hasn't started yet.
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     /// @return current Dutch Auction sale price for specified ERC721 token
@@ -776,6 +777,9 @@ contract JoepegAuctionHouse is
         returns (uint256)
     {
         DutchAuction memory auction = dutchAuctions[_collection][_tokenId];
+        if (block.timestamp < auction.startTime) {
+            return 0;
+        }
         if (block.timestamp >= auction.endTime) {
             return auction.endPrice;
         }

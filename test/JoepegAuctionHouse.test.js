@@ -109,12 +109,19 @@ describe("JoepegAuctionHouse", function () {
     await this.erc721Token.mint(this.alice.address);
   });
 
+  const approveAuctionHouseErc721Token = async (
+    account = alice,
+    tokenId = aliceTokenId
+  ) => {
+    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
+  };
+
   const startEnglishAuction = async (
     account = alice,
     startPrice = englishAuctionStartPrice,
     tokenId = aliceTokenId
   ) => {
-    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
+    await approveAuctionHouseErc721Token(account, tokenId);
     await auctionHouse
       .connect(account)
       .startEnglishAuction(
@@ -133,7 +140,6 @@ describe("JoepegAuctionHouse", function () {
     startPrice = englishAuctionStartPrice,
     tokenId = aliceTokenId
   ) => {
-    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
     await auctionHouse
       .connect(account)
       .scheduleEnglishAuction(
@@ -153,7 +159,7 @@ describe("JoepegAuctionHouse", function () {
     endPrice = dutchAuctionEndPrice,
     tokenId = aliceTokenId
   ) => {
-    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
+    await approveAuctionHouseErc721Token(account, tokenId);
     await auctionHouse
       .connect(account)
       .startDutchAuction(
@@ -175,7 +181,6 @@ describe("JoepegAuctionHouse", function () {
     endPrice = dutchAuctionEndPrice,
     tokenId = aliceTokenId
   ) => {
-    await erc721Token.connect(account).approve(auctionHouse.address, tokenId);
     await auctionHouse
       .connect(account)
       .scheduleDutchAuction(
@@ -537,6 +542,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction in future", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = (await nextSecond()).add(300);
       await scheduleEnglishAuction(startTime);
 
@@ -560,6 +566,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction now", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = await nextSecond();
       await scheduleEnglishAuction(startTime);
 
@@ -671,6 +678,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid on unstarted auction", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = (await nextSecond()).add(300);
       await scheduleEnglishAuction(startTime);
 
@@ -962,6 +970,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot bid on unstarted auction", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = (await nextSecond()).add(300);
       await scheduleEnglishAuction(startTime);
 
@@ -1929,6 +1938,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction in future", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = (await nextSecond()).add(300);
       await scheduleDutchAuction(startTime);
 
@@ -1952,6 +1962,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("successfully schedules auction now", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = await nextSecond();
       await scheduleDutchAuction(startTime);
 
@@ -2008,6 +2019,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot settle unstarted auction", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = (await nextSecond()).add(300);
       await scheduleDutchAuction(startTime);
 
@@ -2215,6 +2227,7 @@ describe("JoepegAuctionHouse", function () {
     });
 
     it("cannot settle unstarted auction", async function () {
+      await approveAuctionHouseErc721Token();
       const startTime = (await nextSecond()).add(300);
       await scheduleDutchAuction(startTime);
 
@@ -2570,6 +2583,17 @@ describe("JoepegAuctionHouse", function () {
 
   describe("getDutchAuctionSalePrice", function () {
     it("sale price is zero for non-existent auction", async function () {
+      const salePrice = await this.auctionHouse.getDutchAuctionSalePrice(
+        this.erc721Token.address,
+        aliceTokenId
+      );
+      expect(salePrice).to.be.equal(0);
+    });
+
+    it("sale price is zero for unstarted auction", async function () {
+      await approveAuctionHouseErc721Token();
+      const startTime = (await nextSecond()).add(300);
+      await scheduleDutchAuction(startTime);
       const salePrice = await this.auctionHouse.getDutchAuctionSalePrice(
         this.erc721Token.address,
         aliceTokenId
