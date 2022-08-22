@@ -228,7 +228,7 @@ contract JoepegExchange is
         _validateMakerAskAndTakerBid(takerBid, makerAsk);
 
         // Skip call when maker ask has expired
-        if (!_validateMakerOrder(makerAsk)) {
+        if (!_checkMakerOrderNotExpired(makerAsk)) {
             return;
         }
 
@@ -607,7 +607,7 @@ contract JoepegExchange is
         // Calculate the total cost of all valid orders
         uint256 totalCost;
         for (uint256 i; i < trades.length; ++i) {
-            if (_validateMakerOrder(trades[i].makerAsk)) {
+            if (_checkMakerOrderNotExpired(trades[i].makerAsk)) {
                 totalCost += trades[i].takerBid.price;
             }
         }
@@ -857,7 +857,11 @@ contract JoepegExchange is
         return (protocolFee * _amount) / PERCENTAGE_PRECISION;
     }
 
-    function _validateMakerOrder(OrderTypes.MakerOrder calldata makerOrder)
+    /**
+      * @notice Check whether the maker order has expired or not
+      * @param makerOrder maker order  
+     */
+    function _checkMakerOrderNotExpired(OrderTypes.MakerOrder calldata makerOrder)
         internal
         view
         returns (bool)
@@ -879,7 +883,7 @@ contract JoepegExchange is
     ) internal view {
         // Verify whether order nonce has expired
         require(
-            _validateMakerOrder(makerOrder),
+            _checkMakerOrderNotExpired(makerOrder),
             "Order: Matching order expired"
         );
 
