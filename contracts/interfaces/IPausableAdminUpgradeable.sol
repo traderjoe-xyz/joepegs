@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-interface IPausableAdmin {
+interface IPausableAdminUpgradeable {
     event PauseAdminAdded(address newAdmin);
     event PauseAdminRemoved(address sender, address removedAdmin);
 
