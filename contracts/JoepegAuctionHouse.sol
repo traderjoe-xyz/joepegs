@@ -326,6 +326,7 @@ contract JoepegAuctionHouse is
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     /// @param _currency address of currency to sell ERC721 token for
+    /// @param _startTime time to start the auction
     /// @param _duration number of seconds for English Auction to run
     /// @param _startPrice minimum starting bid price
     /// @param _minPercentageToAsk minimum percentage of the gross amount that goes to ask
@@ -646,6 +647,7 @@ contract JoepegAuctionHouse is
     /// @param _collection address of ERC721 token
     /// @param _tokenId token id of ERC721 token
     /// @param _currency address of currency to sell ERC721 token for
+    /// @param _startTime time to start the auction
     /// @param _duration number of seconds for Dutch Auction to run
     /// @param _dropInterval number of seconds between each drop in price
     /// @param _startPrice starting sell price
