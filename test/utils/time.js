@@ -17,6 +17,10 @@ async function latest() {
   return BigNumber.from(block.timestamp);
 }
 
+async function nextSecond() {
+  return (await latest()).add(1);
+}
+
 async function advanceTimeAndBlock(time) {
   await advanceTime(time);
   await advanceBlock();
@@ -54,4 +58,5 @@ module.exports = {
   advanceTimeAndBlock,
   duration,
   latest,
+  nextSecond,
 };
