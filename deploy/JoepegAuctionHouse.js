@@ -1,3 +1,4 @@
+const { ethers } = require("hardhat");
 const { verify } = require("./utils");
 
 module.exports = async function ({
@@ -67,6 +68,13 @@ module.exports = async function ({
       deterministicDeployment: false,
     });
   });
+
+  // Initialize implementation contract
+  const implementationContract = await ethers.getContractAt(
+    "JoepegAuctionHouse",
+    proxyContract.implementation
+  );
+  await implementationContract.initialize(...initArgs);
 
   await verify(proxyContract.implementation, constructorArgs);
 };
