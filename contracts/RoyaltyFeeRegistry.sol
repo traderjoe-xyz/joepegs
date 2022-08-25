@@ -27,6 +27,7 @@ contract RoyaltyFeeRegistry is
     uint256 public royaltyFeeLimit;
 
     mapping(address => FeeInfo) private _royaltyFeeInfoCollection;
+    mapping(address => FeeInfo[]) private _royaltyFeeInfosCollection;
 
     event NewRoyaltyFeeLimit(uint256 royaltyFeeLimit);
     event RoyaltyFeeUpdate(
@@ -132,5 +133,27 @@ contract RoyaltyFeeRegistry is
             _royaltyFeeInfoCollection[collection].receiver,
             _royaltyFeeInfoCollection[collection].fee
         );
+    }
+
+    /**
+     * @notice View royalty info for a collection address
+     * @param collection collection address
+     */
+    function royaltyFeeInfosForCollection(address collection)
+        external
+        view
+        returns (FeeInfo[] memory)
+    {
+        if (_royaltyFeeInfosCollection[collection].length > 0) {
+            return _royaltyFeeInfosCollection[collection];
+        } else {
+            FeeInfo[] memory feeInfos = new FeeInfo[](1);
+            feeInfos[0] = FeeInfo({
+                setter: _royaltyFeeInfoCollection[collection].setter,
+                receiver: _royaltyFeeInfoCollection[collection].receiver,
+                fee: _royaltyFeeInfoCollection[collection].fee
+            });
+            return feeInfos;
+        }
     }
 }
