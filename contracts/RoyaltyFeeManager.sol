@@ -7,6 +7,7 @@ import {IERC165, IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol
 
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
+import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
 /**
@@ -24,15 +25,21 @@ contract RoyaltyFeeManager is
     bytes4 public constant INTERFACE_ID_ERC2981 = 0x2a55205a;
 
     IRoyaltyFeeRegistry public royaltyFeeRegistry;
+    IRoyaltyFeeRegistryV2 public royaltyFeeRegistryV2;
 
     /**
      * @notice Initializer
      * @param _royaltyFeeRegistry address of the RoyaltyFeeRegistry
+     * @param _royaltyFeeRegistryV2 address of the RoyaltyFeeRegistryV2
      */
-    function initialize(address _royaltyFeeRegistry) public initializer {
+    function initialize(
+        address _royaltyFeeRegistry,
+        address _royaltyFeeRegistryV2
+    ) public initializer {
         __Ownable_init();
 
         royaltyFeeRegistry = IRoyaltyFeeRegistry(_royaltyFeeRegistry);
+        royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
     }
 
     /**
@@ -69,10 +76,8 @@ contract RoyaltyFeeManager is
     ) external view override returns (RoyaltyFeeTypes.FeeAmountPart[] memory) {
         // Check if there is royalty info in the system
         RoyaltyFeeTypes.FeeAmountPart[]
-            memory registryFeeAmountParts = royaltyFeeRegistry.royaltyInfoParts(
-                collection,
-                amount
-            );
+            memory registryFeeAmountParts = royaltyFeeRegistryV2
+                .royaltyInfoParts(collection, amount);
 
         if (registryFeeAmountParts.length > 0) {
             return registryFeeAmountParts;
