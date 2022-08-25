@@ -7,6 +7,7 @@ import {IERC165, IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol
 
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
+import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
 /**
  * @title RoyaltyFeeManager
@@ -17,6 +18,8 @@ contract RoyaltyFeeManager is
     Initializable,
     OwnableUpgradeable
 {
+    using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeInfoPart;
+
     // https://eips.ethereum.org/EIPS/eip-2981
     bytes4 public constant INTERFACE_ID_ERC2981 = 0x2a55205a;
 
@@ -57,5 +60,37 @@ contract RoyaltyFeeManager is
             }
         }
         return (receiver, royaltyAmount);
+    }
+
+    function calculateRoyaltyFeeAmountParts(
+        address collection,
+        uint256 tokenId,
+        uint256 amount
+    ) external view override returns (RoyaltyFeeTypes.FeeAmountPart[] memory) {
+        // Check if there is royalty info in the system
+        RoyaltyFeeTypes.FeeAmountPart[]
+            memory registryFeeAmountParts = royaltyFeeRegistry.royaltyInfoParts(
+                collection,
+                amount
+            );
+
+        if (registryFeeAmountParts.length > 0) {
+            return registryFeeAmountParts;
+        }
+
+        // There is no royalty info set in registry so check if it supports the ERC2981 interface
+        if (IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981)) {
+            (address receiver, uint256 royaltyAmount) = IERC2981(collection)
+                .royaltyInfo(tokenId, amount);
+            RoyaltyFeeTypes.FeeAmountPart[]
+                memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](1);
+            feeAmountParts[0] = RoyaltyFeeTypes.FeeAmountPart({
+                receiver: receiver,
+                amount: royaltyAmount
+            });
+            return feeAmountParts;
+        } else {
+            return new RoyaltyFeeTypes.FeeAmountPart[](0);
+        }
     }
 }
