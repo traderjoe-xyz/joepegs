@@ -5,6 +5,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
+import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
 error RoyaltyFeeRegistry__RoyaltyFeeLimitTooHigh();
 error RoyaltyFeeRegistry__RoyaltyFeeTooHigh();
@@ -22,13 +23,10 @@ contract RoyaltyFeeRegistry is
     Initializable,
     OwnableUpgradeable
 {
+    using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeInfoPart;
+
     struct FeeInfo {
         address setter;
-        address receiver;
-        uint256 fee;
-    }
-
-    struct FeeInfoPart {
         address receiver;
         uint256 fee;
     }
@@ -38,7 +36,8 @@ contract RoyaltyFeeRegistry is
     mapping(address => FeeInfo) private _royaltyFeeInfoCollection;
 
     // Handles multiple royalty fee recipients
-    mapping(address => FeeInfoPart[]) private _royaltyFeeInfoPartsCollection;
+    mapping(address => RoyaltyFeeTypes.FeeInfoPart[])
+        private _royaltyFeeInfoPartsCollection;
     mapping(address => address) private _royaltyFeeInfoPartsCollectionSetter;
 
     uint8 public maxNumRecipients;
@@ -119,7 +118,7 @@ contract RoyaltyFeeRegistry is
     function updateRoyaltyInfoPartsForCollection(
         address collection,
         address setter,
-        FeeInfoPart[] memory feeInfoParts
+        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
     ) external onlyOwner {
         uint256 numFeeInfoParts = feeInfoParts.length;
         if (numFeeInfoParts > maxNumRecipients) {
@@ -132,7 +131,7 @@ contract RoyaltyFeeRegistry is
         uint256 totalFees = 0;
 
         for (uint256 i = 0; i < numFeeInfoParts; i++) {
-            FeeInfoPart memory feeInfoPart = feeInfoParts[i];
+            RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = feeInfoParts[i];
             if (feeInfoPart.receiver == address(0)) {
                 revert RoyaltyFeeRegistry__RoyaltyFeeRecipientCannotBeNullAddr();
             }
@@ -196,7 +195,7 @@ contract RoyaltyFeeRegistry is
     function royaltyFeeInfoPartsForCollection(address collection)
         external
         view
-        returns (address, FeeInfoPart[] memory)
+        returns (address, RoyaltyFeeTypes.FeeInfoPart[] memory)
     {
         if (
             _royaltyFeeInfoPartsCollection[collection].length > 0 &&
@@ -207,8 +206,9 @@ contract RoyaltyFeeRegistry is
                 _royaltyFeeInfoPartsCollection[collection]
             );
         } else {
-            FeeInfoPart[] memory feeInfoParts = new FeeInfoPart[](1);
-            feeInfoParts[0] = FeeInfoPart({
+            RoyaltyFeeTypes.FeeInfoPart[]
+                memory feeInfoParts = new RoyaltyFeeTypes.FeeInfoPart[](1);
+            feeInfoParts[0] = RoyaltyFeeTypes.FeeInfoPart({
                 receiver: _royaltyFeeInfoCollection[collection].receiver,
                 fee: _royaltyFeeInfoCollection[collection].fee
             });
