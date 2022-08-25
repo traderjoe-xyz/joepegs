@@ -21,4 +21,9 @@ interface IRoyaltyFeeRegistryV2 {
         external
         view
         returns (address, RoyaltyFeeTypes.FeeInfoPart[] memory);
+
+    function royaltyFeeInfoPartsCollectionSetter(address collection)
+        external
+        view
+        returns (address);
 }

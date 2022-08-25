@@ -15,8 +15,8 @@ error RoyaltyFeeRegistryV2__RoyaltyFeeCannotBeZero();
 error RoyaltyFeeRegistryV2__TooManyFeeRecipients();
 
 /**
- * @title RoyaltyFeeRegistry
- * @notice It is a royalty fee registry for the Joepeg exchange.
+ * @title RoyaltyFeeRegistryV2
+ * @notice It is a royalty fee registry for the Joepeg exchange and auction house.
  */
 contract RoyaltyFeeRegistryV2 is
     IRoyaltyFeeRegistryV2,
@@ -30,8 +30,8 @@ contract RoyaltyFeeRegistryV2 is
 
     // Handles multiple royalty fee recipients
     mapping(address => RoyaltyFeeTypes.FeeInfoPart[])
-        private _royaltyFeeInfoPartsCollection;
-    mapping(address => address) private _royaltyFeeInfoPartsCollectionSetter;
+        public royaltyFeeInfoPartsCollection;
+    mapping(address => address) public royaltyFeeInfoPartsCollectionSetter;
 
     uint8 public maxNumRecipients;
 
@@ -109,8 +109,8 @@ contract RoyaltyFeeRegistryV2 is
             revert RoyaltyFeeRegistryV2__RoyaltyFeeTooHigh();
         }
 
-        _royaltyFeeInfoPartsCollection[collection] = feeInfoParts;
-        _royaltyFeeInfoPartsCollectionSetter[collection] = setter;
+        royaltyFeeInfoPartsCollection[collection] = feeInfoParts;
+        royaltyFeeInfoPartsCollectionSetter[collection] = setter;
     }
 
     function royaltyInfoParts(address _collection, uint256 _amount)
@@ -120,7 +120,7 @@ contract RoyaltyFeeRegistryV2 is
         returns (RoyaltyFeeTypes.FeeAmountPart[] memory)
     {
         RoyaltyFeeTypes.FeeInfoPart[]
-            memory feeInfoParts = _royaltyFeeInfoPartsCollection[_collection];
+            memory feeInfoParts = royaltyFeeInfoPartsCollection[_collection];
         uint256 numFeeInfoParts = feeInfoParts.length;
         RoyaltyFeeTypes.FeeAmountPart[]
             memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](
@@ -147,8 +147,8 @@ contract RoyaltyFeeRegistryV2 is
         returns (address, RoyaltyFeeTypes.FeeInfoPart[] memory)
     {
         return (
-            _royaltyFeeInfoPartsCollectionSetter[collection],
-            _royaltyFeeInfoPartsCollection[collection]
+            royaltyFeeInfoPartsCollectionSetter[collection],
+            royaltyFeeInfoPartsCollection[collection]
         );
     }
 }
