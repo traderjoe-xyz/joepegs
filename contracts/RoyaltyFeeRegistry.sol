@@ -5,14 +5,8 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
-import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
 error RoyaltyFeeRegistry__RoyaltyFeeLimitTooHigh();
-error RoyaltyFeeRegistry__RoyaltyFeeTooHigh();
-error RoyaltyFeeRegistry__RoyaltyFeeRecipientCannotBeNullAddr();
-error RoyaltyFeeRegistry__RoyaltyFeeSetterCannotBeNullAddr();
-error RoyaltyFeeRegistry__RoyaltyFeeCannotBeZero();
-error RoyaltyFeeRegistry__TooManyFeeRecipients();
 
 /**
  * @title RoyaltyFeeRegistry
@@ -23,8 +17,6 @@ contract RoyaltyFeeRegistry is
     Initializable,
     OwnableUpgradeable
 {
-    using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeInfoPart;
-
     struct FeeInfo {
         address setter;
         address receiver;
@@ -33,14 +25,8 @@ contract RoyaltyFeeRegistry is
 
     // Limit (if enforced for fee royalty in percentage (10,000 = 100%)
     uint256 public royaltyFeeLimit;
+
     mapping(address => FeeInfo) private _royaltyFeeInfoCollection;
-
-    // Handles multiple royalty fee recipients
-    mapping(address => RoyaltyFeeTypes.FeeInfoPart[])
-        private _royaltyFeeInfoPartsCollection;
-    mapping(address => address) private _royaltyFeeInfoPartsCollectionSetter;
-
-    uint8 public maxNumRecipients;
 
     event NewRoyaltyFeeLimit(uint256 royaltyFeeLimit);
     event RoyaltyFeeUpdate(
@@ -69,7 +55,6 @@ contract RoyaltyFeeRegistry is
         __Ownable_init();
 
         royaltyFeeLimit = _royaltyFeeLimit;
-        maxNumRecipients = 5;
     }
 
     /**
@@ -111,45 +96,6 @@ contract RoyaltyFeeRegistry is
     }
 
     /**
-     * @notice Update royalty info for collection
-     * @param collection address of the NFT contract
-     * @param feeInfoParts address that sets the receiver
-     */
-    function updateRoyaltyInfoPartsForCollection(
-        address collection,
-        address setter,
-        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
-    ) external override onlyOwner {
-        uint256 numFeeInfoParts = feeInfoParts.length;
-        if (numFeeInfoParts > maxNumRecipients) {
-            revert RoyaltyFeeRegistry__TooManyFeeRecipients();
-        }
-        if (setter == address(0)) {
-            revert RoyaltyFeeRegistry__RoyaltyFeeSetterCannotBeNullAddr();
-        }
-
-        uint256 totalFees = 0;
-
-        for (uint256 i = 0; i < numFeeInfoParts; i++) {
-            RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = feeInfoParts[i];
-            if (feeInfoPart.receiver == address(0)) {
-                revert RoyaltyFeeRegistry__RoyaltyFeeRecipientCannotBeNullAddr();
-            }
-            if (feeInfoPart.fee == 0) {
-                revert RoyaltyFeeRegistry__RoyaltyFeeCannotBeZero();
-            }
-            totalFees += feeInfoPart.fee;
-        }
-
-        if (totalFees > royaltyFeeLimit) {
-            revert RoyaltyFeeRegistry__RoyaltyFeeTooHigh();
-        }
-
-        _royaltyFeeInfoPartsCollection[collection] = feeInfoParts;
-        _royaltyFeeInfoPartsCollectionSetter[collection] = setter;
-    }
-
-    /**
      * @notice Calculate royalty info for a collection address and a sale gross amount
      * @param collection collection address
      * @param amount amount
@@ -165,29 +111,6 @@ contract RoyaltyFeeRegistry is
             _royaltyFeeInfoCollection[collection].receiver,
             (amount * _royaltyFeeInfoCollection[collection].fee) / 10000
         );
-    }
-
-    function royaltyInfoParts(address _collection, uint256 _amount)
-        external
-        view
-        override
-        returns (RoyaltyFeeTypes.FeeAmountPart[] memory)
-    {
-        RoyaltyFeeTypes.FeeInfoPart[]
-            memory feeInfoParts = _royaltyFeeInfoPartsCollection[_collection];
-        uint256 numFeeInfoParts = feeInfoParts.length;
-        RoyaltyFeeTypes.FeeAmountPart[]
-            memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](
-                numFeeInfoParts
-            );
-        for (uint256 i = 0; i < numFeeInfoParts; i++) {
-            RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = feeInfoParts[i];
-            feeAmountParts[i] = RoyaltyFeeTypes.FeeAmountPart({
-                receiver: feeInfoPart.receiver,
-                amount: (_amount * feeInfoPart.fee) / 10_000
-            });
-        }
-        return feeAmountParts;
     }
 
     /**
@@ -209,34 +132,5 @@ contract RoyaltyFeeRegistry is
             _royaltyFeeInfoCollection[collection].receiver,
             _royaltyFeeInfoCollection[collection].fee
         );
-    }
-
-    /**
-     * @notice View royalty info for a collection address
-     * @param collection collection address
-     */
-    function royaltyFeeInfoPartsForCollection(address collection)
-        external
-        view
-        override
-        returns (address, RoyaltyFeeTypes.FeeInfoPart[] memory)
-    {
-        if (
-            _royaltyFeeInfoPartsCollection[collection].length > 0 &&
-            _royaltyFeeInfoPartsCollectionSetter[collection] != address(0)
-        ) {
-            return (
-                _royaltyFeeInfoPartsCollectionSetter[collection],
-                _royaltyFeeInfoPartsCollection[collection]
-            );
-        } else {
-            RoyaltyFeeTypes.FeeInfoPart[]
-                memory feeInfoParts = new RoyaltyFeeTypes.FeeInfoPart[](1);
-            feeInfoParts[0] = RoyaltyFeeTypes.FeeInfoPart({
-                receiver: _royaltyFeeInfoCollection[collection].receiver,
-                fee: _royaltyFeeInfoCollection[collection].fee
-            });
-            return (_royaltyFeeInfoCollection[collection].setter, feeInfoParts);
-        }
     }
 }

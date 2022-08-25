@@ -7,12 +7,15 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
 import {IOwnable} from "./interfaces/IOwnable.sol";
+import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
 /**
  * @title RoyaltyFeeSetter
  * @notice Used to allow creators to set royalty parameters in the RoyaltyFeeRegistry.
  */
 contract RoyaltyFeeSetter is Initializable, OwnableUpgradeable {
+    using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeInfoPart;
+
     // ERC721 interfaceID
     bytes4 public constant INTERFACE_ID_ERC721 = 0x80ac58cd;
 
@@ -142,6 +145,19 @@ contract RoyaltyFeeSetter is Initializable, OwnableUpgradeable {
             receiver,
             fee
         );
+    }
+
+    function updateRoyaltyInfoPartsForCollection(
+        address collection,
+        address setter,
+        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
+    ) external onlyOwner {
+        IRoyaltyFeeRegistry(royaltyFeeRegistry)
+            .updateRoyaltyInfoPartsForCollection(
+                collection,
+                setter,
+                feeInfoParts
+            );
     }
 
     /**
