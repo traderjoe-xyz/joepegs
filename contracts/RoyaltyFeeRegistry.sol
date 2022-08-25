@@ -119,7 +119,7 @@ contract RoyaltyFeeRegistry is
         address collection,
         address setter,
         RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
-    ) external onlyOwner {
+    ) external override onlyOwner {
         uint256 numFeeInfoParts = feeInfoParts.length;
         if (numFeeInfoParts > maxNumRecipients) {
             revert RoyaltyFeeRegistry__TooManyFeeRecipients();
@@ -167,6 +167,29 @@ contract RoyaltyFeeRegistry is
         );
     }
 
+    function royaltyInfoParts(address _collection, uint256 _amount)
+        external
+        view
+        override
+        returns (RoyaltyFeeTypes.FeeAmountPart[] memory)
+    {
+        RoyaltyFeeTypes.FeeInfoPart[]
+            memory feeInfoParts = _royaltyFeeInfoPartsCollection[_collection];
+        uint256 numFeeInfoParts = feeInfoParts.length;
+        RoyaltyFeeTypes.FeeAmountPart[]
+            memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](
+                numFeeInfoParts
+            );
+        for (uint256 i = 0; i < numFeeInfoParts; i++) {
+            RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = feeInfoParts[i];
+            feeAmountParts[i] = RoyaltyFeeTypes.FeeAmountPart({
+                receiver: feeInfoPart.receiver,
+                amount: (_amount * feeInfoPart.fee) / 10_000
+            });
+        }
+        return feeAmountParts;
+    }
+
     /**
      * @notice View royalty info for a collection address
      * @param collection collection address
@@ -195,6 +218,7 @@ contract RoyaltyFeeRegistry is
     function royaltyFeeInfoPartsForCollection(address collection)
         external
         view
+        override
         returns (address, RoyaltyFeeTypes.FeeInfoPart[] memory)
     {
         if (

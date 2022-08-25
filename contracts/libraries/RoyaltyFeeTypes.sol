@@ -10,4 +10,9 @@ library RoyaltyFeeTypes {
         address receiver;
         uint256 fee;
     }
+
+    struct FeeAmountPart {
+        address receiver;
+        uint256 amount;
+    }
 }
