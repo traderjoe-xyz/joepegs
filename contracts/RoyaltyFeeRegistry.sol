@@ -7,6 +7,11 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
 
 error RoyaltyFeeRegistry__RoyaltyFeeLimitTooHigh();
+error RoyaltyFeeRegistry__RoyaltyFeeTooHigh();
+error RoyaltyFeeRegistry__RoyaltyFeeRecipientCannotBeNullAddr();
+error RoyaltyFeeRegistry__RoyaltyFeeSetterCannotBeNullAddr();
+error RoyaltyFeeRegistry__RoyaltyFeeCannotBeZero();
+error RoyaltyFeeRegistry__TooManyFeeRecipients();
 
 /**
  * @title RoyaltyFeeRegistry
@@ -23,11 +28,20 @@ contract RoyaltyFeeRegistry is
         uint256 fee;
     }
 
+    struct FeeInfoPart {
+        address receiver;
+        uint256 fee;
+    }
+
     // Limit (if enforced for fee royalty in percentage (10,000 = 100%)
     uint256 public royaltyFeeLimit;
-
     mapping(address => FeeInfo) private _royaltyFeeInfoCollection;
-    mapping(address => FeeInfo[]) private _royaltyFeeInfosCollection;
+
+    // Handles multiple royalty fee recipients
+    mapping(address => FeeInfoPart[]) private _royaltyFeeInfoPartsCollection;
+    mapping(address => address) private _royaltyFeeInfoPartsCollectionSetter;
+
+    uint8 public maxNumRecipients;
 
     event NewRoyaltyFeeLimit(uint256 royaltyFeeLimit);
     event RoyaltyFeeUpdate(
@@ -56,6 +70,7 @@ contract RoyaltyFeeRegistry is
         __Ownable_init();
 
         royaltyFeeLimit = _royaltyFeeLimit;
+        maxNumRecipients = 5;
     }
 
     /**
@@ -94,6 +109,45 @@ contract RoyaltyFeeRegistry is
         });
 
         emit RoyaltyFeeUpdate(collection, setter, receiver, fee);
+    }
+
+    /**
+     * @notice Update royalty info for collection
+     * @param collection address of the NFT contract
+     * @param feeInfoParts address that sets the receiver
+     */
+    function updateRoyaltyInfoPartsForCollection(
+        address collection,
+        address setter,
+        FeeInfoPart[] memory feeInfoParts
+    ) external onlyOwner {
+        uint256 numFeeInfoParts = feeInfoParts.length;
+        if (numFeeInfoParts > maxNumRecipients) {
+            revert RoyaltyFeeRegistry__TooManyFeeRecipients();
+        }
+        if (setter == address(0)) {
+            revert RoyaltyFeeRegistry__RoyaltyFeeSetterCannotBeNullAddr();
+        }
+
+        uint256 totalFees = 0;
+
+        for (uint256 i = 0; i < numFeeInfoParts; i++) {
+            FeeInfoPart memory feeInfoPart = feeInfoParts[i];
+            if (feeInfoPart.receiver == address(0)) {
+                revert RoyaltyFeeRegistry__RoyaltyFeeRecipientCannotBeNullAddr();
+            }
+            if (feeInfoPart.fee == 0) {
+                revert RoyaltyFeeRegistry__RoyaltyFeeCannotBeZero();
+            }
+            totalFees += feeInfoPart.fee;
+        }
+
+        if (totalFees > royaltyFeeLimit) {
+            revert RoyaltyFeeRegistry__RoyaltyFeeTooHigh();
+        }
+
+        _royaltyFeeInfoPartsCollection[collection] = feeInfoParts;
+        _royaltyFeeInfoPartsCollectionSetter[collection] = setter;
     }
 
     /**
@@ -139,21 +193,26 @@ contract RoyaltyFeeRegistry is
      * @notice View royalty info for a collection address
      * @param collection collection address
      */
-    function royaltyFeeInfosForCollection(address collection)
+    function royaltyFeeInfoPartsForCollection(address collection)
         external
         view
-        returns (FeeInfo[] memory)
+        returns (address, FeeInfoPart[] memory)
     {
-        if (_royaltyFeeInfosCollection[collection].length > 0) {
-            return _royaltyFeeInfosCollection[collection];
+        if (
+            _royaltyFeeInfoPartsCollection[collection].length > 0 &&
+            _royaltyFeeInfoPartsCollectionSetter[collection] != address(0)
+        ) {
+            return (
+                _royaltyFeeInfoPartsCollectionSetter[collection],
+                _royaltyFeeInfoPartsCollection[collection]
+            );
         } else {
-            FeeInfo[] memory feeInfos = new FeeInfo[](1);
-            feeInfos[0] = FeeInfo({
-                setter: _royaltyFeeInfoCollection[collection].setter,
+            FeeInfoPart[] memory feeInfoParts = new FeeInfoPart[](1);
+            feeInfoParts[0] = FeeInfoPart({
                 receiver: _royaltyFeeInfoCollection[collection].receiver,
                 fee: _royaltyFeeInfoCollection[collection].fee
             });
-            return feeInfos;
+            return (_royaltyFeeInfoCollection[collection].setter, feeInfoParts);
         }
     }
 }
