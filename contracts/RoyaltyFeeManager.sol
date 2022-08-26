@@ -69,24 +69,30 @@ contract RoyaltyFeeManager is
         return (receiver, royaltyAmount);
     }
 
+    /**
+     * @notice Calculate royalty fee amount parts
+     * @param _collection address of the NFT contract
+     * @param _tokenId tokenId
+     * @param _amount amount to transfer
+     */
     function calculateRoyaltyFeeAmountParts(
-        address collection,
-        uint256 tokenId,
-        uint256 amount
+        address _collection,
+        uint256 _tokenId,
+        uint256 _amount
     ) external view override returns (RoyaltyFeeTypes.FeeAmountPart[] memory) {
         // Check if there is royalty info in the system
         RoyaltyFeeTypes.FeeAmountPart[]
             memory registryFeeAmountParts = royaltyFeeRegistryV2
-                .royaltyAmountParts(collection, amount);
+                .royaltyAmountParts(_collection, _amount);
 
         if (registryFeeAmountParts.length > 0) {
             return registryFeeAmountParts;
         }
 
         // There is no royalty info set in registry so check if it supports the ERC2981 interface
-        if (IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981)) {
-            (address receiver, uint256 royaltyAmount) = IERC2981(collection)
-                .royaltyInfo(tokenId, amount);
+        if (IERC165(_collection).supportsInterface(INTERFACE_ID_ERC2981)) {
+            (address receiver, uint256 royaltyAmount) = IERC2981(_collection)
+                .royaltyInfo(_tokenId, _amount);
             RoyaltyFeeTypes.FeeAmountPart[]
                 memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](1);
             feeAmountParts[0] = RoyaltyFeeTypes.FeeAmountPart({
