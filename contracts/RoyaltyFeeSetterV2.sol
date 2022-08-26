@@ -32,7 +32,7 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
     // ERC2981 interfaceID
     bytes4 public constant INTERFACE_ID_ERC2981 = 0x2a55205a;
 
-    address public royaltyFeeRegistryV2;
+    IRoyaltyFeeRegistryV2 public royaltyFeeRegistryV2;
 
     /**
      * @notice Initializer
@@ -41,7 +41,7 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
     function initialize(address _royaltyFeeRegistryV2) public initializer {
         __Ownable_init();
 
-        royaltyFeeRegistryV2 = _royaltyFeeRegistryV2;
+        royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
     }
 
     /**
@@ -106,17 +106,16 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
         address _setter,
         RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) external {
-        address currentSetter = IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
+        address currentSetter = royaltyFeeRegistryV2
             .royaltyFeeInfoPartsCollectionSetter(_collection);
         if (msg.sender != currentSetter) {
             revert RoyaltyFeeSetterV2__NotCollectionSetter();
         }
-        IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
-            .updateRoyaltyInfoPartsForCollection(
-                _collection,
-                _setter,
-                _feeInfoParts
-            );
+        royaltyFeeRegistryV2.updateRoyaltyInfoPartsForCollection(
+            _collection,
+            _setter,
+            _feeInfoParts
+        );
     }
 
     /**
@@ -131,12 +130,11 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
         address _setter,
         RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) external onlyOwner {
-        IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
-            .updateRoyaltyInfoPartsForCollection(
-                _collection,
-                _setter,
-                _feeInfoParts
-            );
+        royaltyFeeRegistryV2.updateRoyaltyInfoPartsForCollection(
+            _collection,
+            _setter,
+            _feeInfoParts
+        );
     }
 
     /**
@@ -148,7 +146,7 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
         external
         onlyOwner
     {
-        IOwnable(royaltyFeeRegistryV2).transferOwnership(_owner);
+        IOwnable(address(royaltyFeeRegistryV2)).transferOwnership(_owner);
     }
 
     /**
@@ -159,9 +157,7 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
         external
         onlyOwner
     {
-        IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2).updateRoyaltyFeeLimit(
-            _royaltyFeeLimit
-        );
+        royaltyFeeRegistryV2.updateRoyaltyFeeLimit(_royaltyFeeLimit);
     }
 
     /**
@@ -175,7 +171,7 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
         address _setter,
         RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) internal {
-        address currentSetter = IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
+        address currentSetter = royaltyFeeRegistryV2
             .royaltyFeeInfoPartsCollectionSetter(_collection);
         if (currentSetter != address(0)) {
             revert RoyaltyFeeSetterV2__SetterAlreadySet();
@@ -186,11 +182,10 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
         ) {
             revert RoyaltyFeeSetterV2__CollectionIsNotNFT();
         }
-        IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
-            .updateRoyaltyInfoPartsForCollection(
-                _collection,
-                _setter,
-                _feeInfoParts
-            );
+        royaltyFeeRegistryV2.updateRoyaltyInfoPartsForCollection(
+            _collection,
+            _setter,
+            _feeInfoParts
+        );
     }
 }
