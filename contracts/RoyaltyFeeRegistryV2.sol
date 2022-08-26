@@ -7,11 +7,12 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
+error RoyaltyFeeRegistryV2__InvalidMaxNumRecipients();
+error RoyaltyFeeRegistryV2__RoyaltyFeeCannotBeZero();
 error RoyaltyFeeRegistryV2__RoyaltyFeeLimitTooHigh();
-error RoyaltyFeeRegistryV2__RoyaltyFeeTooHigh();
 error RoyaltyFeeRegistryV2__RoyaltyFeeRecipientCannotBeNullAddr();
 error RoyaltyFeeRegistryV2__RoyaltyFeeSetterCannotBeNullAddr();
-error RoyaltyFeeRegistryV2__RoyaltyFeeCannotBeZero();
+error RoyaltyFeeRegistryV2__RoyaltyFeeTooHigh();
 error RoyaltyFeeRegistryV2__TooManyFeeRecipients();
 
 /**
@@ -25,21 +26,25 @@ contract RoyaltyFeeRegistryV2 is
 {
     using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeInfoPart;
 
-    // Limit (if enforced for fee royalty in percentage (10,000 = 100%)
+    /// @notice Max royalty fee bp allowed (10,000 = 100%)
     uint256 public royaltyFeeLimit;
 
-    // Handles multiple royalty fee recipients
-    mapping(address => RoyaltyFeeTypes.FeeInfoPart[])
-        public royaltyFeeInfoPartsCollection;
-    mapping(address => address) public royaltyFeeInfoPartsCollectionSetter;
-
+    /// @notice Max number of royalty fee recipients allowed
     uint8 public maxNumRecipients;
 
-    event NewRoyaltyFeeLimit(
+    /// @notice Stores royalty fee information for collections
+    mapping(address => RoyaltyFeeTypes.FeeInfoPart[])
+        public royaltyFeeInfoPartsCollection;
+
+    /// @notice Stores setter address for collections whose royalty fee information
+    /// are overridden
+    mapping(address => address) public royaltyFeeInfoPartsCollectionSetter;
+
+    event RoyaltyFeeLimitSet(
         uint256 oldRoyaltyFeeLimit,
         uint256 newRoyaltyFeeLimit
     );
-    event NewMaxNumRecipients(
+    event MaxNumRecipientsSet(
         uint256 oldMaxNumRecipients,
         uint256 newMaxNumRecipients
     );
@@ -51,19 +56,28 @@ contract RoyaltyFeeRegistryV2 is
         _;
     }
 
+    modifier isValidMaxNumRecipients(uint256 _maxNumRecipients) {
+        if (_maxNumRecipients == 0) {
+            revert RoyaltyFeeRegistryV2__InvalidMaxNumRecipients();
+        }
+        _;
+    }
+
     /**
      * @notice Initializer
      * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
+     * @param _maxNumRecipients new maximum number of royalty fee recipients allowed
      */
-    function initialize(uint256 _royaltyFeeLimit)
+    function initialize(uint256 _royaltyFeeLimit, uint8 _maxNumRecipients)
         public
         initializer
         isValidRoyaltyFeeLimit(_royaltyFeeLimit)
+        isValidMaxNumRecipients(_maxNumRecipients)
     {
         __Ownable_init();
 
         royaltyFeeLimit = _royaltyFeeLimit;
-        maxNumRecipients = 5;
+        maxNumRecipients = _maxNumRecipients;
     }
 
     /**
@@ -79,7 +93,7 @@ contract RoyaltyFeeRegistryV2 is
         uint256 oldRoyaltyFeeLimit = _royaltyFeeLimit;
         royaltyFeeLimit = _royaltyFeeLimit;
 
-        emit NewRoyaltyFeeLimit(oldRoyaltyFeeLimit, _royaltyFeeLimit);
+        emit RoyaltyFeeLimitSet(oldRoyaltyFeeLimit, _royaltyFeeLimit);
     }
 
     /**
@@ -89,18 +103,20 @@ contract RoyaltyFeeRegistryV2 is
     function updateMaxNumRecipients(uint8 _maxNumRecipients)
         external
         override
+        isValidMaxNumRecipients(_maxNumRecipients)
         onlyOwner
     {
         uint8 oldMaxNumRecipients = maxNumRecipients;
         maxNumRecipients = _maxNumRecipients;
 
-        emit NewMaxNumRecipients(oldMaxNumRecipients, _maxNumRecipients);
+        emit MaxNumRecipientsSet(oldMaxNumRecipients, _maxNumRecipients);
     }
 
     /**
      * @notice Update royalty info for collection
      * @param collection address of the NFT contract
-     * @param feeInfoParts address that sets the receiver
+     * @param setter address that sets the receivers
+     * @param feeInfoParts contains receiver and fee information
      */
     function updateRoyaltyInfoPartsForCollection(
         address collection,
@@ -136,7 +152,12 @@ contract RoyaltyFeeRegistryV2 is
         royaltyFeeInfoPartsCollectionSetter[collection] = setter;
     }
 
-    function royaltyInfoParts(address _collection, uint256 _amount)
+    /**
+     * @notice Get royalty info for collection
+     * @param _collection address of the NFT contract
+     * @param _amount contains receiver and fee information
+     */
+    function royaltyAmountParts(address _collection, uint256 _amount)
         external
         view
         override
@@ -157,21 +178,5 @@ contract RoyaltyFeeRegistryV2 is
             });
         }
         return feeAmountParts;
-    }
-
-    /**
-     * @notice View royalty info for a collection address
-     * @param collection collection address
-     */
-    function royaltyFeeInfoPartsForCollection(address collection)
-        external
-        view
-        override
-        returns (address, RoyaltyFeeTypes.FeeInfoPart[] memory)
-    {
-        return (
-            royaltyFeeInfoPartsCollectionSetter[collection],
-            royaltyFeeInfoPartsCollection[collection]
-        );
     }
 }

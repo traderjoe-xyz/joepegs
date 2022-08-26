@@ -14,15 +14,10 @@ interface IRoyaltyFeeRegistryV2 {
 
     function updateMaxNumRecipients(uint8 _maxNumRecipients) external;
 
-    function royaltyInfoParts(address _collection, uint256 _amount)
+    function royaltyAmountParts(address _collection, uint256 _amount)
         external
         view
         returns (RoyaltyFeeTypes.FeeAmountPart[] memory);
-
-    function royaltyFeeInfoPartsForCollection(address collection)
-        external
-        view
-        returns (address, RoyaltyFeeTypes.FeeInfoPart[] memory);
 
     function royaltyFeeInfoPartsCollectionSetter(address collection)
         external

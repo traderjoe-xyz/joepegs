@@ -77,7 +77,7 @@ contract RoyaltyFeeManager is
         // Check if there is royalty info in the system
         RoyaltyFeeTypes.FeeAmountPart[]
             memory registryFeeAmountParts = royaltyFeeRegistryV2
-                .royaltyInfoParts(collection, amount);
+                .royaltyAmountParts(collection, amount);
 
         if (registryFeeAmountParts.length > 0) {
             return registryFeeAmountParts;
