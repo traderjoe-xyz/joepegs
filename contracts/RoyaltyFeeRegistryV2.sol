@@ -35,7 +35,14 @@ contract RoyaltyFeeRegistryV2 is
 
     uint8 public maxNumRecipients;
 
-    event NewRoyaltyFeeLimit(uint256 royaltyFeeLimit);
+    event NewRoyaltyFeeLimit(
+        uint256 oldRoyaltyFeeLimit,
+        uint256 newRoyaltyFeeLimit
+    );
+    event NewMaxNumRecipients(
+        uint256 oldMaxNumRecipients,
+        uint256 newMaxNumRecipients
+    );
 
     modifier isValidRoyaltyFeeLimit(uint256 _royaltyFeeLimit) {
         if (_royaltyFeeLimit > 9500) {
@@ -60,7 +67,7 @@ contract RoyaltyFeeRegistryV2 is
     }
 
     /**
-     * @notice Update royalty info for collection
+     * @notice Update royalty fee limit
      * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
      */
     function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit)
@@ -69,9 +76,25 @@ contract RoyaltyFeeRegistryV2 is
         isValidRoyaltyFeeLimit(_royaltyFeeLimit)
         onlyOwner
     {
+        uint256 oldRoyaltyFeeLimit = _royaltyFeeLimit;
         royaltyFeeLimit = _royaltyFeeLimit;
 
-        emit NewRoyaltyFeeLimit(_royaltyFeeLimit);
+        emit NewRoyaltyFeeLimit(oldRoyaltyFeeLimit, _royaltyFeeLimit);
+    }
+
+    /**
+     * @notice Update `maxNumRecipients`
+     * @param _maxNumRecipients new max number of recipients allowed
+     */
+    function updateMaxNumRecipients(uint8 _maxNumRecipients)
+        external
+        override
+        onlyOwner
+    {
+        uint8 oldMaxNumRecipients = maxNumRecipients;
+        maxNumRecipients = _maxNumRecipients;
+
+        emit NewMaxNumRecipients(oldMaxNumRecipients, _maxNumRecipients);
     }
 
     /**

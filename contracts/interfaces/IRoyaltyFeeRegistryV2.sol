@@ -12,6 +12,8 @@ interface IRoyaltyFeeRegistryV2 {
 
     function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit) external;
 
+    function updateMaxNumRecipients(uint8 _maxNumRecipients) external;
+
     function royaltyInfoParts(address _collection, uint256 _amount)
         external
         view
