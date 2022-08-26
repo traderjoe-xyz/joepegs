@@ -9,9 +9,16 @@ import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {IOwnable} from "./interfaces/IOwnable.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
+error RoyaltyFeeSetterV2__CollectionCannotSupportERC2981();
+error RoyaltyFeeSetterV2__CollectionIsNotNFT();
+error RoyaltyFeeSetterV2__NotCollectionAdmin();
+error RoyaltyFeeSetterV2__NotCollectionOwner();
+error RoyaltyFeeSetterV2__NotCollectionSetter();
+error RoyaltyFeeSetterV2__SetterAlreadySet();
+
 /**
  * @title RoyaltyFeeSetter
- * @notice Used to allow creators to set royalty parameters in RoyaltyFeeRegistryV2.
+ * @notice Used to allow creators to set royalty information in RoyaltyFeeRegistryV2.
  */
 contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
     using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeInfoPart;
@@ -40,97 +47,95 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
     /**
      * @notice Update royalty info for collection if admin
      * @dev Only to be called if there is no setter address
-     * @param collection address of the NFT contract
-     * @param setter address that sets the receiver
-     * @param feeInfoParts fee info parts
+     * @param _collection address of the NFT contract
+     * @param _setter address that sets the receiver
+     * @param _feeInfoParts fee info parts
      */
     function updateRoyaltyInfoPartsForCollectionIfAdmin(
-        address collection,
-        address setter,
-        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
+        address _collection,
+        address _setter,
+        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) external {
-        require(
-            !IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981),
-            "Admin: Must not be ERC2981"
-        );
-        require(
-            msg.sender == IOwnable(collection).admin(),
-            "Admin: Not the admin"
-        );
+        if (IERC165(_collection).supportsInterface(INTERFACE_ID_ERC2981)) {
+            revert RoyaltyFeeSetterV2__CollectionCannotSupportERC2981();
+        }
+        if (msg.sender != IOwnable(_collection).admin()) {
+            revert RoyaltyFeeSetterV2__NotCollectionAdmin();
+        }
         _updateRoyaltyInfoPartsForCollectionIfOwnerOrAdmin(
-            collection,
-            setter,
-            feeInfoParts
+            _collection,
+            _setter,
+            _feeInfoParts
         );
     }
 
     /**
      * @notice Update royalty info for collection if owner
      * @dev Only to be called if there is no setter address
-     * @param collection address of the NFT contract
-     * @param setter address that sets the receiver
-     * @param feeInfoParts fee info parts
+     * @param _collection address of the NFT contract
+     * @param _setter address that sets the receiver
+     * @param _feeInfoParts fee info parts
      */
     function updateRoyaltyInfoPartsForCollectionIfOwner(
-        address collection,
-        address setter,
-        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
+        address _collection,
+        address _setter,
+        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) external {
-        require(
-            !IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981),
-            "Owner: Must not be ERC2981"
-        );
-        require(
-            msg.sender == IOwnable(collection).owner(),
-            "Owner: Not the owner"
-        );
+        if (IERC165(_collection).supportsInterface(INTERFACE_ID_ERC2981)) {
+            revert RoyaltyFeeSetterV2__CollectionCannotSupportERC2981();
+        }
+        if (msg.sender != IOwnable(_collection).owner()) {
+            revert RoyaltyFeeSetterV2__NotCollectionOwner();
+        }
         _updateRoyaltyInfoPartsForCollectionIfOwnerOrAdmin(
-            collection,
-            setter,
-            feeInfoParts
+            _collection,
+            _setter,
+            _feeInfoParts
         );
     }
 
     /**
      * @notice Update royalty info for collection
      * @dev Only to be called if there msg.sender is the setter
-     * @param collection address of the NFT contract
-     * @param setter address that sets the receiver
-     * @param feeInfoParts fee info parts
+     * @param _collection address of the NFT contract
+     * @param _setter address that sets the receiver
+     * @param _feeInfoParts fee info parts
      */
     function updateRoyaltyInfoPartsForCollectionIfSetter(
-        address collection,
-        address setter,
-        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
+        address _collection,
+        address _setter,
+        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) external {
         address currentSetter = IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
-            .royaltyFeeInfoPartsCollectionSetter(collection);
-        require(msg.sender == currentSetter, "Setter: Not the setter");
+            .royaltyFeeInfoPartsCollectionSetter(_collection);
+        if (msg.sender != currentSetter) {
+            revert RoyaltyFeeSetterV2__NotCollectionSetter();
+        }
         IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
             .updateRoyaltyInfoPartsForCollection(
-                collection,
-                setter,
-                feeInfoParts
+                _collection,
+                _setter,
+                _feeInfoParts
             );
     }
 
     /**
      * @notice Update royalty info for collection
      * @dev Can only be called by contract owner (of this)
-     * @param collection address of the NFT contract
-     * @param setter address that sets the receiver
-     * @param feeInfoParts fee info parts
+     * @param _collection address of the NFT contract
+     * @param _setter address that sets the receiver
+     * @param _feeInfoParts fee info parts
      */
     function updateRoyaltyInfoPartsForCollection(
-        address collection,
-        address setter,
-        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
+        address _collection,
+        address _setter,
+        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) external onlyOwner {
         IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
             .updateRoyaltyInfoPartsForCollection(
-                collection,
-                setter,
-                feeInfoParts
+                _collection,
+                _setter,
+                _feeInfoParts
             );
     }
 
@@ -161,28 +166,31 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
 
     /**
      * @notice Update information and perform checks before updating royalty fee registry
-     * @param collection address of the NFT contract
-     * @param setter address that sets the receiver
-     * @param feeInfoParts fee info parts
+     * @param _collection address of the NFT contract
+     * @param _setter address that sets the receiver
+     * @param _feeInfoParts fee info parts
      */
     function _updateRoyaltyInfoPartsForCollectionIfOwnerOrAdmin(
-        address collection,
-        address setter,
-        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
+        address _collection,
+        address _setter,
+        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) internal {
         address currentSetter = IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
-            .royaltyFeeInfoPartsCollectionSetter(collection);
-        require(currentSetter == address(0), "Setter: Already set");
-        require(
-            (IERC165(collection).supportsInterface(INTERFACE_ID_ERC721) ||
-                IERC165(collection).supportsInterface(INTERFACE_ID_ERC1155)),
-            "Setter: Not ERC721/ERC1155"
-        );
+            .royaltyFeeInfoPartsCollectionSetter(_collection);
+        if (currentSetter != address(0)) {
+            revert RoyaltyFeeSetterV2__SetterAlreadySet();
+        }
+        if (
+            !IERC165(_collection).supportsInterface(INTERFACE_ID_ERC721) &&
+            !IERC165(_collection).supportsInterface(INTERFACE_ID_ERC1155)
+        ) {
+            revert RoyaltyFeeSetterV2__CollectionIsNotNFT();
+        }
         IRoyaltyFeeRegistryV2(royaltyFeeRegistryV2)
             .updateRoyaltyInfoPartsForCollection(
-                collection,
-                setter,
-                feeInfoParts
+                _collection,
+                _setter,
+                _feeInfoParts
             );
     }
 }
