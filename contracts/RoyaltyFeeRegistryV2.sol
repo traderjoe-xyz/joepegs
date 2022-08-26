@@ -48,6 +48,11 @@ contract RoyaltyFeeRegistryV2 is
         uint256 oldMaxNumRecipients,
         uint256 newMaxNumRecipients
     );
+    event RoyaltyFeeInfoSet(
+        address indexed collection,
+        address indexed setter,
+        RoyaltyFeeTypes.FeeInfoPart[] feeInfoParts
+    );
 
     modifier isValidRoyaltyFeeLimit(uint256 _royaltyFeeLimit) {
         if (_royaltyFeeLimit > 9500) {
@@ -114,27 +119,27 @@ contract RoyaltyFeeRegistryV2 is
 
     /**
      * @notice Update royalty info for collection
-     * @param collection address of the NFT contract
-     * @param setter address that sets the receivers
-     * @param feeInfoParts contains receiver and fee information
+     * @param _collection address of the NFT contract
+     * @param _setter address that sets the receivers
+     * @param _feeInfoParts contains receiver and fee information
      */
     function updateRoyaltyInfoPartsForCollection(
-        address collection,
-        address setter,
-        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts
+        address _collection,
+        address _setter,
+        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts
     ) external override onlyOwner {
-        uint256 numFeeInfoParts = feeInfoParts.length;
+        uint256 numFeeInfoParts = _feeInfoParts.length;
         if (numFeeInfoParts > maxNumRecipients) {
             revert RoyaltyFeeRegistryV2__TooManyFeeRecipients();
         }
-        if (setter == address(0)) {
+        if (_setter == address(0)) {
             revert RoyaltyFeeRegistryV2__RoyaltyFeeSetterCannotBeNullAddr();
         }
 
         uint256 totalFees = 0;
 
         for (uint256 i = 0; i < numFeeInfoParts; i++) {
-            RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = feeInfoParts[i];
+            RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = _feeInfoParts[i];
             if (feeInfoPart.receiver == address(0)) {
                 revert RoyaltyFeeRegistryV2__RoyaltyFeeRecipientCannotBeNullAddr();
             }
@@ -148,8 +153,10 @@ contract RoyaltyFeeRegistryV2 is
             revert RoyaltyFeeRegistryV2__RoyaltyFeeTooHigh();
         }
 
-        royaltyFeeInfoPartsCollection[collection] = feeInfoParts;
-        royaltyFeeInfoPartsCollectionSetter[collection] = setter;
+        royaltyFeeInfoPartsCollection[_collection] = _feeInfoParts;
+        royaltyFeeInfoPartsCollectionSetter[_collection] = _setter;
+
+        emit RoyaltyFeeInfoSet(_collection, _setter, _feeInfoParts);
     }
 
     /**
