@@ -223,17 +223,18 @@ contract JoepegExchange is
     function _matchAskWithTakerBidUsingAVAXAndWAVAXIgnoringExpiredAsks(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
-    ) internal {
+    ) internal returns (bool) {
         // Validate orders
         _validateMakerAskAndTakerBid(takerBid, makerAsk);
 
         // Skip call when maker ask has expired
         if (!_checkMakerOrderNotExpired(makerAsk)) {
-            return;
+            return false;
         }
 
         // Match orders
         _matchAskWithTakerBidUsingAVAXAndWAVAX(takerBid, makerAsk);
+        return true;
     }
 
     /**
@@ -603,7 +604,9 @@ contract JoepegExchange is
      */
     function batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(
         Trade[] calldata trades
-    ) external payable nonReentrant {
+    ) external payable nonReentrant returns (bool[] memory transferStatus) {
+        transferStatus = new bool[](trades.length);
+
         // Calculate the total cost of all valid orders
         uint256 totalCost;
         for (uint256 i; i < trades.length; ++i) {
@@ -629,10 +632,11 @@ contract JoepegExchange is
 
         // Match orders
         for (uint256 i; i < trades.length; ++i) {
-            _matchAskWithTakerBidUsingAVAXAndWAVAXIgnoringExpiredAsks(
+            bool status = _matchAskWithTakerBidUsingAVAXAndWAVAXIgnoringExpiredAsks(
                 trades[i].takerBid,
                 trades[i].makerAsk
             );
+            transferStatus[i] = status;
         }
 
         // Return remaining AVAX (if any)

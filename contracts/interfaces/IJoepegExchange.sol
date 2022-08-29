@@ -16,7 +16,7 @@ interface IJoepegBuyBatcher {
 
     function batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(
         Trade[] calldata trades
-    ) external payable;
+    ) external payable returns (bool[] memory transferStatus);
 }
 
 interface IJoepegExchange is IJoepegBuyBatcher {
