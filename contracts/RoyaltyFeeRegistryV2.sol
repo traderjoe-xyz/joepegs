@@ -116,6 +116,17 @@ contract RoyaltyFeeRegistryV2 is
     function updateMaxNumRecipients(uint8 _maxNumRecipients)
         external
         override
+        onlyOwner
+    {
+        _updateMaxNumRecipients(_maxNumRecipients);
+    }
+
+    /**
+     * @notice Update `maxNumRecipients`
+     * @param _maxNumRecipients new max number of recipients allowed
+     */
+    function _updateMaxNumRecipients(uint8 _maxNumRecipients)
+        internal
         isValidMaxNumRecipients(_maxNumRecipients)
         onlyOwner
     {
