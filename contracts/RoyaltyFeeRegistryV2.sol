@@ -155,9 +155,9 @@ contract RoyaltyFeeRegistryV2 is
             revert RoyaltyFeeRegistryV2__RoyaltyFeeSetterCannotBeNullAddr();
         }
 
-        uint256 totalFees = 0;
+        uint256 totalFees;
 
-        for (uint256 i = 0; i < numFeeInfoParts; i++) {
+        for (uint256 i; i < numFeeInfoParts; i++) {
             RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = _feeInfoParts[i];
             if (feeInfoPart.receiver == address(0)) {
                 revert RoyaltyFeeRegistryV2__RoyaltyFeeRecipientCannotBeNullAddr();
@@ -196,7 +196,7 @@ contract RoyaltyFeeRegistryV2 is
             memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](
                 numFeeInfoParts
             );
-        for (uint256 i = 0; i < numFeeInfoParts; i++) {
+        for (uint256 i; i < numFeeInfoParts; i++) {
             RoyaltyFeeTypes.FeeInfoPart memory feeInfoPart = feeInfoParts[i];
             feeAmountParts[i] = RoyaltyFeeTypes.FeeAmountPart({
                 receiver: feeInfoPart.receiver,
