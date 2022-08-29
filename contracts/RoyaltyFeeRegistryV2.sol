@@ -95,7 +95,7 @@ contract RoyaltyFeeRegistryV2 is
         isValidRoyaltyFeeLimit(_royaltyFeeLimit)
         onlyOwner
     {
-        uint256 oldRoyaltyFeeLimit = _royaltyFeeLimit;
+        uint256 oldRoyaltyFeeLimit = royaltyFeeLimit;
         royaltyFeeLimit = _royaltyFeeLimit;
 
         emit RoyaltyFeeLimitSet(oldRoyaltyFeeLimit, _royaltyFeeLimit);

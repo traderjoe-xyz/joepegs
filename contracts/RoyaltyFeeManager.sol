@@ -10,6 +10,10 @@ import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
 import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
+error RoyaltyFeeManager__InvalidRoyaltyFeeRegistryV2();
+error RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadySet();
+error RoyaltyFeeManager__RoyaltyFeeRegistryV2NotSet();
+
 /**
  * @title RoyaltyFeeManager
  * @notice Handles the logic to check and transfer royalty fees (if any).
@@ -27,19 +31,36 @@ contract RoyaltyFeeManager is
     IRoyaltyFeeRegistry public royaltyFeeRegistry;
     IRoyaltyFeeRegistryV2 public royaltyFeeRegistryV2;
 
+    event RoyaltyFeeRegistryV2Set(address indexed newRoyaltyFeeRegistryV2);
+
     /**
      * @notice Initializer
      * @param _royaltyFeeRegistry address of the RoyaltyFeeRegistry
-     * @param _royaltyFeeRegistryV2 address of the RoyaltyFeeRegistryV2
      */
-    function initialize(
-        address _royaltyFeeRegistry,
-        address _royaltyFeeRegistryV2
-    ) public initializer {
+    function initialize(address _royaltyFeeRegistry) public initializer {
         __Ownable_init();
 
         royaltyFeeRegistry = IRoyaltyFeeRegistry(_royaltyFeeRegistry);
+    }
+
+    /**
+     * @notice Update `royaltyFeeRegistryV2` if not already set
+     * @param _royaltyFeeRegistryV2 address of royalty fee registry V2
+     */
+    function updateRoyaltyFeeRegistryV2(address _royaltyFeeRegistryV2)
+        external
+        onlyOwner
+    {
+        if (address(royaltyFeeRegistryV2) != address(0)) {
+            revert RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadySet();
+        }
+        if (_royaltyFeeRegistryV2 == address(0)) {
+            revert RoyaltyFeeManager__InvalidRoyaltyFeeRegistryV2();
+        }
+
         royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
+
+        emit RoyaltyFeeRegistryV2Set(_royaltyFeeRegistryV2);
     }
 
     /**
@@ -53,20 +74,7 @@ contract RoyaltyFeeManager is
         uint256 tokenId,
         uint256 amount
     ) external view override returns (address, uint256) {
-        // 1. Check if there is a royalty info in the system
-        (address receiver, uint256 royaltyAmount) = royaltyFeeRegistry
-            .royaltyInfo(collection, amount);
-
-        // 2. If the receiver is address(0), fee is null, check if it supports the ERC2981 interface
-        if ((receiver == address(0)) || (royaltyAmount == 0)) {
-            if (IERC165(collection).supportsInterface(INTERFACE_ID_ERC2981)) {
-                (receiver, royaltyAmount) = IERC2981(collection).royaltyInfo(
-                    tokenId,
-                    amount
-                );
-            }
-        }
-        return (receiver, royaltyAmount);
+        return _calculateRoyaltyFeeAndGetRecipient(collection, tokenId, amount);
     }
 
     /**
@@ -80,6 +88,11 @@ contract RoyaltyFeeManager is
         uint256 _tokenId,
         uint256 _amount
     ) external view override returns (RoyaltyFeeTypes.FeeAmountPart[] memory) {
+        if (address(royaltyFeeRegistryV2) == address(0)) {
+            // TODO: Should this revert or return empty array?
+            revert RoyaltyFeeManager__RoyaltyFeeRegistryV2NotSet();
+        }
+
         // Check if there is royalty info in the system
         RoyaltyFeeTypes.FeeAmountPart[]
             memory registryFeeAmountParts = royaltyFeeRegistryV2
@@ -89,19 +102,45 @@ contract RoyaltyFeeManager is
             return registryFeeAmountParts;
         }
 
-        // There is no royalty info set in registry so check if it supports the ERC2981 interface
-        if (IERC165(_collection).supportsInterface(INTERFACE_ID_ERC2981)) {
-            (address receiver, uint256 royaltyAmount) = IERC2981(_collection)
-                .royaltyInfo(_tokenId, _amount);
-            RoyaltyFeeTypes.FeeAmountPart[]
-                memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](1);
-            feeAmountParts[0] = RoyaltyFeeTypes.FeeAmountPart({
-                receiver: receiver,
-                amount: royaltyAmount
-            });
-            return feeAmountParts;
-        } else {
-            return new RoyaltyFeeTypes.FeeAmountPart[](0);
+        // Otherwise, fallback to v1 royalty fee calculation
+        (
+            address receiver,
+            uint256 royaltyAmount
+        ) = _calculateRoyaltyFeeAndGetRecipient(_collection, _tokenId, _amount);
+
+        RoyaltyFeeTypes.FeeAmountPart[]
+            memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](1);
+        feeAmountParts[0] = RoyaltyFeeTypes.FeeAmountPart({
+            receiver: receiver,
+            amount: royaltyAmount
+        });
+        return feeAmountParts;
+    }
+
+    /**
+     * @notice Calculate royalty fee and get recipient
+     * @param _collection address of the NFT contract
+     * @param _tokenId tokenId
+     * @param _amount amount to transfer
+     */
+    function _calculateRoyaltyFeeAndGetRecipient(
+        address _collection,
+        uint256 _tokenId,
+        uint256 _amount
+    ) internal view returns (address, uint256) {
+        // 1. Check if there is a royalty info in the system
+        (address receiver, uint256 royaltyAmount) = royaltyFeeRegistry
+            .royaltyInfo(_collection, _amount);
+
+        // 2. If the receiver is address(0), fee is null, check if it supports the ERC2981 interface
+        if ((receiver == address(0)) || (royaltyAmount == 0)) {
+            if (IERC165(_collection).supportsInterface(INTERFACE_ID_ERC2981)) {
+                (receiver, royaltyAmount) = IERC2981(_collection).royaltyInfo(
+                    _tokenId,
+                    _amount
+                );
+            }
         }
+        return (receiver, royaltyAmount);
     }
 }
