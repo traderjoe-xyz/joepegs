@@ -76,13 +76,11 @@ contract RoyaltyFeeRegistryV2 is
     function initialize(uint256 _royaltyFeeLimit, uint8 _maxNumRecipients)
         public
         initializer
-        isValidRoyaltyFeeLimit(_royaltyFeeLimit)
-        isValidMaxNumRecipients(_maxNumRecipients)
     {
         __Ownable_init();
 
-        royaltyFeeLimit = _royaltyFeeLimit;
-        maxNumRecipients = _maxNumRecipients;
+        _updateRoyaltyFeeLimit(_royaltyFeeLimit);
+        _updateMaxNumRecipients(_maxNumRecipients);
     }
 
     /**
@@ -92,8 +90,18 @@ contract RoyaltyFeeRegistryV2 is
     function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit)
         external
         override
-        isValidRoyaltyFeeLimit(_royaltyFeeLimit)
         onlyOwner
+    {
+        _updateRoyaltyFeeLimit(_royaltyFeeLimit);
+    }
+
+    /**
+     * @notice Update royalty fee limit
+     * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)
+     */
+    function _updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit)
+        internal
+        isValidRoyaltyFeeLimit(_royaltyFeeLimit)
     {
         uint256 oldRoyaltyFeeLimit = royaltyFeeLimit;
         royaltyFeeLimit = _royaltyFeeLimit;
@@ -108,6 +116,17 @@ contract RoyaltyFeeRegistryV2 is
     function updateMaxNumRecipients(uint8 _maxNumRecipients)
         external
         override
+        onlyOwner
+    {
+        _updateMaxNumRecipients(_maxNumRecipients);
+    }
+
+    /**
+     * @notice Update `maxNumRecipients`
+     * @param _maxNumRecipients new max number of recipients allowed
+     */
+    function _updateMaxNumRecipients(uint8 _maxNumRecipients)
+        internal
         isValidMaxNumRecipients(_maxNumRecipients)
         onlyOwner
     {
