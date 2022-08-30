@@ -23,9 +23,6 @@ describe("RoyaltyFeeSetterV2", function () {
     this.RoyaltyFeeRegistryV2CF = await ethers.getContractFactory(
       "RoyaltyFeeRegistryV2"
     );
-    this.RoyaltyFeeSetterCF = await ethers.getContractFactory(
-      "RoyaltyFeeSetter"
-    );
     this.RoyaltyFeeSetterV2CF = await ethers.getContractFactory(
       "RoyaltyFeeSetterV2"
     );
@@ -72,12 +69,6 @@ describe("RoyaltyFeeSetterV2", function () {
     await this.royaltyFeeRegistryV2.initialize(
       this.royaltyFeeLimit,
       this.maxNumRecipients
-    );
-
-    this.royaltyFeeSetter = await this.RoyaltyFeeSetterCF.deploy();
-    await this.royaltyFeeSetter.initialize(this.royaltyFeeRegistry.address);
-    await this.royaltyFeeRegistry.transferOwnership(
-      this.royaltyFeeSetter.address
     );
 
     this.royaltyFeeSetterV2 = await this.RoyaltyFeeSetterV2CF.deploy();
