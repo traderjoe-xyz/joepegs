@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 import "../interfaces/IPendingOwnable.sol";
 import "./PendingOwnableErrors.sol";
@@ -25,7 +25,7 @@ import "./PendingOwnableErrors.sol";
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner
  */
-contract PendingOwnable is IERC165, IPendingOwnable {
+abstract contract PendingOwnable is ERC165, IPendingOwnable {
     address private _owner;
     address private _pendingOwner;
 
@@ -124,13 +124,14 @@ contract PendingOwnable is IERC165, IPendingOwnable {
      */
     function supportsInterface(bytes4 interfaceId)
         public
-        pure
+        view
         virtual
+        override
         returns (bool)
     {
         return
-            interfaceId == type(IERC165).interfaceId ||
-            interfaceId == type(IPendingOwnable).interfaceId;
+            interfaceId == type(IPendingOwnable).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**

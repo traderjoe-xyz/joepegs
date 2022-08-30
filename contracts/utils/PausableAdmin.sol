@@ -64,7 +64,7 @@ contract PausableAdmin is PendingOwnable, Pausable, IPausableAdmin {
      */
     function supportsInterface(bytes4 interfaceId)
         public
-        pure
+        view
         virtual
         override
         returns (bool)

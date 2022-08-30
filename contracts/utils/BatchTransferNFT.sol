@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "./PausableAdmin.sol";
+import "./SafePausable.sol";
 import "../interfaces/IBatchTransferNFT.sol";
 
 error BatchTransferNFT__UnsupportedContract(address nft);
@@ -12,7 +12,10 @@ error BatchTransferNFT__UnsupportedContract(address nft);
  * @title BatchTransferNFT
  * @notice Enables to batch transfer multiple NFTs in a single call to this contract
  */
-contract BatchTransferNFT is PausableAdmin, IBatchTransferNFT {
+contract BatchTransferNFT is
+    SafePausableAccessControlEnumerable,
+    IBatchTransferNFT
+{
     /**
      * @dev Returns true if this contract implements the interface defined by
      * `interfaceId`. See the corresponding
@@ -23,7 +26,7 @@ contract BatchTransferNFT is PausableAdmin, IBatchTransferNFT {
      */
     function supportsInterface(bytes4 interfaceId)
         public
-        pure
+        view
         virtual
         override
         returns (bool)
