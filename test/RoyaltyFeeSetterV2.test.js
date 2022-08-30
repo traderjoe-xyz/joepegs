@@ -60,6 +60,8 @@ describe.only("RoyaltyFeeSetterV2", function () {
     this.erc721Token = await this.ERC721TokenCF.deploy();
     this.erc721WithoutRoyaltyToken =
       await this.ERC721WithoutRoyaltyTokenCF.deploy();
+    await this.erc721Token.transferOwnership(this.alice.address);
+    await this.erc721WithoutRoyaltyToken.transferOwnership(this.alice.address);
 
     this.royaltyFeeLimit = 1000; // 1000 = 10%
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy();
@@ -125,11 +127,13 @@ describe.only("RoyaltyFeeSetterV2", function () {
   describe("updateRoyaltyInfoPartsForCollectionIfAdmin", function () {
     it("cannot update if supports ERC2981", async function () {
       await expect(
-        this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollectionIfAdmin(
-          this.erc721Token.address,
-          this.dev.address,
-          [{ receiver: this.alice.address, fee: 100 }]
-        )
+        this.royaltyFeeSetterV2
+          .connect(this.alice)
+          .updateRoyaltyInfoPartsForCollectionIfAdmin(
+            this.erc721Token.address,
+            this.dev.address,
+            [{ receiver: this.alice.address, fee: 100 }]
+          )
       ).to.be.revertedWith(
         "RoyaltyFeeSetterV2__CollectionCannotSupportERC2981"
       );
@@ -148,14 +152,58 @@ describe.only("RoyaltyFeeSetterV2", function () {
     });
 
     it("can successfully update", async function () {
-      await this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollectionIfAdmin(
-        this.erc721WithoutRoyaltyToken.address,
-        this.dev.address,
-        [
-          { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
-          { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
-        ]
+      await this.royaltyFeeSetterV2
+        .connect(this.alice)
+        .updateRoyaltyInfoPartsForCollectionIfAdmin(
+          this.erc721WithoutRoyaltyToken.address,
+          this.dev.address,
+          [
+            { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+            { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+          ]
+        );
+      await assertRoyaltyInfoPartsSet(this.erc721WithoutRoyaltyToken.address);
+    });
+  });
+
+  describe("updateRoyaltyInfoPartsForCollectionIfOwner", function () {
+    it("cannot update if supports ERC2981", async function () {
+      await expect(
+        this.royaltyFeeSetterV2
+          .connect(this.alice)
+          .updateRoyaltyInfoPartsForCollectionIfOwner(
+            this.erc721Token.address,
+            this.dev.address,
+            [{ receiver: this.alice.address, fee: 100 }]
+          )
+      ).to.be.revertedWith(
+        "RoyaltyFeeSetterV2__CollectionCannotSupportERC2981"
       );
+    });
+
+    it("cannot update if not owner", async function () {
+      await expect(
+        this.royaltyFeeSetterV2
+          .connect(this.carol)
+          .updateRoyaltyInfoPartsForCollectionIfOwner(
+            this.erc721WithoutRoyaltyToken.address,
+            this.dev.address,
+            [{ receiver: this.alice.address, fee: 100 }]
+          )
+      ).to.be.revertedWith("RoyaltyFeeSetterV2__NotCollectionOwner");
+    });
+
+    it("can successfully update", async function () {
+      await this.royaltyFeeSetterV2
+        .connect(this.alice)
+        .updateRoyaltyInfoPartsForCollectionIfOwner(
+          this.erc721WithoutRoyaltyToken.address,
+          this.dev.address,
+          [
+            { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+            { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+          ]
+        );
       await assertRoyaltyInfoPartsSet(this.erc721WithoutRoyaltyToken.address);
     });
   });
