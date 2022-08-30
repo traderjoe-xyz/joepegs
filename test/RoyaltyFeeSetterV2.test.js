@@ -2,7 +2,7 @@ const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 const { describe } = require("mocha");
 
-describe.only("RoyaltyFeeSetterV2", function () {
+describe("RoyaltyFeeSetterV2", function () {
   let royaltyFeeManager;
   let royaltyFeeRecipient1;
   let royaltyFeeRecipient2;
