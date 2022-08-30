@@ -125,8 +125,6 @@ describe("JoepegAuctionHouse", function () {
     await this.currencyManager.addCurrency(WAVAX);
 
     // Set royalty fee information via RoyaltyFeeSetterV2
-    // await this.erc721Token.transferOwnership(this.david.address);
-    // this.royaltyFeeRecipient = this.david.address;
     this.royaltyFeeRecipient1 = this.david.address;
     this.royaltyFeePct1 = 500;
     this.royaltyFeeRecipient2 = this.eric.address;
