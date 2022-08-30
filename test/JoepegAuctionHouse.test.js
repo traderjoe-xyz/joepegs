@@ -10,7 +10,7 @@ const {
   nextSecond,
 } = require("./utils/time");
 
-describe.only("JoepegAuctionHouse", function () {
+describe("JoepegAuctionHouse", function () {
   let alice;
   let bob;
   let auctionHouse;
@@ -85,7 +85,6 @@ describe.only("JoepegAuctionHouse", function () {
     this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy();
     await this.protocolFeeManager.initialize(this.protocolFeePct);
 
-    this.royaltyFeePct = 100; // 100 = 1%
     this.royaltyFeeLimit = 1000; // 1000 = 10%
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy();
     await this.royaltyFeeRegistry.initialize(this.royaltyFeeLimit);
@@ -1322,7 +1321,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         englishAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -1380,7 +1384,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         englishAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2157,7 +2166,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2215,7 +2229,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionEndPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2382,7 +2401,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2445,7 +2469,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionEndPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2512,7 +2541,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2586,7 +2620,12 @@ describe.only("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 

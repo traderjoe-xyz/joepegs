@@ -155,6 +155,12 @@ contract RoyaltyFeeRegistryV2 is
             revert RoyaltyFeeRegistryV2__RoyaltyFeeSetterCannotBeNullAddr();
         }
 
+        delete royaltyFeeInfoPartsCollection[_collection];
+        RoyaltyFeeTypes.FeeInfoPart[]
+            storage feeInfoPartsForCollection = royaltyFeeInfoPartsCollection[
+                _collection
+            ];
+
         uint256 totalFees;
 
         for (uint256 i; i < numFeeInfoParts; i++) {
@@ -166,13 +172,13 @@ contract RoyaltyFeeRegistryV2 is
                 revert RoyaltyFeeRegistryV2__RoyaltyFeeCannotBeZero();
             }
             totalFees += feeInfoPart.fee;
+            feeInfoPartsForCollection.push(feeInfoPart);
         }
 
         if (totalFees > royaltyFeeLimit) {
             revert RoyaltyFeeRegistryV2__RoyaltyFeeTooHigh();
         }
 
-        royaltyFeeInfoPartsCollection[_collection] = _feeInfoParts;
         royaltyFeeInfoPartsCollectionSetter[_collection] = _setter;
 
         emit RoyaltyFeeInfoSet(_collection, _setter, _feeInfoParts);
