@@ -1256,6 +1256,7 @@ contract JoepegAuctionHouse is
                         _tokenId,
                         _amount
                     );
+
             for (uint256 i = 0; i < feeAmountParts.length; i++) {
                 RoyaltyFeeTypes.FeeAmountPart
                     memory feeAmountPart = feeAmountParts[i];
