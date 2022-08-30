@@ -322,6 +322,25 @@ describe.only("RoyaltyFeeSetterV2", function () {
     });
   });
 
+  describe("updateRoyaltyFeeLimit", function () {
+    it("cannot update if not owner", async function () {
+      await expect(
+        this.royaltyFeeSetterV2
+          .connect(this.alice)
+          .updateRoyaltyFeeLimit(this.royaltyFeeLimit * 2)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("can successfully update", async function () {
+      const newRoyaltyFeeLimit = this.royaltyFeeLimit * 2;
+      await this.royaltyFeeSetterV2.updateRoyaltyFeeLimit(newRoyaltyFeeLimit);
+
+      await expect(
+        await this.royaltyFeeRegistryV2.royaltyFeeLimit()
+      ).to.be.equal(newRoyaltyFeeLimit);
+    });
+  });
+
   after(async function () {
     await network.provider.request({
       method: "hardhat_reset",
