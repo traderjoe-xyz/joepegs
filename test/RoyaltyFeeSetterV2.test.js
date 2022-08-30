@@ -104,7 +104,11 @@ describe.only("RoyaltyFeeSetterV2", function () {
     royaltyFeePct2 = this.royaltyFeePct2;
   });
 
-  const assertRoyaltyInfoPartsSet = async (collection) => {
+  const assertRoyaltyInfoPartsSet = async (
+    collection,
+    _royaltyFeePct1 = royaltyFeePct1,
+    _royaltyFeePct2 = royaltyFeePct2
+  ) => {
     const feeAmountParts =
       await royaltyFeeManager.calculateRoyaltyFeeAmountParts(
         collection,
@@ -114,12 +118,12 @@ describe.only("RoyaltyFeeSetterV2", function () {
     expect(feeAmountParts.length).to.be.equal(2);
 
     expect(royaltyFeeRecipient1).to.be.equal(feeAmountParts[0].receiver);
-    expect(amount.mul(royaltyFeePct1).div(10_000)).to.be.equal(
+    expect(amount.mul(_royaltyFeePct1).div(10_000)).to.be.equal(
       feeAmountParts[0].amount
     );
 
     expect(royaltyFeeRecipient2).to.be.equal(feeAmountParts[1].receiver);
-    expect(amount.mul(royaltyFeePct2).div(10_000)).to.be.equal(
+    expect(amount.mul(_royaltyFeePct2).div(10_000)).to.be.equal(
       feeAmountParts[1].amount
     );
   };
@@ -205,6 +209,67 @@ describe.only("RoyaltyFeeSetterV2", function () {
           ]
         );
       await assertRoyaltyInfoPartsSet(this.erc721WithoutRoyaltyToken.address);
+    });
+  });
+
+  describe("updateRoyaltyInfoPartsForCollectionIfSetter", function () {
+    it("cannot update if not setter", async function () {
+      const setter = this.bob;
+      await this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollection(
+        this.erc721WithoutRoyaltyToken.address,
+        setter.address,
+        [
+          { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+          { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+        ]
+      );
+
+      await expect(
+        this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollectionIfSetter(
+          this.erc721WithoutRoyaltyToken.address,
+          setter.address,
+          [
+            {
+              receiver: this.royaltyFeeRecipient1,
+              fee: this.royaltyFeePct1 / 2,
+            },
+            {
+              receiver: this.royaltyFeeRecipient2,
+              fee: this.royaltyFeePct2 / 2,
+            },
+          ]
+        )
+      ).to.be.revertedWith("RoyaltyFeeSetterV2__NotCollectionSetter");
+    });
+
+    it("can successfully update", async function () {
+      const setter = this.bob;
+      await this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollection(
+        this.erc721WithoutRoyaltyToken.address,
+        setter.address,
+        [
+          { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+          { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+        ]
+      );
+
+      const newRoyaltyFeePct1 = this.royaltyFeePct1 / 2;
+      const newRoyaltyFeePct2 = this.royaltyFeePct2 / 2;
+      await this.royaltyFeeSetterV2
+        .connect(this.bob)
+        .updateRoyaltyInfoPartsForCollectionIfSetter(
+          this.erc721WithoutRoyaltyToken.address,
+          setter.address,
+          [
+            { receiver: this.royaltyFeeRecipient1, fee: newRoyaltyFeePct1 },
+            { receiver: this.royaltyFeeRecipient2, fee: newRoyaltyFeePct2 },
+          ]
+        );
+      await assertRoyaltyInfoPartsSet(
+        this.erc721WithoutRoyaltyToken.address,
+        newRoyaltyFeePct1,
+        newRoyaltyFeePct2
+      );
     });
   });
 
