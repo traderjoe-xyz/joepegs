@@ -10,7 +10,7 @@ const {
   nextSecond,
 } = require("./utils/time");
 
-describe("JoepegAuctionHouse", function () {
+describe.only("JoepegAuctionHouse", function () {
   let alice;
   let bob;
   let auctionHouse;
