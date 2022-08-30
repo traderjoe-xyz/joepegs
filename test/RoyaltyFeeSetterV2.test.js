@@ -273,6 +273,35 @@ describe.only("RoyaltyFeeSetterV2", function () {
     });
   });
 
+  describe("updateRoyaltyInfoPartsForCollection", function () {
+    it("cannot update if not owner", async function () {
+      await expect(
+        this.royaltyFeeSetterV2
+          .connect(this.alice)
+          .updateRoyaltyInfoPartsForCollection(
+            this.erc721Token.address,
+            this.dev.address,
+            [
+              { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+              { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+            ]
+          )
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("can successfully update", async function () {
+      await this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollection(
+        this.erc721Token.address,
+        this.dev.address,
+        [
+          { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+          { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+        ]
+      );
+      await assertRoyaltyInfoPartsSet(this.erc721Token.address);
+    });
+  });
+
   after(async function () {
     await network.provider.request({
       method: "hardhat_reset",
