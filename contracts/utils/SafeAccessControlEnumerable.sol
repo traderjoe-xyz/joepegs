@@ -3,25 +3,26 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./PendingOwnable.sol";
 
-error SafePausableAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(
+error SafeAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(
     bytes32 role,
     address sender
 );
 
+error SafeAccessControlEnumerable__RoleIsDefaultAdmin();
+
 abstract contract SafeAccessControlEnumerable is
     PendingOwnable,
-    AccessControlEnumerable,
-    Pausable
+    AccessControlEnumerable
 {
     /**
      * @dev Modifier that checks that the role is not the `DEFAULT_ADMIN_ROLE`
      */
-    modifier RoleIsNotDefaultAdmin(bytes32 role) {
-        if (role == DEFAULT_ADMIN_ROLE) revert();
+    modifier roleIsNotDefaultAdmin(bytes32 role) {
+        if (role == DEFAULT_ADMIN_ROLE)
+            revert SafeAccessControlEnumerable__RoleIsDefaultAdmin();
         _;
     }
 
@@ -30,7 +31,7 @@ abstract contract SafeAccessControlEnumerable is
      */
     modifier onlyOwnerOrRole(bytes32 role) {
         if (msg.sender != owner() || !hasRole(role, msg.sender))
-            revert SafePausableAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(
+            revert SafeAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(
                 role,
                 msg.sender
             );
@@ -54,7 +55,7 @@ abstract contract SafeAccessControlEnumerable is
     {
         return
             PendingOwnable.supportsInterface(interfaceId) ||
-            AccessControl.supportsInterface(interfaceId);
+            AccessControlEnumerable.supportsInterface(interfaceId);
     }
 
     /**
@@ -73,7 +74,7 @@ abstract contract SafeAccessControlEnumerable is
         public
         virtual
         override
-        RoleIsNotDefaultAdmin(role)
+        roleIsNotDefaultAdmin(role)
         onlyOwnerOrRole(getRoleAdmin(role))
     {
         _grantRole(role, account);
@@ -95,7 +96,7 @@ abstract contract SafeAccessControlEnumerable is
         public
         virtual
         override
-        RoleIsNotDefaultAdmin(role)
+        roleIsNotDefaultAdmin(role)
         onlyOwnerOrRole(getRoleAdmin(role))
     {
         _revokeRole(role, account);
@@ -123,7 +124,7 @@ abstract contract SafeAccessControlEnumerable is
         public
         virtual
         override
-        RoleIsNotDefaultAdmin(role)
+        roleIsNotDefaultAdmin(role)
     {
         super.revokeRole(role, account);
     }

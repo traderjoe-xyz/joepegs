@@ -11,7 +11,11 @@ import "../interfaces/ISafePausable.sol";
 error SafePausable__AlreadyPaused();
 error SafePausable__AlreadyUnpaused();
 
-abstract contract SafePausable is SafeAccessControlEnumerable, ISafePausable {
+abstract contract SafePausable is
+    SafeAccessControlEnumerable,
+    Pausable,
+    ISafePausable
+{
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 

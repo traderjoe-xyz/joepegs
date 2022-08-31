@@ -12,10 +12,7 @@ error BatchTransferNFT__UnsupportedContract(address nft);
  * @title BatchTransferNFT
  * @notice Enables to batch transfer multiple NFTs in a single call to this contract
  */
-contract BatchTransferNFT is
-    SafePausableAccessControlEnumerable,
-    IBatchTransferNFT
-{
+contract BatchTransferNFT is SafePausable, IBatchTransferNFT {
     /**
      * @dev Returns true if this contract implements the interface defined by
      * `interfaceId`. See the corresponding
