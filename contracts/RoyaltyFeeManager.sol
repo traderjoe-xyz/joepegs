@@ -12,7 +12,6 @@ import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
 error RoyaltyFeeManager__InvalidRoyaltyFeeRegistryV2();
 error RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadySet();
-error RoyaltyFeeManager__RoyaltyFeeRegistryV2NotSet();
 
 /**
  * @title RoyaltyFeeManager
@@ -88,18 +87,16 @@ contract RoyaltyFeeManager is
         uint256 _tokenId,
         uint256 _amount
     ) external view override returns (RoyaltyFeeTypes.FeeAmountPart[] memory) {
-        if (address(royaltyFeeRegistryV2) == address(0)) {
-            // TODO: Should this revert or return empty array?
-            revert RoyaltyFeeManager__RoyaltyFeeRegistryV2NotSet();
-        }
+        // If royaltyFeeRegistryV2 has been initialized, check to see if there is
+        // royalty info set
+        if (address(royaltyFeeRegistryV2) != address(0)) {
+            RoyaltyFeeTypes.FeeAmountPart[]
+                memory registryFeeAmountParts = royaltyFeeRegistryV2
+                    .royaltyAmountParts(_collection, _amount);
 
-        // Check if there is royalty info in the system
-        RoyaltyFeeTypes.FeeAmountPart[]
-            memory registryFeeAmountParts = royaltyFeeRegistryV2
-                .royaltyAmountParts(_collection, _amount);
-
-        if (registryFeeAmountParts.length > 0) {
-            return registryFeeAmountParts;
+            if (registryFeeAmountParts.length > 0) {
+                return registryFeeAmountParts;
+            }
         }
 
         // Otherwise, fallback to v1 royalty fee calculation
