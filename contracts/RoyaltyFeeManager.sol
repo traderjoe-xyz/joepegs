@@ -11,7 +11,7 @@ import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 
 error RoyaltyFeeManager__InvalidRoyaltyFeeRegistryV2();
-error RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadySet();
+error RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadyInitialized();
 
 /**
  * @title RoyaltyFeeManager
@@ -60,7 +60,7 @@ contract RoyaltyFeeManager is
         onlyOwner
     {
         if (address(royaltyFeeRegistryV2) != address(0)) {
-            revert RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadySet();
+            revert RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadyInitialized();
         }
         if (_royaltyFeeRegistryV2 == address(0)) {
             revert RoyaltyFeeManager__InvalidRoyaltyFeeRegistryV2();

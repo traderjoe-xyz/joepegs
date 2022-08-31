@@ -101,12 +101,14 @@ describe("RoyaltyFeeManager", function () {
   });
 
   describe("initializeRoyaltyFeeRegistryV2", function () {
-    it("cannot update royaltyFeeRegistryV2 when already set", async function () {
+    it("cannot initialize royaltyFeeRegistryV2 when already initialized", async function () {
       await expect(
         this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
           this.royaltyFeeRegistryV2.address
         )
-      ).to.be.revertedWith("RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadySet");
+      ).to.be.revertedWith(
+        "RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadyInitialized"
+      );
     });
   });
 
@@ -152,6 +154,40 @@ describe("RoyaltyFeeManager", function () {
       expect(amount.mul(this.royaltyFeePctV1).div(10_000)).to.be.equal(
         feeAmountParts[0].amount
       );
+    });
+
+    it("calculateRoyaltyFeeAmountParts returns empty array if v1 setter has receiver set to null address", async function () {
+      // Set royalty receiver to null address in v1
+      await this.royaltyFeeSetter.updateRoyaltyInfoForCollection(
+        this.erc721Token.address,
+        this.dev.address,
+        ZERO_ADDRESS, // receiver
+        this.royaltyFeePctV1
+      );
+      const feeAmountParts =
+        await this.royaltyFeeManager.calculateRoyaltyFeeAmountParts(
+          this.erc721Token.address,
+          tokenId,
+          amount
+        );
+      expect(feeAmountParts.length).to.be.equal(0);
+    });
+
+    it("calculateRoyaltyFeeAmountParts returns empty array if v1 setter has fee set to 0", async function () {
+      // Set royalty fee to 0 in v1
+      await this.royaltyFeeSetter.updateRoyaltyInfoForCollection(
+        this.erc721Token.address,
+        this.dev.address,
+        this.royaltyFeeRecipientV1,
+        0 // fee
+      );
+      const feeAmountParts =
+        await this.royaltyFeeManager.calculateRoyaltyFeeAmountParts(
+          this.erc721Token.address,
+          tokenId,
+          amount
+        );
+      expect(feeAmountParts.length).to.be.equal(0);
     });
   });
 
