@@ -114,6 +114,10 @@ contract RoyaltyFeeManager is
             uint256 royaltyAmount
         ) = _calculateRoyaltyFeeAndGetRecipient(_collection, _tokenId, _amount);
 
+        if (receiver == address(0) || royaltyAmount == 0) {
+            return new RoyaltyFeeTypes.FeeAmountPart[](0);
+        }
+
         RoyaltyFeeTypes.FeeAmountPart[]
             memory feeAmountParts = new RoyaltyFeeTypes.FeeAmountPart[](1);
         feeAmountParts[0] = RoyaltyFeeTypes.FeeAmountPart({
