@@ -96,7 +96,7 @@ contract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {
 
     /**
      * @notice Update royalty info for collection
-     * @dev Only to be called if there msg.sender is the setter
+     * @dev Only to be called if the msg.sender is the setter
      * @param _collection address of the NFT contract
      * @param _setter address that sets the receiver
      * @param _feeInfoParts fee info parts
