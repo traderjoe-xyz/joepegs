@@ -103,7 +103,7 @@ describe("JoepegExchange", function () {
 
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
     await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
-    await this.royaltyFeeManager.updateRoyaltyFeeRegistryV2(
+    await this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
       this.royaltyFeeRegistryV2.address
     );
 

@@ -76,7 +76,7 @@ describe("RoyaltyFeeManager", function () {
 
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
     await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
-    await this.royaltyFeeManager.updateRoyaltyFeeRegistryV2(
+    await this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
       this.royaltyFeeRegistryV2.address
     );
 
@@ -96,10 +96,10 @@ describe("RoyaltyFeeManager", function () {
     royaltyFeePct2 = this.royaltyFeePct2;
   });
 
-  describe("updateRoyaltyFeeRegistryV2", function () {
+  describe("initializeRoyaltyFeeRegistryV2", function () {
     it("cannot update royaltyFeeRegistryV2 when already set", async function () {
       await expect(
-        this.royaltyFeeManager.updateRoyaltyFeeRegistryV2(
+        this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
           this.royaltyFeeRegistryV2.address
         )
       ).to.be.revertedWith("RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadySet");

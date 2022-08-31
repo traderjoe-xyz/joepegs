@@ -30,7 +30,9 @@ contract RoyaltyFeeManager is
     IRoyaltyFeeRegistry public royaltyFeeRegistry;
     IRoyaltyFeeRegistryV2 public royaltyFeeRegistryV2;
 
-    event RoyaltyFeeRegistryV2Set(address indexed newRoyaltyFeeRegistryV2);
+    event RoyaltyFeeRegistryV2Initialize(
+        address indexed newRoyaltyFeeRegistryV2
+    );
 
     /**
      * @notice Initializer
@@ -46,7 +48,7 @@ contract RoyaltyFeeManager is
      * @notice Update `royaltyFeeRegistryV2` if not already set
      * @param _royaltyFeeRegistryV2 address of royalty fee registry V2
      */
-    function updateRoyaltyFeeRegistryV2(address _royaltyFeeRegistryV2)
+    function initializeRoyaltyFeeRegistryV2(address _royaltyFeeRegistryV2)
         external
         onlyOwner
     {
@@ -59,7 +61,7 @@ contract RoyaltyFeeManager is
 
         royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
 
-        emit RoyaltyFeeRegistryV2Set(_royaltyFeeRegistryV2);
+        emit RoyaltyFeeRegistryV2Initialize(_royaltyFeeRegistryV2);
     }
 
     /**

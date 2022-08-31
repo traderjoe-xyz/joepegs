@@ -80,7 +80,7 @@ describe("RoyaltyFeeSetterV2", function () {
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
     royaltyFeeManager = this.royaltyFeeManager;
     await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
-    await this.royaltyFeeManager.updateRoyaltyFeeRegistryV2(
+    await this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
       this.royaltyFeeRegistryV2.address
     );
 
