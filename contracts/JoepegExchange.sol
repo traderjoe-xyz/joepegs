@@ -614,7 +614,7 @@ contract JoepegExchange is
                         amount
                     );
 
-            for (uint256 i = 0; i < feeAmountParts.length; i++) {
+            for (uint256 i; i < feeAmountParts.length; i++) {
                 RoyaltyFeeTypes.FeeAmountPart
                     memory feeAmountPart = feeAmountParts[i];
                 IERC20(currency).safeTransferFrom(
@@ -693,7 +693,7 @@ contract JoepegExchange is
                         amount
                     );
 
-            for (uint256 i = 0; i < feeAmountParts.length; i++) {
+            for (uint256 i; i < feeAmountParts.length; i++) {
                 RoyaltyFeeTypes.FeeAmountPart
                     memory feeAmountPart = feeAmountParts[i];
                 IERC20(WAVAX).safeTransfer(
