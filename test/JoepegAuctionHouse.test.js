@@ -103,7 +103,10 @@ describe("JoepegAuctionHouse", function () {
     );
 
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
-    await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
+    await this.royaltyFeeManager.initialize(
+      this.royaltyFeeRegistry.address,
+      ZERO_ADDRESS
+    );
     await this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
       this.royaltyFeeRegistryV2.address
     );

@@ -1,6 +1,7 @@
 const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 const { describe } = require("mocha");
+const { ZERO_ADDRESS } = require("./utils/constants");
 
 describe("RoyaltyFeeSetterV2", function () {
   let royaltyFeeManager;
@@ -79,7 +80,10 @@ describe("RoyaltyFeeSetterV2", function () {
 
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
     royaltyFeeManager = this.royaltyFeeManager;
-    await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
+    await this.royaltyFeeManager.initialize(
+      this.royaltyFeeRegistry.address,
+      ZERO_ADDRESS
+    );
     await this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
       this.royaltyFeeRegistryV2.address
     );

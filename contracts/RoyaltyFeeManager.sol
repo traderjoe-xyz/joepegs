@@ -37,15 +37,22 @@ contract RoyaltyFeeManager is
     /**
      * @notice Initializer
      * @param _royaltyFeeRegistry address of the RoyaltyFeeRegistry
+     * @param _royaltyFeeRegistryV2 address of the RoyaltyFeeRegistryV2
      */
-    function initialize(address _royaltyFeeRegistry) public initializer {
+    function initialize(
+        address _royaltyFeeRegistry,
+        address _royaltyFeeRegistryV2
+    ) public initializer {
         __Ownable_init();
 
         royaltyFeeRegistry = IRoyaltyFeeRegistry(_royaltyFeeRegistry);
+        royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
     }
 
     /**
-     * @notice Update `royaltyFeeRegistryV2` if not already set
+     * @notice Update `royaltyFeeRegistryV2` if not already set.
+     * @dev We have this initializer because `royaltyFeeRegistryV2` was added
+     * after the initial deploy of this contract.
      * @param _royaltyFeeRegistryV2 address of royalty fee registry V2
      */
     function initializeRoyaltyFeeRegistryV2(address _royaltyFeeRegistryV2)
