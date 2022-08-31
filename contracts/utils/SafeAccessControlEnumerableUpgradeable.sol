@@ -40,6 +40,8 @@ abstract contract SafeAccessControlEnumerableUpgradeable is
 
     function __SafeAccessControlEnumerable_init() internal onlyInitializing {
         __PendingOwnable_init();
+        __AccessControlEnumerable_init();
+
         __SafeAccessControlEnumerable_init_unchained();
     }
 
