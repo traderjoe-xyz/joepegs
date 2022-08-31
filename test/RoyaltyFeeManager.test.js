@@ -9,6 +9,9 @@ describe("RoyaltyFeeManager", function () {
 
   before(async function () {
     this.ERC721TokenCF = await ethers.getContractFactory("ERC721Token");
+    this.ERC721WithoutRoyaltyTokenCF = await ethers.getContractFactory(
+      "ERC721WithoutRoyaltyToken"
+    );
     this.RoyaltyFeeRegistryCF = await ethers.getContractFactory(
       "RoyaltyFeeRegistry"
     );
@@ -50,6 +53,8 @@ describe("RoyaltyFeeManager", function () {
 
   beforeEach(async function () {
     this.erc721Token = await this.ERC721TokenCF.deploy();
+    this.erc721WithoutRoyaltyToken =
+      await this.ERC721WithoutRoyaltyTokenCF.deploy();
     erc721Token = this.erc721Token;
 
     this.royaltyFeeLimit = 1000; // 1000 = 10%
@@ -157,16 +162,16 @@ describe("RoyaltyFeeManager", function () {
     });
 
     it("calculateRoyaltyFeeAmountParts returns empty array if v1 setter has receiver set to null address", async function () {
-      // Set royalty receiver to null address in v1
+      // Set royalty receiver to null address in v1 for erc721WithoutRoyaltyToken
       await this.royaltyFeeSetter.updateRoyaltyInfoForCollection(
-        this.erc721Token.address,
+        this.erc721WithoutRoyaltyToken.address,
         this.dev.address,
         ZERO_ADDRESS, // receiver
         this.royaltyFeePctV1
       );
       const feeAmountParts =
         await this.royaltyFeeManager.calculateRoyaltyFeeAmountParts(
-          this.erc721Token.address,
+          this.erc721WithoutRoyaltyToken.address,
           tokenId,
           amount
         );
@@ -174,16 +179,16 @@ describe("RoyaltyFeeManager", function () {
     });
 
     it("calculateRoyaltyFeeAmountParts returns empty array if v1 setter has fee set to 0", async function () {
-      // Set royalty fee to 0 in v1
+      // Set royalty fee to 0 in v1 for erc721WithoutRoyaltyToken
       await this.royaltyFeeSetter.updateRoyaltyInfoForCollection(
-        this.erc721Token.address,
+        this.erc721WithoutRoyaltyToken.address,
         this.dev.address,
         this.royaltyFeeRecipientV1,
         0 // fee
       );
       const feeAmountParts =
         await this.royaltyFeeManager.calculateRoyaltyFeeAmountParts(
-          this.erc721Token.address,
+          this.erc721WithoutRoyaltyToken.address,
           tokenId,
           amount
         );
