@@ -30,7 +30,7 @@ abstract contract SafeAccessControlEnumerable is
      * @dev Modifier that checks that an account is the `owner` or has a specific role
      */
     modifier onlyOwnerOrRole(bytes32 role) {
-        if (msg.sender != owner() || !hasRole(role, msg.sender))
+        if (msg.sender != owner() && !hasRole(role, msg.sender))
             revert SafeAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(
                 role,
                 msg.sender
