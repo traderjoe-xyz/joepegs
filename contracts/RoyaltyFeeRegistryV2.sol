@@ -130,18 +130,6 @@ contract RoyaltyFeeRegistryV2 is
         isValidMaxNumRecipients(_maxNumRecipients)
         onlyOwner
     {
-        _updateMaxNumRecipients(_maxNumRecipients);
-    }
-
-    /**
-     * @notice Update `maxNumRecipients`
-     * @param _maxNumRecipients new max number of recipients allowed
-     */
-    function _updateMaxNumRecipients(uint8 _maxNumRecipients)
-        internal
-        isValidMaxNumRecipients(_maxNumRecipients)
-        onlyOwner
-    {
         uint8 oldMaxNumRecipients = maxNumRecipients;
         maxNumRecipients = _maxNumRecipients;
 
