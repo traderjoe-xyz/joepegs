@@ -30,7 +30,7 @@ contract RoyaltyFeeManager is
     IRoyaltyFeeRegistry public royaltyFeeRegistry;
     IRoyaltyFeeRegistryV2 public royaltyFeeRegistryV2;
 
-    event RoyaltyFeeRegistryV2Initialize(
+    event RoyaltyFeeRegistryV2Initialized(
         address indexed newRoyaltyFeeRegistryV2
     );
 
@@ -46,18 +46,28 @@ contract RoyaltyFeeManager is
         __Ownable_init();
 
         royaltyFeeRegistry = IRoyaltyFeeRegistry(_royaltyFeeRegistry);
-        royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
+        _initializeRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
     }
 
     /**
-     * @notice Update `royaltyFeeRegistryV2` if not already set.
-     * @dev We have this initializer because `royaltyFeeRegistryV2` was added
+     * @notice Initialize `royaltyFeeRegistryV2` if not already set.
+     * @dev We have this method because `royaltyFeeRegistryV2` was added
      * after the initial deploy of this contract.
      * @param _royaltyFeeRegistryV2 address of royalty fee registry V2
      */
     function initializeRoyaltyFeeRegistryV2(address _royaltyFeeRegistryV2)
         external
         onlyOwner
+    {
+        _initializeRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
+    }
+
+    /**
+     * @notice Initialize `royaltyFeeRegistryV2` if not already set.
+     * @param _royaltyFeeRegistryV2 address of royalty fee registry V2
+     */
+    function _initializeRoyaltyFeeRegistryV2(address _royaltyFeeRegistryV2)
+        internal
     {
         if (address(royaltyFeeRegistryV2) != address(0)) {
             revert RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadyInitialized();
@@ -68,7 +78,7 @@ contract RoyaltyFeeManager is
 
         royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);
 
-        emit RoyaltyFeeRegistryV2Initialize(_royaltyFeeRegistryV2);
+        emit RoyaltyFeeRegistryV2Initialized(_royaltyFeeRegistryV2);
     }
 
     /**
