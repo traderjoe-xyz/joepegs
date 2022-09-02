@@ -2963,7 +2963,7 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe.only("safePausable", function () {
+  describe("safePausable", function () {
     it("non-owner and non-pauser cannot pause", async function () {
       await expect(
         this.auctionHouse.connect(this.alice).pause()
