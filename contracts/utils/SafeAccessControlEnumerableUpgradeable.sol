@@ -138,7 +138,7 @@ abstract contract SafeAccessControlEnumerableUpgradeable is
         override
         roleIsNotDefaultAdmin(role)
     {
-        super.revokeRole(role, account);
+        super.renounceRole(role, account);
     }
 
     /**
