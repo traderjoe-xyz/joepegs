@@ -82,9 +82,6 @@ describe("RoyaltyFeeSetterV2", function () {
     royaltyFeeManager = this.royaltyFeeManager;
     await this.royaltyFeeManager.initialize(
       this.royaltyFeeRegistry.address,
-      ZERO_ADDRESS
-    );
-    await this.royaltyFeeManager.initializeRoyaltyFeeRegistryV2(
       this.royaltyFeeRegistryV2.address
     );
 
