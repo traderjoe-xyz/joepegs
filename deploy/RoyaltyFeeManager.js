@@ -1,6 +1,10 @@
 const { verify } = require("./utils");
 
-module.exports = async function ({ getNamedAccounts, deployments, getChainId }) {
+module.exports = async function ({
+  getNamedAccounts,
+  deployments,
+  getChainId,
+}) {
   const { deploy, catchUnknownSigner } = deployments;
   const { deployer } = await getNamedAccounts();
 
@@ -16,8 +20,9 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
   }
 
   const royaltyFeeRegistry = await deployments.get("RoyaltyFeeRegistry");
+  const royaltyFeeRegistryV2 = await deployments.get("RoyaltyFeeRegistryV2");
 
-  const args = [royaltyFeeRegistry.address];
+  const args = [royaltyFeeRegistry.address, royaltyFeeRegistryV2.address];
   await catchUnknownSigner(async () => {
     proxyContract = await deploy("RoyaltyFeeManager", {
       from: deployer,
@@ -41,4 +46,4 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
 };
 
 module.exports.tags = ["RoyaltyFeeManager"];
-module.exports.dependencies = ["RoyaltyFeeRegistry"];
+module.exports.dependencies = ["RoyaltyFeeRegistry", "RoyaltyFeeRegistryV2"];
