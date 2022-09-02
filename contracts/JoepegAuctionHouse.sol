@@ -15,6 +15,7 @@ import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
+import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 import {PausableAdminUpgradeable} from "./utils/PausableAdminUpgradeable.sol";
 
 error JoepegAuctionHouse__AuctionAlreadyExists();
@@ -58,6 +59,8 @@ contract JoepegAuctionHouse is
 {
     using SafeCast for uint256;
     using SafeERC20 for IERC20;
+
+    using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeAmountPart;
 
     struct DutchAuction {
         address creator;
@@ -1244,34 +1247,32 @@ contract JoepegAuctionHouse is
             }
         }
 
-        // 2. Royalty fee
+        // 2. Royalty fees
         {
-            (
-                address royaltyFeeRecipient,
-                uint256 royaltyFeeAmount
-            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
-                    _collection,
-                    _tokenId,
-                    _amount
-                );
+            RoyaltyFeeTypes.FeeAmountPart[]
+                memory feeAmountParts = royaltyFeeManager
+                    .calculateRoyaltyFeeAmountParts(
+                        _collection,
+                        _tokenId,
+                        _amount
+                    );
 
-            // Check if there is a royalty fee and that it is different to 0
-            if (
-                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
-            ) {
+            for (uint256 i; i < feeAmountParts.length; i++) {
+                RoyaltyFeeTypes.FeeAmountPart
+                    memory feeAmountPart = feeAmountParts[i];
                 _currency.safeTransferFrom(
                     _from,
-                    royaltyFeeRecipient,
-                    royaltyFeeAmount
+                    feeAmountPart.receiver,
+                    feeAmountPart.amount
                 );
-                finalSellerAmount -= royaltyFeeAmount;
+                finalSellerAmount -= feeAmountPart.amount;
 
                 emit RoyaltyPayment(
                     _collection,
                     _tokenId,
-                    royaltyFeeRecipient,
+                    feeAmountPart.receiver,
                     address(_currency),
-                    royaltyFeeAmount
+                    feeAmountPart.amount
                 );
             }
         }

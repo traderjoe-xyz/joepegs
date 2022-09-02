@@ -1,7 +1,7 @@
 const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
 
-const { WAVAX } = require("./utils/constants");
+const { WAVAX, ZERO_ADDRESS } = require("./utils/constants");
 const {
   buildMakerAskOrderAndTakerBidOrder,
 } = require("./utils/maker-order.js");
@@ -19,8 +19,11 @@ describe("JoepegExchange", function () {
     this.RoyaltyFeeRegistryCF = await ethers.getContractFactory(
       "RoyaltyFeeRegistry"
     );
-    this.RoyaltyFeeSetterCF = await ethers.getContractFactory(
-      "RoyaltyFeeSetter"
+    this.RoyaltyFeeRegistryV2CF = await ethers.getContractFactory(
+      "RoyaltyFeeRegistryV2"
+    );
+    this.RoyaltyFeeSetterV2CF = await ethers.getContractFactory(
+      "RoyaltyFeeSetterV2"
     );
     this.RoyaltyFeeManagerCF = await ethers.getContractFactory(
       "RoyaltyFeeManager"
@@ -45,10 +48,11 @@ describe("JoepegExchange", function () {
 
     this.signers = await ethers.getSigners();
     this.dev = this.signers[0];
-    this.royaltyFeeRecipient = this.signers[1].address;
-    this.alice = this.signers[2];
-    this.bob = this.signers[3];
-    this.carol = this.signers[4];
+    this.alice = this.signers[1];
+    this.bob = this.signers[2];
+    this.carol = this.signers[3];
+    this.david = this.signers[4];
+    this.eric = this.signers[5];
 
     await network.provider.request({
       method: "hardhat_reset",
@@ -84,11 +88,24 @@ describe("JoepegExchange", function () {
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy();
     await this.royaltyFeeRegistry.initialize(this.royaltyFeeLimit);
 
-    this.royaltyFeeSetter = await this.RoyaltyFeeSetterCF.deploy();
-    await this.royaltyFeeSetter.initialize(this.royaltyFeeRegistry.address);
+    this.maxNumRecipients = 2;
+    this.royaltyFeeRegistryV2 = await this.RoyaltyFeeRegistryV2CF.deploy();
+    await this.royaltyFeeRegistryV2.initialize(
+      this.royaltyFeeLimit,
+      this.maxNumRecipients
+    );
+
+    this.royaltyFeeSetterV2 = await this.RoyaltyFeeSetterV2CF.deploy();
+    await this.royaltyFeeSetterV2.initialize(this.royaltyFeeRegistryV2.address);
+    await this.royaltyFeeRegistryV2.transferOwnership(
+      this.royaltyFeeSetterV2.address
+    );
 
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
-    await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
+    await this.royaltyFeeManager.initialize(
+      this.royaltyFeeRegistry.address,
+      this.royaltyFeeRegistryV2.address
+    );
 
     this.protocolFeeRecipient = this.dev.address;
     this.strategyStandardSaleForFixedPrice =
@@ -135,7 +152,20 @@ describe("JoepegExchange", function () {
     await this.exchange.updateTransferSelectorNFT(
       this.transferSelectorNFT.address
     );
-    await this.erc721Token.transferOwnership(this.royaltyFeeRecipient);
+
+    // Set royalty fee information via RoyaltyFeeSetterV2
+    this.royaltyFeeRecipient1 = this.david.address;
+    this.royaltyFeePct1 = 500;
+    this.royaltyFeeRecipient2 = this.eric.address;
+    this.royaltyFeePct2 = 100;
+    await this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollection(
+      this.erc721Token.address,
+      this.dev.address,
+      [
+        { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+        { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+      ]
+    );
 
     const { chainId } = await ethers.provider.getNetwork();
     this.DOMAIN = {
@@ -246,8 +276,11 @@ describe("JoepegExchange", function () {
       const protocolRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
         this.protocolFeeRecipient
       );
-      const royaltyFeeRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const royaltyFeeRecipient1WavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const royaltyFeeRecipient2WavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
 
       // Match taker bid order with maker ask order
@@ -272,16 +305,20 @@ describe("JoepegExchange", function () {
         protocolRecipientWavaxBalanceBefore.add(protocolFee)
       );
 
-      // Check that royalty recipient received royalty fees
-      const [_, royaltyFee] = await this.erc721Token.royaltyInfo(
-        tokenId,
-        price
+      // Check that royalty recipients received royalty fees
+      const royaltyFeeRecipient1WavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
       );
-      const royaltyFeeRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const royaltyFeeRecipient2WavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
-      expect(royaltyFeeRecipientWavaxBalanceAfter).to.be.equal(
-        royaltyFeeRecipientWavaxBalanceBefore.add(royaltyFee)
+      const royaltyFee1 = price.mul(this.royaltyFeePct1).div(10_000);
+      const royaltyFee2 = price.mul(this.royaltyFeePct2).div(10_000);
+      expect(royaltyFeeRecipient1WavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipient1WavaxBalanceBefore.add(royaltyFee1)
+      );
+      expect(royaltyFeeRecipient2WavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipient2WavaxBalanceBefore.add(royaltyFee2)
       );
 
       // Check that seller received `price - protocolFee - royaltyFee`
@@ -289,7 +326,9 @@ describe("JoepegExchange", function () {
         this.alice.address
       );
       expect(aliceWavaxBalanceAfter).to.be.equal(
-        aliceWavaxBalanceBefore.add(price.sub(protocolFee).sub(royaltyFee))
+        aliceWavaxBalanceBefore.add(
+          price.sub(protocolFee).sub(royaltyFee1).sub(royaltyFee2)
+        )
       );
     });
 
@@ -360,8 +399,11 @@ describe("JoepegExchange", function () {
       const protocolRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
         this.protocolFeeRecipient
       );
-      const royaltyFeeRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const royaltyFeeRecipient1WavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const royaltyFeeRecipient2WavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
 
       // Match taker ask order with maker bid order
@@ -387,15 +429,19 @@ describe("JoepegExchange", function () {
       );
 
       // Check that royalty recipient received royalty fees
-      const [_, royaltyFee] = await this.erc721Token.royaltyInfo(
-        tokenId,
-        price
+      const royaltyFeeRecipient1WavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
       );
-      const royaltyFeeRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const royaltyFeeRecipient2WavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
-      expect(royaltyFeeRecipientWavaxBalanceAfter).to.be.equal(
-        royaltyFeeRecipientWavaxBalanceBefore.add(royaltyFee)
+      const royaltyFee1 = price.mul(this.royaltyFeePct1).div(10_000);
+      const royaltyFee2 = price.mul(this.royaltyFeePct2).div(10_000);
+      expect(royaltyFeeRecipient1WavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipient1WavaxBalanceBefore.add(royaltyFee1)
+      );
+      expect(royaltyFeeRecipient2WavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipient2WavaxBalanceBefore.add(royaltyFee2)
       );
 
       // Check that seller received `price - protocolFee - royaltyFee`
@@ -403,7 +449,9 @@ describe("JoepegExchange", function () {
         this.alice.address
       );
       expect(aliceWavaxBalanceAfter).to.be.equal(
-        aliceWavaxBalanceBefore.add(price.sub(protocolFee).sub(royaltyFee))
+        aliceWavaxBalanceBefore.add(
+          price.sub(protocolFee).sub(royaltyFee1).sub(royaltyFee2)
+        )
       );
     });
 
@@ -475,8 +523,11 @@ describe("JoepegExchange", function () {
       const protocolRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
         this.protocolFeeRecipient
       );
-      const royaltyFeeRecipientWavaxBalanceBefore = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const royaltyFeeRecipient1WavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const royaltyFeeRecipient2WavaxBalanceBefore = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
 
       // Match taker ask order with collection maker bid order
@@ -502,15 +553,19 @@ describe("JoepegExchange", function () {
       );
 
       // Check that royalty recipient received royalty fees
-      const [_, royaltyFee] = await this.erc721Token.royaltyInfo(
-        tokenId,
-        price
+      const royaltyFeeRecipient1WavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
       );
-      const royaltyFeeRecipientWavaxBalanceAfter = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const royaltyFeeRecipient2WavaxBalanceAfter = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
-      expect(royaltyFeeRecipientWavaxBalanceAfter).to.be.equal(
-        royaltyFeeRecipientWavaxBalanceBefore.add(royaltyFee)
+      const royaltyFee1 = price.mul(this.royaltyFeePct1).div(10_000);
+      const royaltyFee2 = price.mul(this.royaltyFeePct2).div(10_000);
+      expect(royaltyFeeRecipient1WavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipient1WavaxBalanceBefore.add(royaltyFee1)
+      );
+      expect(royaltyFeeRecipient2WavaxBalanceAfter).to.be.equal(
+        royaltyFeeRecipient2WavaxBalanceBefore.add(royaltyFee2)
       );
 
       // Check that seller received `price - protocolFee - royaltyFee`
@@ -518,7 +573,9 @@ describe("JoepegExchange", function () {
         this.alice.address
       );
       expect(aliceWavaxBalanceAfter).to.be.equal(
-        aliceWavaxBalanceBefore.add(price.sub(protocolFee).sub(royaltyFee))
+        aliceWavaxBalanceBefore.add(
+          price.sub(protocolFee).sub(royaltyFee1).sub(royaltyFee2)
+        )
       );
     });
 

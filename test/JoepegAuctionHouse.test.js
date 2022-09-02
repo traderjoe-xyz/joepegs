@@ -36,6 +36,12 @@ describe("JoepegAuctionHouse", function () {
     this.RoyaltyFeeRegistryCF = await ethers.getContractFactory(
       "RoyaltyFeeRegistry"
     );
+    this.RoyaltyFeeRegistryV2CF = await ethers.getContractFactory(
+      "RoyaltyFeeRegistryV2"
+    );
+    this.RoyaltyFeeSetterV2CF = await ethers.getContractFactory(
+      "RoyaltyFeeSetterV2"
+    );
     this.RoyaltyFeeManagerCF = await ethers.getContractFactory(
       "RoyaltyFeeManager"
     );
@@ -49,6 +55,7 @@ describe("JoepegAuctionHouse", function () {
     bob = this.bob;
     this.carol = this.signers[3];
     this.david = this.signers[4];
+    this.eric = this.signers[5];
 
     await network.provider.request({
       method: "hardhat_reset",
@@ -78,13 +85,28 @@ describe("JoepegAuctionHouse", function () {
     this.protocolFeeManager = await this.ProtocolFeeManagerCF.deploy();
     await this.protocolFeeManager.initialize(this.protocolFeePct);
 
-    this.royaltyFeePct = 100; // 100 = 1%
     this.royaltyFeeLimit = 1000; // 1000 = 10%
     this.royaltyFeeRegistry = await this.RoyaltyFeeRegistryCF.deploy();
     await this.royaltyFeeRegistry.initialize(this.royaltyFeeLimit);
 
+    this.maxNumRecipients = 2;
+    this.royaltyFeeRegistryV2 = await this.RoyaltyFeeRegistryV2CF.deploy();
+    await this.royaltyFeeRegistryV2.initialize(
+      this.royaltyFeeLimit,
+      this.maxNumRecipients
+    );
+
+    this.royaltyFeeSetterV2 = await this.RoyaltyFeeSetterV2CF.deploy();
+    await this.royaltyFeeSetterV2.initialize(this.royaltyFeeRegistryV2.address);
+    await this.royaltyFeeRegistryV2.transferOwnership(
+      this.royaltyFeeSetterV2.address
+    );
+
     this.royaltyFeeManager = await this.RoyaltyFeeManagerCF.deploy();
-    await this.royaltyFeeManager.initialize(this.royaltyFeeRegistry.address);
+    await this.royaltyFeeManager.initialize(
+      this.royaltyFeeRegistry.address,
+      this.royaltyFeeRegistryV2.address
+    );
 
     this.protocolFeeRecipient = this.dev.address;
 
@@ -102,8 +124,19 @@ describe("JoepegAuctionHouse", function () {
     );
     await this.currencyManager.addCurrency(WAVAX);
 
-    await this.erc721Token.transferOwnership(this.david.address);
-    this.royaltyFeeRecipient = this.david.address;
+    // Set royalty fee information via RoyaltyFeeSetterV2
+    this.royaltyFeeRecipient1 = this.david.address;
+    this.royaltyFeePct1 = 500;
+    this.royaltyFeeRecipient2 = this.eric.address;
+    this.royaltyFeePct2 = 100;
+    await this.royaltyFeeSetterV2.updateRoyaltyInfoPartsForCollection(
+      this.erc721Token.address,
+      this.dev.address,
+      [
+        { receiver: this.royaltyFeeRecipient1, fee: this.royaltyFeePct1 },
+        { receiver: this.royaltyFeeRecipient2, fee: this.royaltyFeePct2 },
+      ]
+    );
 
     // Mint
     await this.erc721Token.mint(this.alice.address);
@@ -1242,8 +1275,11 @@ describe("JoepegAuctionHouse", function () {
       await placeEnglishAuctionBid();
       await advanceTimeAndBlock(duration.seconds(auctionDuration / 2));
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -1259,11 +1295,16 @@ describe("JoepegAuctionHouse", function () {
       // Check englishAuction data is deleted
       await assertEnglishAuctionIsDeleted();
 
-      // Confirm royalty fee recipient received royalty fee
+      // Confirm royalty fee recipients received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        englishAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        englishAuctionStartPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        englishAuctionStartPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -1278,7 +1319,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         englishAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -1292,8 +1338,11 @@ describe("JoepegAuctionHouse", function () {
       await placeEnglishAuctionBid();
       await advanceTimeAndBlock(duration.seconds(auctionDuration));
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -1311,9 +1360,14 @@ describe("JoepegAuctionHouse", function () {
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        englishAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        englishAuctionStartPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        englishAuctionStartPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -1328,7 +1382,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         englishAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2061,8 +2120,11 @@ describe("JoepegAuctionHouse", function () {
       await startDutchAuction();
       await depositAndApproveWAVAX(this.bob, dutchAuctionStartPrice);
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -2080,9 +2142,14 @@ describe("JoepegAuctionHouse", function () {
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        dutchAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -2097,7 +2164,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2111,8 +2183,11 @@ describe("JoepegAuctionHouse", function () {
       await advanceTimeAndBlock(duration.seconds(auctionDuration));
       await depositAndApproveWAVAX(this.bob, dutchAuctionEndPrice);
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -2130,9 +2205,14 @@ describe("JoepegAuctionHouse", function () {
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        dutchAuctionEndPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        dutchAuctionEndPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        dutchAuctionEndPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -2147,7 +2227,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionEndPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2264,8 +2349,11 @@ describe("JoepegAuctionHouse", function () {
     it("can successfully settle auction", async function () {
       await startDutchAuction();
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -2289,9 +2377,14 @@ describe("JoepegAuctionHouse", function () {
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        dutchAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -2306,7 +2399,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2319,8 +2417,11 @@ describe("JoepegAuctionHouse", function () {
       await startDutchAuction();
       await advanceTimeAndBlock(duration.seconds(auctionDuration));
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -2344,9 +2445,14 @@ describe("JoepegAuctionHouse", function () {
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        dutchAuctionEndPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        dutchAuctionEndPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        dutchAuctionEndPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -2361,7 +2467,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionEndPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2373,8 +2484,11 @@ describe("JoepegAuctionHouse", function () {
     it("can settle auction with refund when excess AVAX amount is provided", async function () {
       await startDutchAuction();
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -2403,9 +2517,14 @@ describe("JoepegAuctionHouse", function () {
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        dutchAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -2420,7 +2539,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 
@@ -2439,8 +2563,11 @@ describe("JoepegAuctionHouse", function () {
     it("can settle auction with AVAX and WAVAX", async function () {
       await startDutchAuction();
 
-      const beforeRoyaltyFeeRecipientWAVAXBalance = await this.wavax.balanceOf(
-        this.royaltyFeeRecipient
+      const beforeRoyaltyFeeRecipient1WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient1
+      );
+      const beforeRoyaltyFeeRecipient2WAVAXBalance = await this.wavax.balanceOf(
+        this.royaltyFeeRecipient2
       );
       const beforeProtocolRecipientWAVAXBalance = await this.wavax.balanceOf(
         this.protocolFeeRecipient
@@ -2469,9 +2596,14 @@ describe("JoepegAuctionHouse", function () {
 
       // Confirm royalty fee recipient received royalty fee
       await assertWAVAXBalanceIncrease(
-        this.royaltyFeeRecipient,
-        beforeRoyaltyFeeRecipientWAVAXBalance,
-        dutchAuctionStartPrice.mul(this.royaltyFeePct).div(10_000)
+        this.royaltyFeeRecipient1,
+        beforeRoyaltyFeeRecipient1WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct1).div(10_000)
+      );
+      await assertWAVAXBalanceIncrease(
+        this.royaltyFeeRecipient2,
+        beforeRoyaltyFeeRecipient2WAVAXBalance,
+        dutchAuctionStartPrice.mul(this.royaltyFeePct2).div(10_000)
       );
 
       // Confirm protocol fee recipient received royalty fee
@@ -2486,7 +2618,12 @@ describe("JoepegAuctionHouse", function () {
         this.alice.address,
         beforeAliceWAVAXBalance,
         dutchAuctionStartPrice
-          .mul(10_000 - this.royaltyFeePct - this.protocolFeePct)
+          .mul(
+            10_000 -
+              this.royaltyFeePct1 -
+              this.royaltyFeePct2 -
+              this.protocolFeePct
+          )
           .div(10_000)
       );
 

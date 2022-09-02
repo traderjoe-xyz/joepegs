@@ -20,6 +20,7 @@ import {IWAVAX} from "./interfaces/IWAVAX.sol";
 
 // Joepeg libraries
 import {OrderTypes} from "./libraries/OrderTypes.sol";
+import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 import {SignatureChecker} from "./libraries/SignatureChecker.sol";
 
 /**
@@ -34,6 +35,7 @@ contract JoepegExchange is
 {
     using SafeERC20 for IERC20;
 
+    using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeAmountPart;
     using OrderTypes for OrderTypes.MakerOrder;
     using OrderTypes for OrderTypes.TakerOrder;
 
@@ -604,32 +606,30 @@ contract JoepegExchange is
 
         // 2. Royalty fee
         {
-            (
-                address royaltyFeeRecipient,
-                uint256 royaltyFeeAmount
-            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
-                    collection,
-                    tokenId,
-                    amount
-                );
+            RoyaltyFeeTypes.FeeAmountPart[]
+                memory feeAmountParts = royaltyFeeManager
+                    .calculateRoyaltyFeeAmountParts(
+                        collection,
+                        tokenId,
+                        amount
+                    );
 
-            // Check if there is a royalty fee and that it is different to 0
-            if (
-                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
-            ) {
+            for (uint256 i; i < feeAmountParts.length; i++) {
+                RoyaltyFeeTypes.FeeAmountPart
+                    memory feeAmountPart = feeAmountParts[i];
                 IERC20(currency).safeTransferFrom(
                     from,
-                    royaltyFeeRecipient,
-                    royaltyFeeAmount
+                    feeAmountPart.receiver,
+                    feeAmountPart.amount
                 );
-                finalSellerAmount -= royaltyFeeAmount;
+                finalSellerAmount -= feeAmountPart.amount;
 
                 emit RoyaltyPayment(
                     collection,
                     tokenId,
-                    royaltyFeeRecipient,
+                    feeAmountPart.receiver,
                     currency,
-                    royaltyFeeAmount
+                    feeAmountPart.amount
                 );
             }
         }
@@ -685,31 +685,29 @@ contract JoepegExchange is
 
         // 2. Royalty fee
         {
-            (
-                address royaltyFeeRecipient,
-                uint256 royaltyFeeAmount
-            ) = royaltyFeeManager.calculateRoyaltyFeeAndGetRecipient(
-                    collection,
-                    tokenId,
-                    amount
-                );
+            RoyaltyFeeTypes.FeeAmountPart[]
+                memory feeAmountParts = royaltyFeeManager
+                    .calculateRoyaltyFeeAmountParts(
+                        collection,
+                        tokenId,
+                        amount
+                    );
 
-            // Check if there is a royalty fee and that it is different to 0
-            if (
-                (royaltyFeeRecipient != address(0)) && (royaltyFeeAmount != 0)
-            ) {
+            for (uint256 i; i < feeAmountParts.length; i++) {
+                RoyaltyFeeTypes.FeeAmountPart
+                    memory feeAmountPart = feeAmountParts[i];
                 IERC20(WAVAX).safeTransfer(
-                    royaltyFeeRecipient,
-                    royaltyFeeAmount
+                    feeAmountPart.receiver,
+                    feeAmountPart.amount
                 );
-                finalSellerAmount -= royaltyFeeAmount;
+                finalSellerAmount -= feeAmountPart.amount;
 
                 emit RoyaltyPayment(
                     collection,
                     tokenId,
-                    royaltyFeeRecipient,
-                    address(WAVAX),
-                    royaltyFeeAmount
+                    feeAmountPart.receiver,
+                    WAVAX,
+                    feeAmountPart.amount
                 );
             }
         }
