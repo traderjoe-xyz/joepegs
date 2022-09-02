@@ -16,7 +16,7 @@ import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
-import {PausableAdminUpgradeable} from "./utils/PausableAdminUpgradeable.sol";
+import {SafePausableUpgradeable} from "./utils/SafePausableUpgradeable.sol";
 
 error JoepegAuctionHouse__AuctionAlreadyExists();
 error JoepegAuctionHouse__CurrencyMismatch();
@@ -53,7 +53,7 @@ error JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
  */
 contract JoepegAuctionHouse is
     Initializable,
-    PausableAdminUpgradeable,
+    SafePausableUpgradeable,
     ReentrancyGuardUpgradeable,
     IERC721Receiver
 {
@@ -268,7 +268,7 @@ contract JoepegAuctionHouse is
         address _royaltyFeeManager,
         address _protocolFeeRecipient
     ) public initializer {
-        __PausableAdmin_init();
+        __SafePausable_init();
         __ReentrancyGuard_init();
 
         _updateEnglishAuctionMinBidIncrementPct(
