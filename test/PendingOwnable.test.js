@@ -1,9 +1,11 @@
 const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
 
-describe("BatchTransferNFT", function () {
+describe("MockPendingOwnable", function () {
   before(async function () {
-    this.pendingOwnableCF = await ethers.getContractFactory("PendingOwnable");
+    this.pendingOwnableCF = await ethers.getContractFactory(
+      "MockPendingOwnable"
+    );
 
     this.signers = await ethers.getSigners();
     this.dev = this.signers[0];
