@@ -31,27 +31,27 @@ describe("MockPendingOwnableUpgradeable", function () {
       this.mockPendingOwnableUpgradeable
         .connect(this.alice)
         .setPendingOwner(this.alice.address)
-    ).to.be.revertedWith("PendingOwnable__NotOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner");
 
     await expect(
       this.mockPendingOwnableUpgradeable
         .connect(this.alice)
         .revokePendingOwner()
-    ).to.be.revertedWith("PendingOwnable__NotOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner");
 
     await expect(
       this.mockPendingOwnableUpgradeable.connect(this.alice).becomeOwner()
-    ).to.be.revertedWith("PendingOwnable__NotPendingOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NotPendingOwner");
 
     await expect(
       this.mockPendingOwnableUpgradeable.connect(this.alice).renounceOwnership()
-    ).to.be.revertedWith("PendingOwnable__NotOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner");
   });
 
   it("Should allow owner to call ownable function", async function () {
     await expect(
       this.mockPendingOwnableUpgradeable.connect(this.dev).revokePendingOwner()
-    ).to.be.revertedWith("PendingOwnable__NoPendingOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NoPendingOwner");
 
     await this.mockPendingOwnableUpgradeable
       .connect(this.dev)
@@ -61,7 +61,7 @@ describe("MockPendingOwnableUpgradeable", function () {
       this.mockPendingOwnableUpgradeable
         .connect(this.dev)
         .setPendingOwner(this.alice.address)
-    ).to.be.revertedWith("PendingOwnable__PendingOwnerAlreadySet");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__PendingOwnerAlreadySet");
 
     await this.mockPendingOwnableUpgradeable
       .connect(this.dev)
@@ -69,7 +69,7 @@ describe("MockPendingOwnableUpgradeable", function () {
 
     await expect(
       this.mockPendingOwnableUpgradeable.connect(this.dev).revokePendingOwner()
-    ).to.be.revertedWith("PendingOwnable__NoPendingOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NoPendingOwner");
   });
 
   it("Should allow the pendingOwner to become the owner and revert on the previous owner", async function () {
@@ -83,11 +83,11 @@ describe("MockPendingOwnableUpgradeable", function () {
       this.mockPendingOwnableUpgradeable
         .connect(this.dev)
         .setPendingOwner(this.alice.address)
-    ).to.be.revertedWith("PendingOwnable__NotOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner");
 
     await expect(
       this.mockPendingOwnableUpgradeable.connect(this.alice).becomeOwner()
-    ).to.be.revertedWith("PendingOwnable__NotPendingOwner");
+    ).to.be.revertedWith("PendingOwnableUpgradeable__NotPendingOwner");
   });
 
   after(async function () {
