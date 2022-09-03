@@ -1462,7 +1462,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .emergencyCancelEnglishAuction(this.erc721Token.address, aliceTokenId)
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot cancel non-existent auction", async function () {
@@ -2692,7 +2692,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .emergencyCancelDutchAuction(this.erc721Token.address, aliceTokenId)
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot cancel non-existent auction", async function () {
@@ -2797,7 +2797,7 @@ describe("JoepegAuctionHouse", function () {
           .updateEnglishAuctionMinBidIncrementPct(
             englishAuctionMinBidIncrementPct * 2
           )
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot update to zero", async function () {
@@ -2836,7 +2836,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .updateEnglishAuctionRefreshTime(englishAuctionRefreshTime * 2)
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot update to zero", async function () {
@@ -2866,7 +2866,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .updateCurrencyManager("0x0000000000000000000000000000000000000001")
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
@@ -2891,7 +2891,7 @@ describe("JoepegAuctionHouse", function () {
           .updateProtocolFeeManager(
             "0x0000000000000000000000000000000000000001"
           )
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
@@ -2918,7 +2918,7 @@ describe("JoepegAuctionHouse", function () {
           .updateProtocolFeeRecipient(
             "0x0000000000000000000000000000000000000001"
           )
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
@@ -2945,7 +2945,7 @@ describe("JoepegAuctionHouse", function () {
         this.auctionHouse
           .connect(this.alice)
           .updateRoyaltyFeeManager("0x0000000000000000000000000000000000000001")
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith("PendingOwnableUpgradeable__NotOwner()");
     });
 
     it("cannot update to zero address", async function () {
