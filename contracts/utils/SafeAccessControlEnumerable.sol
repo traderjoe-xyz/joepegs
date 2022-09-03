@@ -4,14 +4,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 
+import "../Errors.sol";
 import "./PendingOwnable.sol";
-
-error SafeAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(
-    bytes32 role,
-    address sender
-);
-
-error SafeAccessControlEnumerable__RoleIsDefaultAdmin();
 
 abstract contract SafeAccessControlEnumerable is
     PendingOwnable,

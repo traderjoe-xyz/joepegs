@@ -4,11 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
+import "../Errors.sol";
 import "./SafeAccessControlEnumerableUpgradeable.sol";
 import "../interfaces/ISafePausableUpgradeable.sol";
-
-error SafePausableUpgradeable__AlreadyPaused();
-error SafePausableUpgradeable__AlreadyUnpaused();
 
 abstract contract SafePausableUpgradeable is
     SafeAccessControlEnumerableUpgradeable,

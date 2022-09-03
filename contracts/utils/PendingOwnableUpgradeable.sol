@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeabl
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "../interfaces/IPendingOwnableUpgradeable.sol";
-import "./PendingOwnableErrors.sol";
+import "../Errors.sol";
 
 /**
  * @title Pending Ownable

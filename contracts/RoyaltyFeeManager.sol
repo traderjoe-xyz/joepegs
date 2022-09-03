@@ -5,13 +5,11 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC165, IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
+import "./Errors.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IRoyaltyFeeRegistry} from "./interfaces/IRoyaltyFeeRegistry.sol";
 import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
-
-error RoyaltyFeeManager__InvalidRoyaltyFeeRegistryV2();
-error RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadyInitialized();
 
 /**
  * @title RoyaltyFeeManager

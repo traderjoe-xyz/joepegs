@@ -4,11 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 
+import "../Errors.sol";
 import "./SafeAccessControlEnumerable.sol";
 import "../interfaces/ISafePausable.sol";
-
-error SafePausable__AlreadyPaused();
-error SafePausable__AlreadyUnpaused();
 
 abstract contract SafePausable is
     SafeAccessControlEnumerable,
