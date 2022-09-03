@@ -43,7 +43,7 @@ module.exports = async function ({
 
   // Initialize implementation contract
   const implementationContract = await ethers.getContractAt(
-    "RoyaltyFeeRegistryV2",
+    "RoyaltyFeeSetterV2",
     proxyContract.implementation
   );
   await implementationContract.initialize(...args);
