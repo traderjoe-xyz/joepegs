@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 import "../interfaces/IPendingOwnable.sol";
-import "./PendingOwnableErrors.sol";
+import "../Errors.sol";
 
 /**
  * @title Pending Ownable

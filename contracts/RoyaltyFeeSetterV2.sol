@@ -5,16 +5,10 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
+import "./Errors.sol";
 import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {IOwnable} from "./interfaces/IOwnable.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
-
-error RoyaltyFeeSetterV2__CollectionCannotSupportERC2981();
-error RoyaltyFeeSetterV2__CollectionIsNotNFT();
-error RoyaltyFeeSetterV2__NotCollectionAdmin();
-error RoyaltyFeeSetterV2__NotCollectionOwner();
-error RoyaltyFeeSetterV2__NotCollectionSetter();
-error RoyaltyFeeSetterV2__SetterAlreadySet();
 
 /**
  * @title RoyaltyFeeSetter

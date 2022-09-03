@@ -11,41 +11,13 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
+import "./Errors.sol";
 import {ICurrencyManager} from "./interfaces/ICurrencyManager.sol";
 import {IProtocolFeeManager} from "./interfaces/IProtocolFeeManager.sol";
 import {IRoyaltyFeeManager} from "./interfaces/IRoyaltyFeeManager.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
 import {SafePausableUpgradeable} from "./utils/SafePausableUpgradeable.sol";
-
-error JoepegAuctionHouse__AuctionAlreadyExists();
-error JoepegAuctionHouse__CurrencyMismatch();
-error JoepegAuctionHouse__ExpectedNonNullAddress();
-error JoepegAuctionHouse__ExpectedNonZeroFinalSellerAmount();
-error JoepegAuctionHouse__FeesHigherThanExpected();
-error JoepegAuctionHouse__InvalidDropInterval();
-error JoepegAuctionHouse__InvalidDuration();
-error JoepegAuctionHouse__InvalidMinPercentageToAsk();
-error JoepegAuctionHouse__InvalidStartTime();
-error JoepegAuctionHouse__NoAuctionExists();
-error JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();
-error JoepegAuctionHouse__UnsupportedCurrency();
-
-error JoepegAuctionHouse__EnglishAuctionCannotBidOnUnstartedAuction();
-error JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();
-error JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();
-error JoepegAuctionHouse__EnglishAuctionCannotSettleUnstartedAuction();
-error JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();
-error JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();
-error JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();
-error JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();
-error JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();
-error JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();
-
-error JoepegAuctionHouse__DutchAuctionCannotSettleUnstartedAuction();
-error JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();
-error JoepegAuctionHouse__DutchAuctionInsufficientAmountToSettle();
-error JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();
 
 /**
  * @title JoepegAuctionHouse

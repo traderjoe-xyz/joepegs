@@ -4,16 +4,9 @@ pragma solidity ^0.8.0;
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
+import "./Errors.sol";
 import {IRoyaltyFeeRegistryV2} from "./interfaces/IRoyaltyFeeRegistryV2.sol";
 import {RoyaltyFeeTypes} from "./libraries/RoyaltyFeeTypes.sol";
-
-error RoyaltyFeeRegistryV2__InvalidMaxNumRecipients();
-error RoyaltyFeeRegistryV2__RoyaltyFeeCannotBeZero();
-error RoyaltyFeeRegistryV2__RoyaltyFeeLimitTooHigh();
-error RoyaltyFeeRegistryV2__RoyaltyFeeRecipientCannotBeNullAddr();
-error RoyaltyFeeRegistryV2__RoyaltyFeeSetterCannotBeNullAddr();
-error RoyaltyFeeRegistryV2__RoyaltyFeeTooHigh();
-error RoyaltyFeeRegistryV2__TooManyFeeRecipients();
 
 /**
  * @title RoyaltyFeeRegistryV2
