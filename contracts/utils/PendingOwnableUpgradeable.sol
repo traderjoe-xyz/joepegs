@@ -38,7 +38,7 @@ abstract contract PendingOwnableUpgradeable is
      * @notice Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        if (msg.sender != _owner) revert PendingOwnable__NotOwner();
+        if (msg.sender != _owner) revert PendingOwnableUpgradeable__NotOwner();
         _;
     }
 
@@ -47,7 +47,7 @@ abstract contract PendingOwnableUpgradeable is
      */
     modifier onlyPendingOwner() {
         if (msg.sender != _pendingOwner || msg.sender == address(0))
-            revert PendingOwnable__NotPendingOwner();
+            revert PendingOwnableUpgradeable__NotPendingOwner();
         _;
     }
 
@@ -90,7 +90,7 @@ abstract contract PendingOwnableUpgradeable is
         onlyOwner
     {
         if (_pendingOwner != address(0))
-            revert PendingOwnable__PendingOwnerAlreadySet();
+            revert PendingOwnableUpgradeable__PendingOwnerAlreadySet();
         _setPendingOwner(pendingOwner_);
     }
 
@@ -101,7 +101,7 @@ abstract contract PendingOwnableUpgradeable is
      */
     function revokePendingOwner() public virtual override onlyOwner {
         if (_pendingOwner == address(0))
-            revert PendingOwnable__NoPendingOwner();
+            revert PendingOwnableUpgradeable__NoPendingOwner();
         _setPendingOwner(address(0));
     }
 

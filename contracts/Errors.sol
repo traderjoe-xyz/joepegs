@@ -58,6 +58,12 @@ error PendingOwnable__NotPendingOwner();
 error PendingOwnable__PendingOwnerAlreadySet();
 error PendingOwnable__NoPendingOwner();
 
+// PendingOwnableUpgradeable
+error PendingOwnableUpgradeable__NotOwner();
+error PendingOwnableUpgradeable__NotPendingOwner();
+error PendingOwnableUpgradeable__PendingOwnerAlreadySet();
+error PendingOwnableUpgradeable__NoPendingOwner();
+
 // SafeAccessControlEnumerable
 error SafeAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(
     bytes32 role,
