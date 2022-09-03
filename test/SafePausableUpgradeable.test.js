@@ -2,7 +2,7 @@ const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
 
 let PAUSER_ROLE, UNPAUSER_ROLE, PAUSER_ADMIN_ROLE, UNPAUSER_ADMIN_ROLE;
-describe.only("SafePausableUpgradeable", function () {
+describe("SafePausableUpgradeable", function () {
   before(async function () {
     this.safePausableCF = await ethers.getContractFactory(
       "MockSafePausableUpgradeable"
