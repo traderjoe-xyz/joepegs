@@ -19,12 +19,11 @@ module.exports = async function ({
     proxyOwner = "0x64c4607AD853999EE5042Ba8377BfC4099C273DE";
   }
 
-  const royaltyFeeRegistry = await deployments.get("RoyaltyFeeRegistry");
   const royaltyFeeRegistryV2 = await deployments.get("RoyaltyFeeRegistryV2");
 
-  const args = [royaltyFeeRegistry.address, royaltyFeeRegistryV2.address];
+  const args = [royaltyFeeRegistryV2.address];
   await catchUnknownSigner(async () => {
-    proxyContract = await deploy("RoyaltyFeeManager", {
+    proxyContract = await deploy("RoyaltyFeeSetterV2", {
       from: deployer,
       proxy: {
         owner: proxyOwner,
@@ -42,8 +41,15 @@ module.exports = async function ({
     });
   });
 
+  // Initialize implementation contract
+  const implementationContract = await ethers.getContractAt(
+    "RoyaltyFeeRegistryV2",
+    proxyContract.implementation
+  );
+  await implementationContract.initialize(...args);
+
   await verify(proxyContract.implementation, []);
 };
 
-module.exports.tags = ["RoyaltyFeeManager"];
-module.exports.dependencies = ["RoyaltyFeeRegistry", "RoyaltyFeeRegistryV2"];
+module.exports.tags = ["RoyaltyFeeSetterV2"];
+module.exports.dependencies = ["RoyaltyFeeRegistryV2"];
