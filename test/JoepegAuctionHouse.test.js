@@ -112,6 +112,8 @@ describe("JoepegAuctionHouse", function () {
 
     this.auctionHouse = await this.AuctionHouseCF.deploy(WAVAX);
     auctionHouse = this.auctionHouse;
+    this.PAUSER_ROLE = await this.auctionHouse.PAUSER_ROLE();
+    this.UNPAUSER_ROLE = await this.auctionHouse.UNPAUSER_ROLE();
 
     // Initialization
     await this.auctionHouse.initialize(
@@ -2961,57 +2963,69 @@ describe("JoepegAuctionHouse", function () {
     });
   });
 
-  describe("pausableAdmin", function () {
-    it("non-pause admin cannot pause", async function () {
+  describe("safePausable", function () {
+    it("non-owner and non-pauser cannot pause", async function () {
       await expect(
         this.auctionHouse.connect(this.alice).pause()
       ).to.be.revertedWith(
-        `PausableAdmin__OnlyPauseAdmin("${this.alice.address}")`
+        `SafeAccessControlEnumerableUpgradeable__SenderMissingRoleAndIsNotOwner`
       );
     });
 
-    it("non-owner cannot unpause", async function () {
+    it("non-owner and non-unpauser cannot unpause", async function () {
       await this.auctionHouse.pause();
       await expect(
         this.auctionHouse.connect(this.alice).unpause()
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith(
+        "SafeAccessControlEnumerableUpgradeable__SenderMissingRoleAndIsNotOwner"
+      );
     });
 
-    it("pause admin who is not owner cannot unpause", async function () {
-      await this.auctionHouse.addPauseAdmin(this.alice.address);
+    it("pauser who is not owner cannot unpause", async function () {
+      await this.auctionHouse.grantRole(this.PAUSER_ROLE, this.alice.address);
       await this.auctionHouse.connect(this.alice).pause();
       await expect(
         this.auctionHouse.connect(this.alice).unpause()
-      ).to.be.revertedWith("PendingOwnable__NotOwner()");
+      ).to.be.revertedWith(
+        "SafeAccessControlEnumerableUpgradeable__SenderMissingRoleAndIsNotOwner"
+      );
     });
 
-    it("non-owner cannot add pause admin", async function () {
-      await this.auctionHouse.addPauseAdmin(this.alice.address);
+    it("non-owner cannot grant pauser role", async function () {
+      await this.auctionHouse.grantRole(this.PAUSER_ROLE, this.alice.address);
       await expect(
-        this.auctionHouse.connect(this.alice).addPauseAdmin(this.bob.address)
-      ).to.be.revertedWith("PendingOwnable__NotOwner");
+        this.auctionHouse
+          .connect(this.alice)
+          .grantRole(this.PAUSER_ROLE, this.bob.address)
+      ).to.be.revertedWith(
+        "SafeAccessControlEnumerableUpgradeable__SenderMissingRoleAndIsNotOwner"
+      );
     });
 
-    it("non-owner cannot remove pause admin", async function () {
-      await this.auctionHouse.addPauseAdmin(this.alice.address);
+    it("non-owner cannot revoke pauser role", async function () {
+      await this.auctionHouse.grantRole(this.PAUSER_ROLE, this.alice.address);
       await expect(
-        this.auctionHouse.connect(this.bob).removePauseAdmin(this.alice.address)
-      ).to.be.revertedWith("PendingOwnable__NotOwner");
+        this.auctionHouse
+          .connect(this.bob)
+          .revokeRole(this.PAUSER_ROLE, this.alice.address)
+      ).to.be.revertedWith(
+        "SafeAccessControlEnumerableUpgradeable__SenderMissingRoleAndIsNotOwner"
+      );
     });
 
-    it("owner can add and remove pause admin", async function () {
-      await this.auctionHouse.addPauseAdmin(this.alice.address);
+    it("owner can add and revoke pauser role", async function () {
+      await this.auctionHouse.grantRole(this.PAUSER_ROLE, this.alice.address);
       expect(
-        await this.auctionHouse.isPauseAdmin(this.alice.address)
-      ).to.be.equal(true);
-      await this.auctionHouse.removePauseAdmin(this.alice.address);
+        await this.auctionHouse.getRoleMemberCount(this.PAUSER_ROLE)
+      ).to.be.equal(1);
+      await this.auctionHouse.revokeRole(this.PAUSER_ROLE, this.alice.address);
       expect(
-        await this.auctionHouse.isPauseAdmin(this.alice.address)
-      ).to.be.equal(false);
+        await this.auctionHouse.getRoleMemberCount(this.PAUSER_ROLE)
+      ).to.be.equal(0);
     });
 
-    it("pause admin can pause", async function () {
-      await this.auctionHouse.addPauseAdmin(this.alice.address);
+    it("pauser can pause", async function () {
+      await this.auctionHouse.grantRole(this.PAUSER_ROLE, this.alice.address);
       await this.auctionHouse.connect(this.alice).pause();
       expect(await this.auctionHouse.paused()).to.be.equal(true);
     });
@@ -3024,19 +3038,6 @@ describe("JoepegAuctionHouse", function () {
       expect(await this.auctionHouse.paused()).to.be.equal(false);
 
       await startDutchAuction();
-    });
-
-    it("transferring ownership should add new owner to pause admin and remove privilege of previous owner", async function () {
-      await this.auctionHouse.setPendingOwner(this.alice.address);
-      await this.auctionHouse.connect(this.alice).becomeOwner();
-
-      expect(await this.auctionHouse.owner()).to.be.equal(this.alice.address);
-      expect(
-        await this.auctionHouse.isPauseAdmin(this.alice.address)
-      ).to.be.equal(true);
-      expect(
-        await this.auctionHouse.isPauseAdmin(this.dev.address)
-      ).to.be.equal(false);
     });
   });
 
