@@ -69,12 +69,14 @@ module.exports = async function ({
     });
   });
 
-  // Initialize implementation contract
-  const implementationContract = await ethers.getContractAt(
-    "JoepegAuctionHouse",
-    proxyContract.implementation
-  );
-  await implementationContract.initialize(...initArgs);
+  if (proxyContract && proxyContract.newlyDeployed) {
+    // Initialize implementation contract
+    const implementationContract = await ethers.getContractAt(
+      "JoepegAuctionHouse",
+      proxyContract.implementation
+    );
+    await implementationContract.initialize(...initArgs);
+  }
 
   await verify(proxyContract.implementation, constructorArgs);
 };

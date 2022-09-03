@@ -41,12 +41,14 @@ module.exports = async function ({
     });
   });
 
-  // Initialize implementation contract
-  const implementationContract = await ethers.getContractAt(
-    "RoyaltyFeeSetterV2",
-    proxyContract.implementation
-  );
-  await implementationContract.initialize(...args);
+  if (proxyContract && proxyContract.newlyDeployed) {
+    // Initialize implementation contract
+    const implementationContract = await ethers.getContractAt(
+      "RoyaltyFeeSetterV2",
+      proxyContract.implementation
+    );
+    await implementationContract.initialize(...args);
+  }
 
   await verify(proxyContract.implementation, []);
 };
