@@ -15,8 +15,7 @@ describe("MockPendingOwnableUpgradeable", function () {
   });
 
   beforeEach(async function () {
-    this.mockPendingOwnableUpgradeable =
-      await this.mockPendingOwnableUpgradeableCF.deploy();
+    this.mockPendingOwnableUpgradeable = await this.mockPendingOwnableUpgradeableCF.deploy();
     await this.mockPendingOwnableUpgradeable.initialize();
   });
 
@@ -52,6 +51,13 @@ describe("MockPendingOwnableUpgradeable", function () {
     await expect(
       this.mockPendingOwnableUpgradeable.connect(this.dev).revokePendingOwner()
     ).to.be.revertedWith("PendingOwnableUpgradeable__NoPendingOwner");
+
+    // Should revert on address(0)
+    await expect(
+      this.mockPendingOwnableUpgradeable
+        .connect(this.dev)
+        .setPendingOwner(ethers.constants.AddressZero)
+    ).to.be.revertedWith("PendingOwnableUpgradeable__AddressZero");
 
     await this.mockPendingOwnableUpgradeable
       .connect(this.dev)
