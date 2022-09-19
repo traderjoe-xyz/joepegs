@@ -79,6 +79,7 @@ abstract contract PendingOwnable is ERC165, IPendingOwnable {
         override
         onlyOwner
     {
+        if (pendingOwner_ == address(0)) revert PendingOwnable__AddressZero();
         if (_pendingOwner != address(0))
             revert PendingOwnable__PendingOwnerAlreadySet();
         _setPendingOwner(pendingOwner_);
