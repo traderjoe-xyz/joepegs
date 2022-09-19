@@ -51,6 +51,13 @@ describe("MockPendingOwnable", function () {
       this.pendingOwnable.connect(this.dev).setPendingOwner(this.alice.address)
     ).to.be.revertedWith("PendingOwnable__PendingOwnerAlreadySet");
 
+    // Should revert on address(0)
+    await expect(
+      this.pendingOwnable
+        .connect(this.dev)
+        .setPendingOwner(ethers.constants.AddressZero)
+  ).to.be.revertedWith("PendingOwnable__AddressZero");
+
     await this.pendingOwnable.connect(this.dev).revokePendingOwner();
 
     await expect(
