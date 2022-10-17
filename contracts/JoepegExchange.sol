@@ -196,14 +196,14 @@ contract JoepegExchange is
     }
 
     /**
-     * @notice Match ask with a taker bid order using AVAX
+     * @notice Validate order sides, maker ask currency and taker bid sender
      * @param takerBid taker bid order
      * @param makerAsk maker ask order
      */
-    function _matchAskWithTakerBidUsingAVAXAndWAVAX(
+    function _validateMakerAskAndTakerBid(
         OrderTypes.TakerOrder calldata takerBid,
         OrderTypes.MakerOrder calldata makerAsk
-    ) internal {
+    ) internal view {
         require(
             (makerAsk.isOrderAsk) && (!takerBid.isOrderAsk),
             "Order: Wrong sides"
@@ -213,6 +213,41 @@ contract JoepegExchange is
             msg.sender == takerBid.taker,
             "Order: Taker must be the sender"
         );
+    }
+
+    /**
+     * @notice Match ask with a taker bid order using AVAX and ignore expired asks if any
+     * @param takerBid taker bid order
+     * @param makerAsk maker ask order
+     */
+    function _matchAskWithTakerBidUsingAVAXAndWAVAXIgnoringExpiredAsks(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    ) internal returns (bool) {
+        // Validate orders
+        _validateMakerAskAndTakerBid(takerBid, makerAsk);
+
+        // Skip call when maker ask has expired
+        if (!_checkMakerOrderNotExpired(makerAsk)) {
+            return false;
+        }
+
+        // Match orders
+        _matchAskWithTakerBidUsingAVAXAndWAVAX(takerBid, makerAsk);
+        return true;
+    }
+
+    /**
+     * @notice Match ask with a taker bid order using AVAX
+     * @param takerBid taker bid order
+     * @param makerAsk maker ask order
+     */
+    function _matchAskWithTakerBidUsingAVAXAndWAVAX(
+        OrderTypes.TakerOrder calldata takerBid,
+        OrderTypes.MakerOrder calldata makerAsk
+    ) internal {
+        // Validate orders
+        _validateMakerAskAndTakerBid(takerBid, makerAsk);
 
         // Check the maker ask order
         bytes32 askHash = makerAsk.hash();
@@ -563,6 +598,56 @@ contract JoepegExchange is
     }
 
     /**
+     * @notice Match multiple asks with their respective taker bid order using AVAX and WAVAX, ignoring expired maker asks
+     * @dev Used when the caller doesn't want the transaction to revert if a maker ask already expired
+     * @param trades an array of trades
+     */
+    function batchBuyWithAVAXAndWAVAXIgnoringExpiredAsks(
+        Trade[] calldata trades
+    ) external payable nonReentrant returns (bool[] memory transferStatus) {
+        transferStatus = new bool[](trades.length);
+
+        // Calculate the total cost of all valid orders
+        uint256 totalCost;
+        for (uint256 i; i < trades.length; ++i) {
+            if (_checkMakerOrderNotExpired(trades[i].makerAsk)) {
+                totalCost += trades[i].takerBid.price;
+            }
+        }
+
+        // Transfer WAVAX if needed
+        if (totalCost > msg.value) {
+            IERC20(WAVAX).safeTransferFrom(
+                msg.sender,
+                address(this),
+                (totalCost - msg.value)
+            );
+
+            // Wrap AVAX sent to this contract
+            IWAVAX(WAVAX).deposit{value: msg.value}();
+        } else {
+            // Wrap AVAX needed to pay for valid orders
+            IWAVAX(WAVAX).deposit{value: totalCost}();
+        }
+
+        // Match orders
+        for (uint256 i; i < trades.length; ++i) {
+            bool status = _matchAskWithTakerBidUsingAVAXAndWAVAXIgnoringExpiredAsks(
+                trades[i].takerBid,
+                trades[i].makerAsk
+            );
+            transferStatus[i] = status;
+        }
+
+        // Return remaining AVAX (if any)
+        if (msg.value > totalCost) {
+            uint256 remainingAVAX = msg.value - totalCost;
+            (bool sent, ) = msg.sender.call{value: remainingAVAX}("");
+            require(sent, "Batch Buy: Failed to return remaining AVAX");
+        }
+    }
+
+    /**
      * @notice Transfer fees and funds to royalty recipient, protocol, and seller
      * @param collection non fungible token address for the transfer
      * @param tokenId tokenId
@@ -777,6 +862,21 @@ contract JoepegExchange is
     }
 
     /**
+      * @notice Check whether the maker order has expired or not
+      * @param makerOrder maker order  
+     */
+    function _checkMakerOrderNotExpired(OrderTypes.MakerOrder calldata makerOrder)
+        internal
+        view
+        returns (bool)
+    {
+        return
+            !_isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
+                makerOrder.nonce
+            ] && makerOrder.nonce >= userMinOrderNonce[makerOrder.signer];
+    }
+
+    /**
      * @notice Verify the validity of the maker order
      * @param makerOrder maker order
      * @param orderHash computed hash for the order
@@ -787,11 +887,7 @@ contract JoepegExchange is
     ) internal view {
         // Verify whether order nonce has expired
         require(
-            (
-                !_isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
-                    makerOrder.nonce
-                ]
-            ) && (makerOrder.nonce >= userMinOrderNonce[makerOrder.signer]),
+            _checkMakerOrderNotExpired(makerOrder),
             "Order: Matching order expired"
         );
 
