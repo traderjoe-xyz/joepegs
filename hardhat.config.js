@@ -8,6 +8,7 @@ require("hardhat-contract-sizer");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 require("solidity-coverage");
+require("./tasks/transfer-ownerships");
 
 module.exports = {
   solidity: {
@@ -30,26 +31,29 @@ module.exports = {
       url: "https://api.avax.network/ext/bc/C/rpc",
       accounts: process.env.DEPLOY_PRIVATE_KEY
         ? [process.env.DEPLOY_PRIVATE_KEY]
-        : [],      
+        : [],
       chainId: 43114,
       live: true,
       saveDeployments: true,
-      gasPrice: 225000000000,
+      gasPrice: 225_000_000_000,
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
-      gasPrice: 225000000000,
-      gasLimit: 80000000000,
+      gasPrice: 225_000_000_000,
+      gasLimit: 8_000_000_000,
       chainId: 43113,
       accounts: process.env.DEPLOY_PRIVATE_KEY
         ? [process.env.DEPLOY_PRIVATE_KEY]
         : [],
     },
     bscTestnet: {
-      url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-      gasPrice: 25000000000,
+      url: process.env.RPC_ENDPOINT,
+      gasPrice: 20_000_000_000,
+      gasLimit: 49_000_000_000,
       chainId: 97,
-      accounts: process.env.BNB_TESTNET_DEPLOYER ? [process.env.BNB_TESTNET_DEPLOYER] : [],
+      accounts: process.env.BNB_TESTNET_DEPLOYER
+        ? [process.env.BNB_TESTNET_DEPLOYER]
+        : [],
     },
   },
   contractSizer: {
@@ -64,6 +68,7 @@ module.exports = {
       // See https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html#multiple-api-keys-and-alternative-block-explorers
       avalanche: process.env.SNOWTRACE_API_KEY,
       avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
+      bscTestnet: process.env.BNB_API_KEY,
     },
   },
 };
