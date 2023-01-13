@@ -1,0 +1,518 @@
+{
+  "address": "0x371B96A06d8f5d0d985ae420e2369c13610065E5",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "RoyaltyFeeSetterV2__CollectionCannotSupportERC2981",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RoyaltyFeeSetterV2__CollectionIsNotNFT",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RoyaltyFeeSetterV2__NotCollectionAdmin",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RoyaltyFeeSetterV2__NotCollectionOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RoyaltyFeeSetterV2__NotCollectionSetter",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RoyaltyFeeSetterV2__SetterAlreadySet",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "INTERFACE_ID_ERC1155",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "INTERFACE_ID_ERC2981",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "INTERFACE_ID_ERC721",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_royaltyFeeRegistryV2",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "royaltyFeeRegistryV2",
+      "outputs": [
+        {
+          "internalType": "contract IRoyaltyFeeRegistryV2",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_owner",
+          "type": "address"
+        }
+      ],
+      "name": "updateOwnerOfRoyaltyFeeRegistryV2",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_royaltyFeeLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateRoyaltyFeeLimit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_collection",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_setter",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fee",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct RoyaltyFeeTypes.FeeInfoPart[]",
+          "name": "_feeInfoParts",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "updateRoyaltyInfoPartsForCollection",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_collection",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_setter",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fee",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct RoyaltyFeeTypes.FeeInfoPart[]",
+          "name": "_feeInfoParts",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "updateRoyaltyInfoPartsForCollectionIfAdmin",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_collection",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_setter",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fee",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct RoyaltyFeeTypes.FeeInfoPart[]",
+          "name": "_feeInfoParts",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "updateRoyaltyInfoPartsForCollectionIfOwner",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_collection",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_setter",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "fee",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct RoyaltyFeeTypes.FeeInfoPart[]",
+          "name": "_feeInfoParts",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "updateRoyaltyInfoPartsForCollectionIfSetter",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xc46f6d1613dbff827f69ea2dda25dcda0238edb88a89b3b6b57808cfc69e5195",
+  "receipt": {
+    "to": null,
+    "from": "0x597E2587eCA945fB001BAdF1adF878CcB8e368b6",
+    "contractAddress": "0x371B96A06d8f5d0d985ae420e2369c13610065E5",
+    "transactionIndex": 0,
+    "gasUsed": "835964",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x235ce44082d44396f7206fcb4e0b511b8106cb0d5472daf3a2ccd3dc3c5cf7e7",
+    "transactionHash": "0xc46f6d1613dbff827f69ea2dda25dcda0238edb88a89b3b6b57808cfc69e5195",
+    "logs": [],
+    "blockNumber": 26311613,
+    "cumulativeGasUsed": "835964",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "e27c224c09507bb41163b96c985afc0d",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.10+commit.fc410830\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"RoyaltyFeeSetterV2__CollectionCannotSupportERC2981\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RoyaltyFeeSetterV2__CollectionIsNotNFT\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RoyaltyFeeSetterV2__NotCollectionAdmin\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RoyaltyFeeSetterV2__NotCollectionOwner\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RoyaltyFeeSetterV2__NotCollectionSetter\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"RoyaltyFeeSetterV2__SetterAlreadySet\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"INTERFACE_ID_ERC1155\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"INTERFACE_ID_ERC2981\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"INTERFACE_ID_ERC721\",\"outputs\":[{\"internalType\":\"bytes4\",\"name\":\"\",\"type\":\"bytes4\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_royaltyFeeRegistryV2\",\"type\":\"address\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"royaltyFeeRegistryV2\",\"outputs\":[{\"internalType\":\"contract IRoyaltyFeeRegistryV2\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"updateOwnerOfRoyaltyFeeRegistryV2\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_royaltyFeeLimit\",\"type\":\"uint256\"}],\"name\":\"updateRoyaltyFeeLimit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_collection\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_setter\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"internalType\":\"struct RoyaltyFeeTypes.FeeInfoPart[]\",\"name\":\"_feeInfoParts\",\"type\":\"tuple[]\"}],\"name\":\"updateRoyaltyInfoPartsForCollection\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_collection\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_setter\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"internalType\":\"struct RoyaltyFeeTypes.FeeInfoPart[]\",\"name\":\"_feeInfoParts\",\"type\":\"tuple[]\"}],\"name\":\"updateRoyaltyInfoPartsForCollectionIfAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_collection\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_setter\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"internalType\":\"struct RoyaltyFeeTypes.FeeInfoPart[]\",\"name\":\"_feeInfoParts\",\"type\":\"tuple[]\"}],\"name\":\"updateRoyaltyInfoPartsForCollectionIfOwner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_collection\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_setter\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"internalType\":\"struct RoyaltyFeeTypes.FeeInfoPart[]\",\"name\":\"_feeInfoParts\",\"type\":\"tuple[]\"}],\"name\":\"updateRoyaltyInfoPartsForCollectionIfSetter\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"initialize(address)\":{\"params\":{\"_royaltyFeeRegistryV2\":\"address of the royalty fee registry\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"},\"updateOwnerOfRoyaltyFeeRegistryV2(address)\":{\"details\":\"Can be used for migration of this royalty fee setter contract\",\"params\":{\"_owner\":\"new owner address\"}},\"updateRoyaltyFeeLimit(uint256)\":{\"params\":{\"_royaltyFeeLimit\":\"new royalty fee limit (500 = 5%, 1,000 = 10%)\"}},\"updateRoyaltyInfoPartsForCollection(address,address,(address,uint256)[])\":{\"details\":\"Can only be called by contract owner (of this)\",\"params\":{\"_collection\":\"address of the NFT contract\",\"_feeInfoParts\":\"fee info parts\",\"_setter\":\"address that sets the receiver\"}},\"updateRoyaltyInfoPartsForCollectionIfAdmin(address,address,(address,uint256)[])\":{\"details\":\"Only to be called if there is no setter address\",\"params\":{\"_collection\":\"address of the NFT contract\",\"_feeInfoParts\":\"fee info parts\",\"_setter\":\"address that sets the receiver\"}},\"updateRoyaltyInfoPartsForCollectionIfOwner(address,address,(address,uint256)[])\":{\"details\":\"Only to be called if there is no setter address\",\"params\":{\"_collection\":\"address of the NFT contract\",\"_feeInfoParts\":\"fee info parts\",\"_setter\":\"address that sets the receiver\"}},\"updateRoyaltyInfoPartsForCollectionIfSetter(address,address,(address,uint256)[])\":{\"details\":\"Only to be called if the msg.sender is the setter\",\"params\":{\"_collection\":\"address of the NFT contract\",\"_feeInfoParts\":\"fee info parts\",\"_setter\":\"address that sets the receiver\"}}},\"title\":\"RoyaltyFeeSetter\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"initialize(address)\":{\"notice\":\"Initializer\"},\"updateOwnerOfRoyaltyFeeRegistryV2(address)\":{\"notice\":\"Update owner of royalty fee registry\"},\"updateRoyaltyFeeLimit(uint256)\":{\"notice\":\"Update royalty info for collection\"},\"updateRoyaltyInfoPartsForCollection(address,address,(address,uint256)[])\":{\"notice\":\"Update royalty info for collection\"},\"updateRoyaltyInfoPartsForCollectionIfAdmin(address,address,(address,uint256)[])\":{\"notice\":\"Update royalty info for collection if admin\"},\"updateRoyaltyInfoPartsForCollectionIfOwner(address,address,(address,uint256)[])\":{\"notice\":\"Update royalty info for collection if owner\"},\"updateRoyaltyInfoPartsForCollectionIfSetter(address,address,(address,uint256)[])\":{\"notice\":\"Update royalty info for collection\"}},\"notice\":\"Used to allow creators to set royalty information in RoyaltyFeeRegistryV2.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/RoyaltyFeeSetterV2.sol\":\"RoyaltyFeeSetterV2\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)\\n\\npragma solidity ^0.8.0;\\n\\nimport \\\"../utils/ContextUpgradeable.sol\\\";\\nimport \\\"../proxy/utils/Initializable.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract OwnableUpgradeable is Initializable, ContextUpgradeable {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    function __Ownable_init() internal onlyInitializing {\\n        __Ownable_init_unchained();\\n    }\\n\\n    function __Ownable_init_unchained() internal onlyInitializing {\\n        _transferOwnership(_msgSender());\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(owner() == _msgSender(), \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby removing any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n\\n    /**\\n     * @dev This empty reserved space is put in place to allow future versions to add new\\n     * variables without shifting down storage in the inheritance chain.\\n     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps\\n     */\\n    uint256[49] private __gap;\\n}\\n\",\"keccak256\":\"0x652fee292f698d8dba81bf287cb71f1682f6483b67ebe601a5f7387dcfc30b34\",\"license\":\"MIT\"},\"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v4.5.0) (proxy/utils/Initializable.sol)\\n\\npragma solidity ^0.8.0;\\n\\nimport \\\"../../utils/AddressUpgradeable.sol\\\";\\n\\n/**\\n * @dev This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed\\n * behind a proxy. Since proxied contracts do not make use of a constructor, it's common to move constructor logic to an\\n * external initializer function, usually called `initialize`. It then becomes necessary to protect this initializer\\n * function so it can only be called once. The {initializer} modifier provided by this contract will have this effect.\\n *\\n * TIP: To avoid leaving the proxy in an uninitialized state, the initializer function should be called as early as\\n * possible by providing the encoded function call as the `_data` argument to {ERC1967Proxy-constructor}.\\n *\\n * CAUTION: When used with inheritance, manual care must be taken to not invoke a parent initializer twice, or to ensure\\n * that all initializers are idempotent. This is not verified automatically as constructors are by Solidity.\\n *\\n * [CAUTION]\\n * ====\\n * Avoid leaving a contract uninitialized.\\n *\\n * An uninitialized contract can be taken over by an attacker. This applies to both a proxy and its implementation\\n * contract, which may impact the proxy. To initialize the implementation contract, you can either invoke the\\n * initializer manually, or you can include a constructor to automatically mark it as initialized when it is deployed:\\n *\\n * [.hljs-theme-light.nopadding]\\n * ```\\n * /// @custom:oz-upgrades-unsafe-allow constructor\\n * constructor() initializer {}\\n * ```\\n * ====\\n */\\nabstract contract Initializable {\\n    /**\\n     * @dev Indicates that the contract has been initialized.\\n     */\\n    bool private _initialized;\\n\\n    /**\\n     * @dev Indicates that the contract is in the process of being initialized.\\n     */\\n    bool private _initializing;\\n\\n    /**\\n     * @dev Modifier to protect an initializer function from being invoked twice.\\n     */\\n    modifier initializer() {\\n        // If the contract is initializing we ignore whether _initialized is set in order to support multiple\\n        // inheritance patterns, but we only do this in the context of a constructor, because in other contexts the\\n        // contract may have been reentered.\\n        require(_initializing ? _isConstructor() : !_initialized, \\\"Initializable: contract is already initialized\\\");\\n\\n        bool isTopLevelCall = !_initializing;\\n        if (isTopLevelCall) {\\n            _initializing = true;\\n            _initialized = true;\\n        }\\n\\n        _;\\n\\n        if (isTopLevelCall) {\\n            _initializing = false;\\n        }\\n    }\\n\\n    /**\\n     * @dev Modifier to protect an initialization function so that it can only be invoked by functions with the\\n     * {initializer} modifier, directly or indirectly.\\n     */\\n    modifier onlyInitializing() {\\n        require(_initializing, \\\"Initializable: contract is not initializing\\\");\\n        _;\\n    }\\n\\n    function _isConstructor() private view returns (bool) {\\n        return !AddressUpgradeable.isContract(address(this));\\n    }\\n}\\n\",\"keccak256\":\"0x372b0bc04e3b4c074559bbbfb1317afddb56de5504158ca25a7f9cd403980445\",\"license\":\"MIT\"},\"@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v4.5.0) (utils/Address.sol)\\n\\npragma solidity ^0.8.1;\\n\\n/**\\n * @dev Collection of functions related to the address type\\n */\\nlibrary AddressUpgradeable {\\n    /**\\n     * @dev Returns true if `account` is a contract.\\n     *\\n     * [IMPORTANT]\\n     * ====\\n     * It is unsafe to assume that an address for which this function returns\\n     * false is an externally-owned account (EOA) and not a contract.\\n     *\\n     * Among others, `isContract` will return false for the following\\n     * types of addresses:\\n     *\\n     *  - an externally-owned account\\n     *  - a contract in construction\\n     *  - an address where a contract will be created\\n     *  - an address where a contract lived, but was destroyed\\n     * ====\\n     *\\n     * [IMPORTANT]\\n     * ====\\n     * You shouldn't rely on `isContract` to protect against flash loan attacks!\\n     *\\n     * Preventing calls from contracts is highly discouraged. It breaks composability, breaks support for smart wallets\\n     * like Gnosis Safe, and does not provide security since it can be circumvented by calling from a contract\\n     * constructor.\\n     * ====\\n     */\\n    function isContract(address account) internal view returns (bool) {\\n        // This method relies on extcodesize/address.code.length, which returns 0\\n        // for contracts in construction, since the code is only stored at the end\\n        // of the constructor execution.\\n\\n        return account.code.length > 0;\\n    }\\n\\n    /**\\n     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to\\n     * `recipient`, forwarding all available gas and reverting on errors.\\n     *\\n     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost\\n     * of certain opcodes, possibly making contracts go over the 2300 gas limit\\n     * imposed by `transfer`, making them unable to receive funds via\\n     * `transfer`. {sendValue} removes this limitation.\\n     *\\n     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].\\n     *\\n     * IMPORTANT: because control is transferred to `recipient`, care must be\\n     * taken to not create reentrancy vulnerabilities. Consider using\\n     * {ReentrancyGuard} or the\\n     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].\\n     */\\n    function sendValue(address payable recipient, uint256 amount) internal {\\n        require(address(this).balance >= amount, \\\"Address: insufficient balance\\\");\\n\\n        (bool success, ) = recipient.call{value: amount}(\\\"\\\");\\n        require(success, \\\"Address: unable to send value, recipient may have reverted\\\");\\n    }\\n\\n    /**\\n     * @dev Performs a Solidity function call using a low level `call`. A\\n     * plain `call` is an unsafe replacement for a function call: use this\\n     * function instead.\\n     *\\n     * If `target` reverts with a revert reason, it is bubbled up by this\\n     * function (like regular Solidity function calls).\\n     *\\n     * Returns the raw returned data. To convert to the expected return value,\\n     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].\\n     *\\n     * Requirements:\\n     *\\n     * - `target` must be a contract.\\n     * - calling `target` with `data` must not revert.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCall(address target, bytes memory data) internal returns (bytes memory) {\\n        return functionCall(target, data, \\\"Address: low-level call failed\\\");\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with\\n     * `errorMessage` as a fallback revert reason when `target` reverts.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCall(\\n        address target,\\n        bytes memory data,\\n        string memory errorMessage\\n    ) internal returns (bytes memory) {\\n        return functionCallWithValue(target, data, 0, errorMessage);\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],\\n     * but also transferring `value` wei to `target`.\\n     *\\n     * Requirements:\\n     *\\n     * - the calling contract must have an ETH balance of at least `value`.\\n     * - the called Solidity function must be `payable`.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCallWithValue(\\n        address target,\\n        bytes memory data,\\n        uint256 value\\n    ) internal returns (bytes memory) {\\n        return functionCallWithValue(target, data, value, \\\"Address: low-level call with value failed\\\");\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but\\n     * with `errorMessage` as a fallback revert reason when `target` reverts.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCallWithValue(\\n        address target,\\n        bytes memory data,\\n        uint256 value,\\n        string memory errorMessage\\n    ) internal returns (bytes memory) {\\n        require(address(this).balance >= value, \\\"Address: insufficient balance for call\\\");\\n        require(isContract(target), \\\"Address: call to non-contract\\\");\\n\\n        (bool success, bytes memory returndata) = target.call{value: value}(data);\\n        return verifyCallResult(success, returndata, errorMessage);\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],\\n     * but performing a static call.\\n     *\\n     * _Available since v3.3._\\n     */\\n    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {\\n        return functionStaticCall(target, data, \\\"Address: low-level static call failed\\\");\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],\\n     * but performing a static call.\\n     *\\n     * _Available since v3.3._\\n     */\\n    function functionStaticCall(\\n        address target,\\n        bytes memory data,\\n        string memory errorMessage\\n    ) internal view returns (bytes memory) {\\n        require(isContract(target), \\\"Address: static call to non-contract\\\");\\n\\n        (bool success, bytes memory returndata) = target.staticcall(data);\\n        return verifyCallResult(success, returndata, errorMessage);\\n    }\\n\\n    /**\\n     * @dev Tool to verifies that a low level call was successful, and revert if it wasn't, either by bubbling the\\n     * revert reason using the provided one.\\n     *\\n     * _Available since v4.3._\\n     */\\n    function verifyCallResult(\\n        bool success,\\n        bytes memory returndata,\\n        string memory errorMessage\\n    ) internal pure returns (bytes memory) {\\n        if (success) {\\n            return returndata;\\n        } else {\\n            // Look for revert reason and bubble it up if present\\n            if (returndata.length > 0) {\\n                // The easiest way to bubble the revert reason is using memory via assembly\\n\\n                assembly {\\n                    let returndata_size := mload(returndata)\\n                    revert(add(32, returndata), returndata_size)\\n                }\\n            } else {\\n                revert(errorMessage);\\n            }\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x55cf2bd9fc76704ddcdc19834cd288b7de00fc0f298a40ea16a954ae8991db2d\",\"license\":\"MIT\"},\"@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (utils/Context.sol)\\n\\npragma solidity ^0.8.0;\\nimport \\\"../proxy/utils/Initializable.sol\\\";\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract ContextUpgradeable is Initializable {\\n    function __Context_init() internal onlyInitializing {\\n    }\\n\\n    function __Context_init_unchained() internal onlyInitializing {\\n    }\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n\\n    /**\\n     * @dev This empty reserved space is put in place to allow future versions to add new\\n     * variables without shifting down storage in the inheritance chain.\\n     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps\\n     */\\n    uint256[50] private __gap;\\n}\\n\",\"keccak256\":\"0x963ea7f0b48b032eef72fe3a7582edf78408d6f834115b9feadd673a4d5bd149\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/introspection/IERC165.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (utils/introspection/IERC165.sol)\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Interface of the ERC165 standard, as defined in the\\n * https://eips.ethereum.org/EIPS/eip-165[EIP].\\n *\\n * Implementers can declare support of contract interfaces, which can then be\\n * queried by others ({ERC165Checker}).\\n *\\n * For an implementation, see {ERC165}.\\n */\\ninterface IERC165 {\\n    /**\\n     * @dev Returns true if this contract implements the interface defined by\\n     * `interfaceId`. See the corresponding\\n     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]\\n     * to learn more about how these ids are created.\\n     *\\n     * This function call must use less than 30 000 gas.\\n     */\\n    function supportsInterface(bytes4 interfaceId) external view returns (bool);\\n}\\n\",\"keccak256\":\"0x447a5f3ddc18419d41ff92b3773fb86471b1db25773e07f877f548918a185bf1\",\"license\":\"MIT\"},\"contracts/Errors.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\n// JoepegAuctionHouse\\nerror JoepegAuctionHouse__AuctionAlreadyExists();\\nerror JoepegAuctionHouse__CurrencyMismatch();\\nerror JoepegAuctionHouse__ExpectedNonNullAddress();\\nerror JoepegAuctionHouse__ExpectedNonZeroFinalSellerAmount();\\nerror JoepegAuctionHouse__FeesHigherThanExpected();\\nerror JoepegAuctionHouse__InvalidDropInterval();\\nerror JoepegAuctionHouse__InvalidDuration();\\nerror JoepegAuctionHouse__InvalidMinPercentageToAsk();\\nerror JoepegAuctionHouse__InvalidStartTime();\\nerror JoepegAuctionHouse__NoAuctionExists();\\nerror JoepegAuctionHouse__OnlyAuctionCreatorCanCancel();\\nerror JoepegAuctionHouse__UnsupportedCurrency();\\n\\nerror JoepegAuctionHouse__EnglishAuctionCannotBidOnUnstartedAuction();\\nerror JoepegAuctionHouse__EnglishAuctionCannotBidOnEndedAuction();\\nerror JoepegAuctionHouse__EnglishAuctionCannotCancelWithExistingBid();\\nerror JoepegAuctionHouse__EnglishAuctionCannotSettleUnstartedAuction();\\nerror JoepegAuctionHouse__EnglishAuctionCannotSettleWithoutBid();\\nerror JoepegAuctionHouse__EnglishAuctionCreatorCannotPlaceBid();\\nerror JoepegAuctionHouse__EnglishAuctionInsufficientBidAmount();\\nerror JoepegAuctionHouse__EnglishAuctionInvalidMinBidIncrementPct();\\nerror JoepegAuctionHouse__EnglishAuctionInvalidRefreshTime();\\nerror JoepegAuctionHouse__EnglishAuctionOnlyCreatorCanSettleBeforeEndTime();\\n\\nerror JoepegAuctionHouse__DutchAuctionCannotSettleUnstartedAuction();\\nerror JoepegAuctionHouse__DutchAuctionCreatorCannotSettle();\\nerror JoepegAuctionHouse__DutchAuctionInsufficientAmountToSettle();\\nerror JoepegAuctionHouse__DutchAuctionInvalidStartEndPrice();\\n\\n// RoyaltyFeeManager\\nerror RoyaltyFeeManager__InvalidRoyaltyFeeRegistryV2();\\nerror RoyaltyFeeManager__RoyaltyFeeRegistryV2AlreadyInitialized();\\n\\n// RoyaltyFeeRegistryV2\\nerror RoyaltyFeeRegistryV2__InvalidMaxNumRecipients();\\nerror RoyaltyFeeRegistryV2__RoyaltyFeeCannotBeZero();\\nerror RoyaltyFeeRegistryV2__RoyaltyFeeLimitTooHigh();\\nerror RoyaltyFeeRegistryV2__RoyaltyFeeRecipientCannotBeNullAddr();\\nerror RoyaltyFeeRegistryV2__RoyaltyFeeSetterCannotBeNullAddr();\\nerror RoyaltyFeeRegistryV2__RoyaltyFeeTooHigh();\\nerror RoyaltyFeeRegistryV2__TooManyFeeRecipients();\\n\\n// RoyaltyFeeSetterV2\\nerror RoyaltyFeeSetterV2__CollectionCannotSupportERC2981();\\nerror RoyaltyFeeSetterV2__CollectionIsNotNFT();\\nerror RoyaltyFeeSetterV2__NotCollectionAdmin();\\nerror RoyaltyFeeSetterV2__NotCollectionOwner();\\nerror RoyaltyFeeSetterV2__NotCollectionSetter();\\nerror RoyaltyFeeSetterV2__SetterAlreadySet();\\n\\n// PendingOwnable\\nerror PendingOwnable__NotOwner();\\nerror PendingOwnable__AddressZero();\\nerror PendingOwnable__NotPendingOwner();\\nerror PendingOwnable__PendingOwnerAlreadySet();\\nerror PendingOwnable__NoPendingOwner();\\n\\n// PendingOwnableUpgradeable\\nerror PendingOwnableUpgradeable__NotOwner();\\nerror PendingOwnableUpgradeable__AddressZero();\\nerror PendingOwnableUpgradeable__NotPendingOwner();\\nerror PendingOwnableUpgradeable__PendingOwnerAlreadySet();\\nerror PendingOwnableUpgradeable__NoPendingOwner();\\n\\n// SafeAccessControlEnumerable\\nerror SafeAccessControlEnumerable__SenderMissingRoleAndIsNotOwner(\\n    bytes32 role,\\n    address sender\\n);\\nerror SafeAccessControlEnumerable__RoleIsDefaultAdmin();\\n\\n// SafeAccessControlEnumerableUpgradeable\\nerror SafeAccessControlEnumerableUpgradeable__SenderMissingRoleAndIsNotOwner(\\n    bytes32 role,\\n    address sender\\n);\\nerror SafeAccessControlEnumerableUpgradeable__RoleIsDefaultAdmin();\\n\\n// SafePausable\\nerror SafePausable__AlreadyPaused();\\nerror SafePausable__AlreadyUnpaused();\\n\\n// SafePausableUpgradeable\\nerror SafePausableUpgradeable__AlreadyPaused();\\nerror SafePausableUpgradeable__AlreadyUnpaused();\\n\",\"keccak256\":\"0xb023dfe27f0b2ee7f44ffb823c1257104bddac1bb130f674f5bb4934d785ddb2\",\"license\":\"MIT\"},\"contracts/RoyaltyFeeSetterV2.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport {OwnableUpgradeable} from \\\"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol\\\";\\nimport {Initializable} from \\\"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\\\";\\nimport {IERC165} from \\\"@openzeppelin/contracts/utils/introspection/IERC165.sol\\\";\\n\\nimport \\\"./Errors.sol\\\";\\nimport {IRoyaltyFeeRegistryV2} from \\\"./interfaces/IRoyaltyFeeRegistryV2.sol\\\";\\nimport {IOwnable} from \\\"./interfaces/IOwnable.sol\\\";\\nimport {RoyaltyFeeTypes} from \\\"./libraries/RoyaltyFeeTypes.sol\\\";\\n\\n/**\\n * @title RoyaltyFeeSetter\\n * @notice Used to allow creators to set royalty information in RoyaltyFeeRegistryV2.\\n */\\ncontract RoyaltyFeeSetterV2 is Initializable, OwnableUpgradeable {\\n    using RoyaltyFeeTypes for RoyaltyFeeTypes.FeeInfoPart;\\n\\n    // ERC721 interfaceID\\n    bytes4 public constant INTERFACE_ID_ERC721 = 0x80ac58cd;\\n\\n    // ERC1155 interfaceID\\n    bytes4 public constant INTERFACE_ID_ERC1155 = 0xd9b67a26;\\n\\n    // ERC2981 interfaceID\\n    bytes4 public constant INTERFACE_ID_ERC2981 = 0x2a55205a;\\n\\n    IRoyaltyFeeRegistryV2 public royaltyFeeRegistryV2;\\n\\n    /**\\n     * @notice Initializer\\n     * @param _royaltyFeeRegistryV2 address of the royalty fee registry\\n     */\\n    function initialize(address _royaltyFeeRegistryV2) public initializer {\\n        __Ownable_init();\\n\\n        royaltyFeeRegistryV2 = IRoyaltyFeeRegistryV2(_royaltyFeeRegistryV2);\\n    }\\n\\n    /**\\n     * @notice Update royalty info for collection if admin\\n     * @dev Only to be called if there is no setter address\\n     * @param _collection address of the NFT contract\\n     * @param _setter address that sets the receiver\\n     * @param _feeInfoParts fee info parts\\n     */\\n    function updateRoyaltyInfoPartsForCollectionIfAdmin(\\n        address _collection,\\n        address _setter,\\n        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts\\n    ) external {\\n        if (IERC165(_collection).supportsInterface(INTERFACE_ID_ERC2981)) {\\n            revert RoyaltyFeeSetterV2__CollectionCannotSupportERC2981();\\n        }\\n        if (msg.sender != IOwnable(_collection).admin()) {\\n            revert RoyaltyFeeSetterV2__NotCollectionAdmin();\\n        }\\n        _updateRoyaltyInfoPartsForCollectionIfOwnerOrAdmin(\\n            _collection,\\n            _setter,\\n            _feeInfoParts\\n        );\\n    }\\n\\n    /**\\n     * @notice Update royalty info for collection if owner\\n     * @dev Only to be called if there is no setter address\\n     * @param _collection address of the NFT contract\\n     * @param _setter address that sets the receiver\\n     * @param _feeInfoParts fee info parts\\n     */\\n    function updateRoyaltyInfoPartsForCollectionIfOwner(\\n        address _collection,\\n        address _setter,\\n        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts\\n    ) external {\\n        if (IERC165(_collection).supportsInterface(INTERFACE_ID_ERC2981)) {\\n            revert RoyaltyFeeSetterV2__CollectionCannotSupportERC2981();\\n        }\\n        if (msg.sender != IOwnable(_collection).owner()) {\\n            revert RoyaltyFeeSetterV2__NotCollectionOwner();\\n        }\\n        _updateRoyaltyInfoPartsForCollectionIfOwnerOrAdmin(\\n            _collection,\\n            _setter,\\n            _feeInfoParts\\n        );\\n    }\\n\\n    /**\\n     * @notice Update royalty info for collection\\n     * @dev Only to be called if the msg.sender is the setter\\n     * @param _collection address of the NFT contract\\n     * @param _setter address that sets the receiver\\n     * @param _feeInfoParts fee info parts\\n     */\\n    function updateRoyaltyInfoPartsForCollectionIfSetter(\\n        address _collection,\\n        address _setter,\\n        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts\\n    ) external {\\n        address currentSetter = royaltyFeeRegistryV2\\n            .royaltyFeeInfoPartsCollectionSetter(_collection);\\n        if (msg.sender != currentSetter) {\\n            revert RoyaltyFeeSetterV2__NotCollectionSetter();\\n        }\\n        royaltyFeeRegistryV2.updateRoyaltyInfoPartsForCollection(\\n            _collection,\\n            _setter,\\n            _feeInfoParts\\n        );\\n    }\\n\\n    /**\\n     * @notice Update royalty info for collection\\n     * @dev Can only be called by contract owner (of this)\\n     * @param _collection address of the NFT contract\\n     * @param _setter address that sets the receiver\\n     * @param _feeInfoParts fee info parts\\n     */\\n    function updateRoyaltyInfoPartsForCollection(\\n        address _collection,\\n        address _setter,\\n        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts\\n    ) external onlyOwner {\\n        royaltyFeeRegistryV2.updateRoyaltyInfoPartsForCollection(\\n            _collection,\\n            _setter,\\n            _feeInfoParts\\n        );\\n    }\\n\\n    /**\\n     * @notice Update owner of royalty fee registry\\n     * @dev Can be used for migration of this royalty fee setter contract\\n     * @param _owner new owner address\\n     */\\n    function updateOwnerOfRoyaltyFeeRegistryV2(address _owner)\\n        external\\n        onlyOwner\\n    {\\n        IOwnable(address(royaltyFeeRegistryV2)).transferOwnership(_owner);\\n    }\\n\\n    /**\\n     * @notice Update royalty info for collection\\n     * @param _royaltyFeeLimit new royalty fee limit (500 = 5%, 1,000 = 10%)\\n     */\\n    function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit)\\n        external\\n        onlyOwner\\n    {\\n        royaltyFeeRegistryV2.updateRoyaltyFeeLimit(_royaltyFeeLimit);\\n    }\\n\\n    /**\\n     * @notice Update information and perform checks before updating royalty fee registry\\n     * @param _collection address of the NFT contract\\n     * @param _setter address that sets the receiver\\n     * @param _feeInfoParts fee info parts\\n     */\\n    function _updateRoyaltyInfoPartsForCollectionIfOwnerOrAdmin(\\n        address _collection,\\n        address _setter,\\n        RoyaltyFeeTypes.FeeInfoPart[] memory _feeInfoParts\\n    ) internal {\\n        address currentSetter = royaltyFeeRegistryV2\\n            .royaltyFeeInfoPartsCollectionSetter(_collection);\\n        if (currentSetter != address(0)) {\\n            revert RoyaltyFeeSetterV2__SetterAlreadySet();\\n        }\\n        if (\\n            !IERC165(_collection).supportsInterface(INTERFACE_ID_ERC721) &&\\n            !IERC165(_collection).supportsInterface(INTERFACE_ID_ERC1155)\\n        ) {\\n            revert RoyaltyFeeSetterV2__CollectionIsNotNFT();\\n        }\\n        royaltyFeeRegistryV2.updateRoyaltyInfoPartsForCollection(\\n            _collection,\\n            _setter,\\n            _feeInfoParts\\n        );\\n    }\\n}\\n\",\"keccak256\":\"0xe4abd7b6d3bb79f7a9eaa6dde985f5d1c7ef96567a2f6ec5986db8a6e530410b\",\"license\":\"MIT\"},\"contracts/interfaces/IOwnable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IOwnable {\\n    function transferOwnership(address newOwner) external;\\n\\n    function owner() external view returns (address);\\n\\n    function admin() external view returns (address);\\n}\\n\",\"keccak256\":\"0x18db62f701321954e63206b2ed92cf07a762720b7563514fdb68cc4f5af2f52c\",\"license\":\"MIT\"},\"contracts/interfaces/IRoyaltyFeeRegistryV2.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport {RoyaltyFeeTypes} from \\\"../libraries/RoyaltyFeeTypes.sol\\\";\\n\\ninterface IRoyaltyFeeRegistryV2 {\\n    function updateRoyaltyInfoPartsForCollection(\\n        address collection,\\n        address setter,\\n        RoyaltyFeeTypes.FeeInfoPart[] memory feeInfoParts\\n    ) external;\\n\\n    function updateRoyaltyFeeLimit(uint256 _royaltyFeeLimit) external;\\n\\n    function updateMaxNumRecipients(uint8 _maxNumRecipients) external;\\n\\n    function royaltyAmountParts(address _collection, uint256 _amount)\\n        external\\n        view\\n        returns (RoyaltyFeeTypes.FeeAmountPart[] memory);\\n\\n    function royaltyFeeInfoPartsCollectionSetter(address collection)\\n        external\\n        view\\n        returns (address);\\n}\\n\",\"keccak256\":\"0x49c24c244391eb8294824ce971911dc9d2aefe02504146e86e94cb172bd68e45\",\"license\":\"MIT\"},\"contracts/libraries/RoyaltyFeeTypes.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\n/**\\n * @title RoyaltyFeeTypes\\n * @notice This library contains types related to royalty fees\\n */\\nlibrary RoyaltyFeeTypes {\\n    struct FeeInfoPart {\\n        address receiver;\\n        uint256 fee;\\n    }\\n\\n    struct FeeAmountPart {\\n        address receiver;\\n        uint256 amount;\\n    }\\n}\\n\",\"keccak256\":\"0x5934513c2554cb3a7e3f0102cb25761307b26ec03bdf6dd187416db009162f11\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50610e28806100206000396000f3fe608060405234801561001057600080fd5b50600436106100ea5760003560e01c8063b060dd861161008c578063c235c88911610066578063c235c889146101bd578063c4d66de8146101d0578063ccc60033146101e3578063f2fde38b146101f657600080fd5b8063b060dd861461018e578063b9223c9d1461019c578063bc6bc0cd146101af57600080fd5b806333bf6156116100c857806333bf61561461012a578063715018a61461014e5780638b452d9c146101565780638da5cb5b1461016957600080fd5b806324f00862146100ef5780632a943b78146101045780632ff8c05814610117575b600080fd5b6101026100fd366004610b77565b610209565b005b610102610112366004610b77565b61033e565b610102610125366004610b77565b6103dc565b610138636cdb3d1360e11b81565b6040516101459190610c73565b60405180910390f35b6101026104e2565b610102610164366004610c88565b610518565b6033546001600160a01b03165b6040516001600160a01b039091168152602001610145565b61013863152a902d60e11b81565b6101026101aa366004610cac565b6105a5565b6101386380ac58cd60e01b81565b606554610176906001600160a01b031681565b6101026101de366004610c88565b610600565b6101026101f1366004610b77565b6106dd565b610102610204366004610c88565b610802565b6040516301ffc9a760e01b81526001600160a01b038416906301ffc9a79061023c9063152a902d60e11b90600401610c73565b602060405180830381865afa158015610259573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061027d9190610cc5565b1561029b576040516361620abf60e11b815260040160405180910390fd5b826001600160a01b0316638da5cb5b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156102d9573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102fd9190610ce7565b6001600160a01b0316336001600160a01b03161461032e57604051632c1e1af360e21b815260040160405180910390fd5b61033983838361089d565b505050565b6033546001600160a01b031633146103715760405162461bcd60e51b815260040161036890610d04565b60405180910390fd5b606554604051630552876f60e31b81526001600160a01b0390911690632a943b78906103a590869086908690600401610d39565b600060405180830381600087803b1580156103bf57600080fd5b505af11580156103d3573d6000803e3d6000fd5b50505050505050565b6065546040516303c621db60e41b81526001600160a01b0385811660048301526000921690633c621db090602401602060405180830381865afa158015610427573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061044b9190610ce7565b9050336001600160a01b0382161461047657604051636540cea560e01b815260040160405180910390fd5b606554604051630552876f60e31b81526001600160a01b0390911690632a943b78906104aa90879087908790600401610d39565b600060405180830381600087803b1580156104c457600080fd5b505af11580156104d8573d6000803e3d6000fd5b5050505050505050565b6033546001600160a01b0316331461050c5760405162461bcd60e51b815260040161036890610d04565b6105166000610a46565b565b6033546001600160a01b031633146105425760405162461bcd60e51b815260040161036890610d04565b60655460405163f2fde38b60e01b81526001600160a01b0383811660048301529091169063f2fde38b906024015b600060405180830381600087803b15801561058a57600080fd5b505af115801561059e573d6000803e3d6000fd5b5050505050565b6033546001600160a01b031633146105cf5760405162461bcd60e51b815260040161036890610d04565b60655460405163b9223c9d60e01b8152600481018390526001600160a01b039091169063b9223c9d90602401610570565b600054610100900460ff1661061b5760005460ff161561061f565b303b155b6106825760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b6064820152608401610368565b600054610100900460ff161580156106a4576000805461ffff19166101011790555b6106ac610a98565b606580546001600160a01b0319166001600160a01b03841617905580156106d9576000805461ff00191690555b5050565b6040516301ffc9a760e01b81526001600160a01b038416906301ffc9a7906107109063152a902d60e11b90600401610c73565b602060405180830381865afa15801561072d573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906107519190610cc5565b1561076f576040516361620abf60e11b815260040160405180910390fd5b826001600160a01b031663f851a4406040518163ffffffff1660e01b8152600401602060405180830381865afa1580156107ad573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906107d19190610ce7565b6001600160a01b0316336001600160a01b03161461032e5760405163737b66b160e01b815260040160405180910390fd5b6033546001600160a01b0316331461082c5760405162461bcd60e51b815260040161036890610d04565b6001600160a01b0381166108915760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201526564647265737360d01b6064820152608401610368565b61089a81610a46565b50565b6065546040516303c621db60e41b81526001600160a01b0385811660048301526000921690633c621db090602401602060405180830381865afa1580156108e8573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061090c9190610ce7565b90506001600160a01b038116156109365760405163e488be7960e01b815260040160405180910390fd5b6040516301ffc9a760e01b81526001600160a01b038516906301ffc9a790610969906380ac58cd60e01b90600401610c73565b602060405180830381865afa158015610986573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109aa9190610cc5565b158015610a2857506040516301ffc9a760e01b81526001600160a01b038516906301ffc9a7906109e590636cdb3d1360e11b90600401610c73565b602060405180830381865afa158015610a02573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610a269190610cc5565b155b156104765760405163ee576a6f60e01b815260040160405180910390fd5b603380546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b600054610100900460ff16610abf5760405162461bcd60e51b815260040161036890610da7565b610516600054610100900460ff16610ae95760405162461bcd60e51b815260040161036890610da7565b61051633610a46565b6001600160a01b038116811461089a57600080fd5b634e487b7160e01b600052604160045260246000fd5b6040805190810167ffffffffffffffff81118282101715610b4057610b40610b07565b60405290565b604051601f8201601f1916810167ffffffffffffffff81118282101715610b6f57610b6f610b07565b604052919050565b600080600060608486031215610b8c57600080fd5b8335610b9781610af2565b9250602084810135610ba881610af2565b925060408581013567ffffffffffffffff80821115610bc657600080fd5b818801915088601f830112610bda57600080fd5b813581811115610bec57610bec610b07565b610bfa858260051b01610b46565b818152858101925060069190911b83018501908a821115610c1a57600080fd5b928501925b81841015610c635784848c031215610c375760008081fd5b610c3f610b1d565b8435610c4a81610af2565b8152848701358782015283529284019291850191610c1f565b8096505050505050509250925092565b6001600160e01b031991909116815260200190565b600060208284031215610c9a57600080fd5b8135610ca581610af2565b9392505050565b600060208284031215610cbe57600080fd5b5035919050565b600060208284031215610cd757600080fd5b81518015158114610ca557600080fd5b600060208284031215610cf957600080fd5b8151610ca581610af2565b6020808252818101527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604082015260600190565b60006060820160018060a01b0380871684526020818716818601526040606081870152838751808652608088019150838901955060005b81811015610d97578651805187168452850151858401529584019591830191600101610d70565b50909a9950505050505050505050565b6020808252602b908201527f496e697469616c697a61626c653a20636f6e7472616374206973206e6f74206960408201526a6e697469616c697a696e6760a81b60608201526080019056fea2646970667358221220116465e9d80661f2a9826878a90f4ba4b3cdeaea913c43c6cda36c6277f49c9d64736f6c634300080a0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100ea5760003560e01c8063b060dd861161008c578063c235c88911610066578063c235c889146101bd578063c4d66de8146101d0578063ccc60033146101e3578063f2fde38b146101f657600080fd5b8063b060dd861461018e578063b9223c9d1461019c578063bc6bc0cd146101af57600080fd5b806333bf6156116100c857806333bf61561461012a578063715018a61461014e5780638b452d9c146101565780638da5cb5b1461016957600080fd5b806324f00862146100ef5780632a943b78146101045780632ff8c05814610117575b600080fd5b6101026100fd366004610b77565b610209565b005b610102610112366004610b77565b61033e565b610102610125366004610b77565b6103dc565b610138636cdb3d1360e11b81565b6040516101459190610c73565b60405180910390f35b6101026104e2565b610102610164366004610c88565b610518565b6033546001600160a01b03165b6040516001600160a01b039091168152602001610145565b61013863152a902d60e11b81565b6101026101aa366004610cac565b6105a5565b6101386380ac58cd60e01b81565b606554610176906001600160a01b031681565b6101026101de366004610c88565b610600565b6101026101f1366004610b77565b6106dd565b610102610204366004610c88565b610802565b6040516301ffc9a760e01b81526001600160a01b038416906301ffc9a79061023c9063152a902d60e11b90600401610c73565b602060405180830381865afa158015610259573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061027d9190610cc5565b1561029b576040516361620abf60e11b815260040160405180910390fd5b826001600160a01b0316638da5cb5b6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156102d9573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906102fd9190610ce7565b6001600160a01b0316336001600160a01b03161461032e57604051632c1e1af360e21b815260040160405180910390fd5b61033983838361089d565b505050565b6033546001600160a01b031633146103715760405162461bcd60e51b815260040161036890610d04565b60405180910390fd5b606554604051630552876f60e31b81526001600160a01b0390911690632a943b78906103a590869086908690600401610d39565b600060405180830381600087803b1580156103bf57600080fd5b505af11580156103d3573d6000803e3d6000fd5b50505050505050565b6065546040516303c621db60e41b81526001600160a01b0385811660048301526000921690633c621db090602401602060405180830381865afa158015610427573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061044b9190610ce7565b9050336001600160a01b0382161461047657604051636540cea560e01b815260040160405180910390fd5b606554604051630552876f60e31b81526001600160a01b0390911690632a943b78906104aa90879087908790600401610d39565b600060405180830381600087803b1580156104c457600080fd5b505af11580156104d8573d6000803e3d6000fd5b5050505050505050565b6033546001600160a01b0316331461050c5760405162461bcd60e51b815260040161036890610d04565b6105166000610a46565b565b6033546001600160a01b031633146105425760405162461bcd60e51b815260040161036890610d04565b60655460405163f2fde38b60e01b81526001600160a01b0383811660048301529091169063f2fde38b906024015b600060405180830381600087803b15801561058a57600080fd5b505af115801561059e573d6000803e3d6000fd5b5050505050565b6033546001600160a01b031633146105cf5760405162461bcd60e51b815260040161036890610d04565b60655460405163b9223c9d60e01b8152600481018390526001600160a01b039091169063b9223c9d90602401610570565b600054610100900460ff1661061b5760005460ff161561061f565b303b155b6106825760405162461bcd60e51b815260206004820152602e60248201527f496e697469616c697a61626c653a20636f6e747261637420697320616c72656160448201526d191e481a5b9a5d1a585b1a5e995960921b6064820152608401610368565b600054610100900460ff161580156106a4576000805461ffff19166101011790555b6106ac610a98565b606580546001600160a01b0319166001600160a01b03841617905580156106d9576000805461ff00191690555b5050565b6040516301ffc9a760e01b81526001600160a01b038416906301ffc9a7906107109063152a902d60e11b90600401610c73565b602060405180830381865afa15801561072d573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906107519190610cc5565b1561076f576040516361620abf60e11b815260040160405180910390fd5b826001600160a01b031663f851a4406040518163ffffffff1660e01b8152600401602060405180830381865afa1580156107ad573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906107d19190610ce7565b6001600160a01b0316336001600160a01b03161461032e5760405163737b66b160e01b815260040160405180910390fd5b6033546001600160a01b0316331461082c5760405162461bcd60e51b815260040161036890610d04565b6001600160a01b0381166108915760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201526564647265737360d01b6064820152608401610368565b61089a81610a46565b50565b6065546040516303c621db60e41b81526001600160a01b0385811660048301526000921690633c621db090602401602060405180830381865afa1580156108e8573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061090c9190610ce7565b90506001600160a01b038116156109365760405163e488be7960e01b815260040160405180910390fd5b6040516301ffc9a760e01b81526001600160a01b038516906301ffc9a790610969906380ac58cd60e01b90600401610c73565b602060405180830381865afa158015610986573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109aa9190610cc5565b158015610a2857506040516301ffc9a760e01b81526001600160a01b038516906301ffc9a7906109e590636cdb3d1360e11b90600401610c73565b602060405180830381865afa158015610a02573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610a269190610cc5565b155b156104765760405163ee576a6f60e01b815260040160405180910390fd5b603380546001600160a01b038381166001600160a01b0319831681179093556040519116919082907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a35050565b600054610100900460ff16610abf5760405162461bcd60e51b815260040161036890610da7565b610516600054610100900460ff16610ae95760405162461bcd60e51b815260040161036890610da7565b61051633610a46565b6001600160a01b038116811461089a57600080fd5b634e487b7160e01b600052604160045260246000fd5b6040805190810167ffffffffffffffff81118282101715610b4057610b40610b07565b60405290565b604051601f8201601f1916810167ffffffffffffffff81118282101715610b6f57610b6f610b07565b604052919050565b600080600060608486031215610b8c57600080fd5b8335610b9781610af2565b9250602084810135610ba881610af2565b925060408581013567ffffffffffffffff80821115610bc657600080fd5b818801915088601f830112610bda57600080fd5b813581811115610bec57610bec610b07565b610bfa858260051b01610b46565b818152858101925060069190911b83018501908a821115610c1a57600080fd5b928501925b81841015610c635784848c031215610c375760008081fd5b610c3f610b1d565b8435610c4a81610af2565b8152848701358782015283529284019291850191610c1f565b8096505050505050509250925092565b6001600160e01b031991909116815260200190565b600060208284031215610c9a57600080fd5b8135610ca581610af2565b9392505050565b600060208284031215610cbe57600080fd5b5035919050565b600060208284031215610cd757600080fd5b81518015158114610ca557600080fd5b600060208284031215610cf957600080fd5b8151610ca581610af2565b6020808252818101527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604082015260600190565b60006060820160018060a01b0380871684526020818716818601526040606081870152838751808652608088019150838901955060005b81811015610d97578651805187168452850151858401529584019591830191600101610d70565b50909a9950505050505050505050565b6020808252602b908201527f496e697469616c697a61626c653a20636f6e7472616374206973206e6f74206960408201526a6e697469616c697a696e6760a81b60608201526080019056fea2646970667358221220116465e9d80661f2a9826878a90f4ba4b3cdeaea913c43c6cda36c6277f49c9d64736f6c634300080a0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "initialize(address)": {
+        "params": {
+          "_royaltyFeeRegistryV2": "address of the royalty fee registry"
+        }
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      },
+      "updateOwnerOfRoyaltyFeeRegistryV2(address)": {
+        "details": "Can be used for migration of this royalty fee setter contract",
+        "params": {
+          "_owner": "new owner address"
+        }
+      },
+      "updateRoyaltyFeeLimit(uint256)": {
+        "params": {
+          "_royaltyFeeLimit": "new royalty fee limit (500 = 5%, 1,000 = 10%)"
+        }
+      },
+      "updateRoyaltyInfoPartsForCollection(address,address,(address,uint256)[])": {
+        "details": "Can only be called by contract owner (of this)",
+        "params": {
+          "_collection": "address of the NFT contract",
+          "_feeInfoParts": "fee info parts",
+          "_setter": "address that sets the receiver"
+        }
+      },
+      "updateRoyaltyInfoPartsForCollectionIfAdmin(address,address,(address,uint256)[])": {
+        "details": "Only to be called if there is no setter address",
+        "params": {
+          "_collection": "address of the NFT contract",
+          "_feeInfoParts": "fee info parts",
+          "_setter": "address that sets the receiver"
+        }
+      },
+      "updateRoyaltyInfoPartsForCollectionIfOwner(address,address,(address,uint256)[])": {
+        "details": "Only to be called if there is no setter address",
+        "params": {
+          "_collection": "address of the NFT contract",
+          "_feeInfoParts": "fee info parts",
+          "_setter": "address that sets the receiver"
+        }
+      },
+      "updateRoyaltyInfoPartsForCollectionIfSetter(address,address,(address,uint256)[])": {
+        "details": "Only to be called if the msg.sender is the setter",
+        "params": {
+          "_collection": "address of the NFT contract",
+          "_feeInfoParts": "fee info parts",
+          "_setter": "address that sets the receiver"
+        }
+      }
+    },
+    "title": "RoyaltyFeeSetter",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "initialize(address)": {
+        "notice": "Initializer"
+      },
+      "updateOwnerOfRoyaltyFeeRegistryV2(address)": {
+        "notice": "Update owner of royalty fee registry"
+      },
+      "updateRoyaltyFeeLimit(uint256)": {
+        "notice": "Update royalty info for collection"
+      },
+      "updateRoyaltyInfoPartsForCollection(address,address,(address,uint256)[])": {
+        "notice": "Update royalty info for collection"
+      },
+      "updateRoyaltyInfoPartsForCollectionIfAdmin(address,address,(address,uint256)[])": {
+        "notice": "Update royalty info for collection if admin"
+      },
+      "updateRoyaltyInfoPartsForCollectionIfOwner(address,address,(address,uint256)[])": {
+        "notice": "Update royalty info for collection if owner"
+      },
+      "updateRoyaltyInfoPartsForCollectionIfSetter(address,address,(address,uint256)[])": {
+        "notice": "Update royalty info for collection"
+      }
+    },
+    "notice": "Used to allow creators to set royalty information in RoyaltyFeeRegistryV2.",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 702,
+        "contract": "contracts/RoyaltyFeeSetterV2.sol:RoyaltyFeeSetterV2",
+        "label": "_initialized",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_bool"
+      },
+      {
+        "astId": 705,
+        "contract": "contracts/RoyaltyFeeSetterV2.sol:RoyaltyFeeSetterV2",
+        "label": "_initializing",
+        "offset": 1,
+        "slot": "0",
+        "type": "t_bool"
+      },
+      {
+        "astId": 1223,
+        "contract": "contracts/RoyaltyFeeSetterV2.sol:RoyaltyFeeSetterV2",
+        "label": "__gap",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_array(t_uint256)50_storage"
+      },
+      {
+        "astId": 582,
+        "contract": "contracts/RoyaltyFeeSetterV2.sol:RoyaltyFeeSetterV2",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "51",
+        "type": "t_address"
+      },
+      {
+        "astId": 694,
+        "contract": "contracts/RoyaltyFeeSetterV2.sol:RoyaltyFeeSetterV2",
+        "label": "__gap",
+        "offset": 0,
+        "slot": "52",
+        "type": "t_array(t_uint256)49_storage"
+      },
+      {
+        "astId": 13363,
+        "contract": "contracts/RoyaltyFeeSetterV2.sol:RoyaltyFeeSetterV2",
+        "label": "royaltyFeeRegistryV2",
+        "offset": 0,
+        "slot": "101",
+        "type": "t_contract(IRoyaltyFeeRegistryV2)14731"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_uint256)49_storage": {
+        "base": "t_uint256",
+        "encoding": "inplace",
+        "label": "uint256[49]",
+        "numberOfBytes": "1568"
+      },
+      "t_array(t_uint256)50_storage": {
+        "base": "t_uint256",
+        "encoding": "inplace",
+        "label": "uint256[50]",
+        "numberOfBytes": "1600"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_contract(IRoyaltyFeeRegistryV2)14731": {
+        "encoding": "inplace",
+        "label": "contract IRoyaltyFeeRegistryV2",
+        "numberOfBytes": "20"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}
