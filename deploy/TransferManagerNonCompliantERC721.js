@@ -6,7 +6,7 @@ module.exports = async function ({ getNamedAccounts, deployments, getChainId }) 
 
   let proxyContract, proxyOwner;
 
-  const chainId = getChainId();
+  const chainId = await getChainId();
 
   if (chainId == 4 || chainId == 43113) {
     proxyOwner = "0xdB40a7b71642FE24CC546bdF4749Aa3c0B042f78";
