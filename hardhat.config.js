@@ -47,7 +47,7 @@ module.exports = {
         : [],
     },
     bscTestnet: {
-      url: process.env.RPC_ENDPOINT,
+      url: process.env.BNB_RPC_ENDPOINT,
       gasPrice: 20_000_000_000,
       gasLimit: 49_000_000_000,
       chainId: 97,
