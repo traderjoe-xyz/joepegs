@@ -24,6 +24,9 @@ module.exports = async function ({
   const strategyStandardSaleForFixedPrice = await deployments.get(
     "StrategyStandardSaleForFixedPrice"
   );
+  const strategyAnyItemFromCollectionForFixedPrice = await deployments.get(
+    "StrategyAnyItemFromCollectionForFixedPrice"
+  );
 
   const args = [];
   await catchUnknownSigner(async () => {
@@ -54,10 +57,16 @@ module.exports = async function ({
     await executionManager.addStrategy(
       strategyStandardSaleForFixedPrice.address
     );
+    await executionManager.addStrategy(
+      strategyAnyItemFromCollectionForFixedPrice.address
+    );
   }
 
   await verify(proxyContract.implementation, []);
 };
 
 module.exports.tags = ["ExecutionManager"];
-module.exports.dependencies = ["StrategyStandardSaleForFixedPrice"];
+module.exports.dependencies = [
+  "StrategyStandardSaleForFixedPrice",
+  "StrategyAnyItemFromCollectionForFixedPrice",
+];
