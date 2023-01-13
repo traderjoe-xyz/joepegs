@@ -19,6 +19,11 @@ module.exports = async function ({
       "0xc778417e063141139fce010982780140aa0cd5ab"
     ); // wrapped ETH ethers.utils.getAddress
     proxyOwner = deployer;
+  } else if (chainId == 97) {
+    wNativeAddress = ethers.utils.getAddress(
+      "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"
+    );
+    proxyOwner = "0x597E2587eCA945fB001BAdF1adF878CcB8e368b6";
   } else if (chainId == 43114 || chainId == 31337) {
     // avalanche mainnet or hardhat network ethers.utils.getAddresses
     wNativeAddress = ethers.utils.getAddress(

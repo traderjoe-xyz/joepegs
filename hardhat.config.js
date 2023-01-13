@@ -45,6 +45,12 @@ module.exports = {
         ? [process.env.DEPLOY_PRIVATE_KEY]
         : [],
     },
+    bscTestnet: {
+      url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+      gasPrice: 25000000000,
+      chainId: 97,
+      accounts: process.env.BNB_TESTNET_DEPLOYER ? [process.env.BNB_TESTNET_DEPLOYER] : [],
+    },
   },
   contractSizer: {
     strict: true,
