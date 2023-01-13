@@ -20,7 +20,7 @@ module.exports = async function ({
     // multisig
     proxyOwner = "0x64c4607AD853999EE5042Ba8377BfC4099C273DE";
   }
-  const defaultProtocolFeeAmount = 200; // 200 -> 2%
+  const defaultProtocolFeeAmount = 250; // 200 -> 2%
 
   const args = [defaultProtocolFeeAmount];
   await catchUnknownSigner(async () => {
