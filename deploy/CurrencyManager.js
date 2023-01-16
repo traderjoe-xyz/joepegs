@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 const { verify } = require("./utils");
+const { getWNative, getProxyOwner } = require("./getAddress");
 
 module.exports = async function ({
   deployments,
@@ -13,34 +14,8 @@ module.exports = async function ({
 
   let wNativeAddress, proxyOwner, proxyContract;
 
-  if (chainId == 4) {
-    // rinkeby contract addresses
-    wNativeAddress = ethers.utils.getAddress(
-      "0xc778417e063141139fce010982780140aa0cd5ab"
-    ); // wrapped ETH ethers.utils.getAddress
-
-    proxyOwner = deployer;
-  } else if (chainId == 97) {
-    wNativeAddress = ethers.utils.getAddress(
-      "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"
-    );
-    proxyOwner = "0x597E2587eCA945fB001BAdF1adF878CcB8e368b6";
-  } else if (chainId == 43114 || chainId == 31337) {
-    // avalanche mainnet or hardhat network ethers.utils.getAddresses
-    wNativeAddress = ethers.utils.getAddress(
-      "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
-    );
-    // multisig
-    proxyOwner = "0x64c4607AD853999EE5042Ba8377BfC4099C273DE";
-  } else if (chainId == 43113) {
-    // fuji contract addresses
-    wNativeAddress = ethers.utils.getAddress(
-      "0xd00ae08403B9bbb9124bB305C09058E32C39A48c"
-    );
-    proxyOwner = "0xdB40a7b71642FE24CC546bdF4749Aa3c0B042f78";
-  } else {
-    throw new Error("Failed to find WAVAX address");
-  }
+  proxyOwner = getProxyOwner(chainId);
+  wNativeAddress = getWNative(chainId);
 
   const args = [];
   await catchUnknownSigner(async () => {
