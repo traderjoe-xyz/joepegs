@@ -9,7 +9,12 @@ contract MockCallbackReceiver is ICallbackRecipient {
 
     event CallbackCalled();
 
-    function saleCallback(address, bytes32) external override {
+    function saleCallback(
+        bytes32,
+        address,
+        uint256,
+        uint256
+    ) external override {
         emit CallbackCalled();
     }
 

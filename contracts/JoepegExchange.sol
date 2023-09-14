@@ -457,8 +457,10 @@ contract JoepegExchange is
 
         if (isAllowedCallbackRecipient[makerBid.signer]) {
             ICallbackRecipient(makerBid.signer).saleCallback(
+                bidHash,
                 takerAsk.taker,
-                bidHash
+                tokenId,
+                takerAsk.price
             );
         }
 
