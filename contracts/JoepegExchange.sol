@@ -633,9 +633,9 @@ contract JoepegExchange is
         // Match orders
         for (uint256 i; i < trades.length; ++i) {
             bool status = _matchAskWithTakerBidUsingAVAXAndWAVAXIgnoringExpiredAsks(
-                trades[i].takerBid,
-                trades[i].makerAsk
-            );
+                    trades[i].takerBid,
+                    trades[i].makerAsk
+                );
             transferStatus[i] = status;
         }
 
@@ -862,14 +862,12 @@ contract JoepegExchange is
     }
 
     /**
-      * @notice Check whether the maker order has expired or not
-      * @param makerOrder maker order  
+     * @notice Check whether the maker order has expired or not
+     * @param makerOrder maker order
      */
-    function _checkMakerOrderNotExpired(OrderTypes.MakerOrder calldata makerOrder)
-        internal
-        view
-        returns (bool)
-    {
+    function _checkMakerOrderNotExpired(
+        OrderTypes.MakerOrder calldata makerOrder
+    ) internal view returns (bool) {
         return
             !_isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
                 makerOrder.nonce
