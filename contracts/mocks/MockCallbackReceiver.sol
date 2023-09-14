@@ -13,10 +13,11 @@ contract MockCallbackReceiver is ICallbackRecipient {
         emit CallbackCalled();
     }
 
-    function isValidSignature(
-        bytes32,
-        bytes memory
-    ) external pure returns (bytes4) {
+    function isValidSignature(bytes32, bytes memory)
+        external
+        pure
+        returns (bytes4)
+    {
         return MAGIC_VALUE;
     }
 

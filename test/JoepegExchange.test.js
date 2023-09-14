@@ -1191,7 +1191,7 @@ describe("JoepegExchange", function () {
       ).to.emit(this.mockCallbackReceiver, "CallbackCalled");
     });
 
-    it("triggers callback on asks", async function () {
+    it("doesn't trigger callback on asks", async function () {
       const mockSigner = ethers.provider.getSigner(
         this.mockCallbackReceiver.address
       );
@@ -1252,7 +1252,7 @@ describe("JoepegExchange", function () {
         this.exchange
           .connect(this.alice)
           .matchAskWithTakerBid(takerBidOrder, makerAskOrder)
-      ).to.emit(this.mockCallbackReceiver, "CallbackCalled");
+      ).not.to.emit(this.mockCallbackReceiver, "CallbackCalled");
     });
 
     it("doesn't trigger if the address has been removed", async function () {

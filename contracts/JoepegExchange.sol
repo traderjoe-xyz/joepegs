@@ -295,13 +295,6 @@ contract JoepegExchange is
             amount
         );
 
-        if (isAllowedCallbackRecipient[makerAsk.signer]) {
-            ICallbackRecipient(makerAsk.signer).saleCallback(
-                takerBid.taker,
-                askHash
-            );
-        }
-
         emit TakerBid(
             askHash,
             makerAsk.nonce,
@@ -389,13 +382,6 @@ contract JoepegExchange is
             tokenId,
             amount
         );
-
-        if (isAllowedCallbackRecipient[makerAsk.signer]) {
-            ICallbackRecipient(makerAsk.signer).saleCallback(
-                takerBid.taker,
-                askHash
-            );
-        }
 
         emit TakerBid(
             askHash,
