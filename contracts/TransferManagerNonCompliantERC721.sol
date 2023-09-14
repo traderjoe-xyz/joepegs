@@ -36,7 +36,7 @@ contract TransferManagerNonCompliantERC721 is
         address from,
         address to,
         uint256 tokenId,
-        uint256 amount
+        uint256
     ) external override {
         require(msg.sender == joepegExchange, "Transfer: Only JoepegExchange");
         IERC721(collection).transferFrom(from, to, tokenId);

@@ -34,7 +34,7 @@ contract TransferManagerERC721 is ITransferManagerNFT, Initializable {
         address from,
         address to,
         uint256 tokenId,
-        uint256 amount
+        uint256
     ) external override {
         require(msg.sender == joepegExchange, "Transfer: Only JoepegExchange");
         // https://docs.openzeppelin.com/contracts/2.x/api/token/erc721#IERC721-safeTransferFrom
