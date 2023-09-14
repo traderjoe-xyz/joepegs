@@ -1097,13 +1097,6 @@ describe("JoepegExchange", function () {
         });
       });
     });
-
-    after(async function () {
-      await network.provider.request({
-        method: "hardhat_reset",
-        params: [],
-      });
-    });
   });
 
   describe("triggers callback on sales", function () {
@@ -1323,13 +1316,6 @@ describe("JoepegExchange", function () {
           .connect(this.alice)
           .matchBidWithTakerAsk(takerAskOrder, makerBidOrder)
       ).to.not.emit(this.mockCallbackReceiver, "CallbackCalled");
-    });
-
-    after(async function () {
-      await network.provider.request({
-        method: "hardhat_reset",
-        params: [],
-      });
     });
   });
 });
