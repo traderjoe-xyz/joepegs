@@ -17,6 +17,7 @@ import {IJoepegExchange} from "./interfaces/IJoepegExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
+import {ICallbackRecipient} from "./interfaces/ICallbackRecipient.sol";
 
 // Joepeg libraries
 import {OrderTypes} from "./libraries/OrderTypes.sol";
@@ -56,6 +57,8 @@ contract JoepegExchange is
     mapping(address => mapping(uint256 => bool))
         private _isUserOrderNonceExecutedOrCancelled;
 
+    mapping(address => bool) public isAllowedCallbackRecipient;
+
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
     event NewCurrencyManager(address indexed currencyManager);
@@ -64,6 +67,10 @@ contract JoepegExchange is
     event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
     event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
     event NewTransferSelectorNFT(address indexed transferSelectorNFT);
+    event NewCallbackRecipientUpdate(
+        address indexed callbackRecipient,
+        bool isAllowed
+    );
 
     event RoyaltyPayment(
         address indexed collection,
@@ -288,6 +295,13 @@ contract JoepegExchange is
             amount
         );
 
+        if (isAllowedCallbackRecipient[makerAsk.signer]) {
+            ICallbackRecipient(makerAsk.signer).saleCallback(
+                takerBid.taker,
+                askHash
+            );
+        }
+
         emit TakerBid(
             askHash,
             makerAsk.nonce,
@@ -376,6 +390,13 @@ contract JoepegExchange is
             amount
         );
 
+        if (isAllowedCallbackRecipient[makerAsk.signer]) {
+            ICallbackRecipient(makerAsk.signer).saleCallback(
+                takerBid.taker,
+                askHash
+            );
+        }
+
         emit TakerBid(
             askHash,
             makerAsk.nonce,
@@ -447,6 +468,13 @@ contract JoepegExchange is
             takerAsk.price,
             takerAsk.minPercentageToAsk
         );
+
+        if (isAllowedCallbackRecipient[makerBid.signer]) {
+            ICallbackRecipient(makerBid.signer).saleCallback(
+                takerAsk.taker,
+                bidHash
+            );
+        }
 
         emit TakerAsk(
             bidHash,
@@ -553,6 +581,20 @@ contract JoepegExchange is
         transferSelectorNFT = ITransferSelectorNFT(_transferSelectorNFT);
 
         emit NewTransferSelectorNFT(_transferSelectorNFT);
+    }
+
+    /**
+     * @notice Update callback recipient
+     * @param _callbackRecipient The address of the callback recipient
+     * @param _isAllowed Whether the callback recipient is allowed or not
+     */
+    function setCallbackRecipientAllowed(
+        address _callbackRecipient,
+        bool _isAllowed
+    ) external onlyOwner {
+        isAllowedCallbackRecipient[_callbackRecipient] = _isAllowed;
+
+        emit NewCallbackRecipientUpdate(_callbackRecipient, _isAllowed);
     }
 
     /**
