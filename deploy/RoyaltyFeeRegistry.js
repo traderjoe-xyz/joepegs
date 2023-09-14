@@ -1,4 +1,5 @@
 const { verify } = require("./utils");
+const { getProxyOwner } = require("./getAddress");
 
 module.exports = async function ({
   getNamedAccounts,
@@ -12,14 +13,7 @@ module.exports = async function ({
 
   const chainId = await getChainId();
 
-  if (chainId == 4 || chainId == 43113) {
-    proxyOwner = "0xdB40a7b71642FE24CC546bdF4749Aa3c0B042f78";
-  } else if (chainId == 97) {
-    proxyOwner = "0x597E2587eCA945fB001BAdF1adF878CcB8e368b6";
-  } else if (chainId == 43114 || chainId == 31337) {
-    // multisig
-    proxyOwner = "0x64c4607AD853999EE5042Ba8377BfC4099C273DE";
-  }
+  proxyOwner = getProxyOwner(chainId);
 
   const royaltyFeeLimit = 2000; // 2000 = 20%
 

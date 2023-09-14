@@ -9,15 +9,23 @@ task("transfer-ownerships", "Transfer ownerships of deployed contracts")
     await transferOwnership("ExecutionManager", newOwnerAddress);
     await transferOwnership("ProtocolFeeManager", newOwnerAddress);
     await transferOwnership("RoyaltyFeeManager", newOwnerAddress);
-    await transferOwnership("RoyaltyFeeRegistry", newOwnerAddress);
     await transferOwnership("RoyaltyFeeSetter", newOwnerAddress);
     await transferOwnership("TransferSelectorNFT", newOwnerAddress);
     await transferOwnership("ERC721Token", newOwnerAddress);
     await transferOwnership("ERC1155Token", newOwnerAddress);
     await transferOwnership("BatchTransferNFT", newOwnerAddress);
-    await transferOwnership("RoyaltyFeeRegistryV2", newOwnerAddress);
     await transferOwnership("RoyaltyFeeSetterV2", newOwnerAddress);
     await transferOwnership("JoepegAuctionHouse", newOwnerAddress);
+
+    console.log(
+      `Transferring ownerships of RoyaltyFeeRegistries to RoyaltyFeeSetters`
+    );
+    const royaltyFeeSetter = await deployments.get("RoyaltyFeeSetter");
+    const royaltyFeeSetterAddress = royaltyFeeSetter.address;
+    const royaltyFeeSetterV2 = await deployments.get("RoyaltyFeeSetterV2");
+    const royaltyFeeSetterV2Address = royaltyFeeSetterV2.address;
+    await transferOwnership("RoyaltyFeeRegistry", royaltyFeeSetterAddress);
+    await transferOwnership("RoyaltyFeeRegistryV2", royaltyFeeSetterV2Address);
   });
 
 const transferOwnership = async (contractName, newOwner) => {

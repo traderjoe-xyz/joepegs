@@ -1,0 +1,36 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/utils/Multicall.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\npragma abicoder v2;\n\n/**\n * @title Multicall\n * @notice Enables calling multiple methods in a single call to the contract.\n */\ncontract Multicall {\n    struct Call {\n        address target;\n        bytes callData;\n    }\n\n    /**\n     * @notice Aggregates multiple transactions in a single call\n     * @param calls an array of calls : each call has a target and calldata\n     */\n    function aggregate(Call[] memory calls)\n        public\n        returns (uint256 blockNumber, bytes[] memory returnData)\n    {\n        blockNumber = block.number;\n        returnData = new bytes[](calls.length);\n        for (uint256 i = 0; i < calls.length; i++) {\n            (bool success, bytes memory ret) = calls[i].target.call(\n                calls[i].callData\n            );\n            require(success);\n            returnData[i] = ret;\n        }\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "storageLayout",
+          "devdoc",
+          "userdoc",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "libraries": {}
+  }
+}
