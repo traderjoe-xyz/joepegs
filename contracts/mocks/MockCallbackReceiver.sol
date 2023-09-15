@@ -13,7 +13,8 @@ contract MockCallbackReceiver is ICallbackRecipient {
         bytes32,
         address,
         uint256,
-        uint256
+        uint256,
+        bytes calldata
     ) external override {
         emit CallbackCalled();
     }

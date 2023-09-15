@@ -460,7 +460,8 @@ contract JoepegExchange is
                 bidHash,
                 takerAsk.taker,
                 tokenId,
-                takerAsk.price
+                takerAsk.price,
+                takerAsk.params
             );
         }
 

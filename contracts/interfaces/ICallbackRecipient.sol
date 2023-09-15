@@ -6,6 +6,7 @@ interface ICallbackRecipient {
         bytes32 orderHash,
         address taker,
         uint256 nftId,
-        uint256 price
+        uint256 price,
+        bytes calldata params
     ) external;
 }
