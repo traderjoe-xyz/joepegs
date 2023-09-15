@@ -25,12 +25,7 @@ contract ERC721WithoutRoyaltyToken is ERC721("Sample NFT", "NFT"), Ownable {
         return newTokenId;
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        pure
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256) public pure override returns (string memory) {
         return
             "https://ikzttp.mypinata.cloud/ipfs/QmQFkLSQysj94s5GvTHPyzTxrawwtjgiiYS2TBLgrvw8CW/5629";
     }

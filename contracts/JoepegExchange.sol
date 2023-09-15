@@ -17,6 +17,7 @@ import {IJoepegExchange} from "./interfaces/IJoepegExchange.sol";
 import {ITransferManagerNFT} from "./interfaces/ITransferManagerNFT.sol";
 import {ITransferSelectorNFT} from "./interfaces/ITransferSelectorNFT.sol";
 import {IWAVAX} from "./interfaces/IWAVAX.sol";
+import {ICallbackRecipient} from "./interfaces/ICallbackRecipient.sol";
 
 // Joepeg libraries
 import {OrderTypes} from "./libraries/OrderTypes.sol";
@@ -56,6 +57,8 @@ contract JoepegExchange is
     mapping(address => mapping(uint256 => bool))
         private _isUserOrderNonceExecutedOrCancelled;
 
+    mapping(address => bool) public isAllowedCallbackRecipient;
+
     event CancelAllOrders(address indexed user, uint256 newMinNonce);
     event CancelMultipleOrders(address indexed user, uint256[] orderNonces);
     event NewCurrencyManager(address indexed currencyManager);
@@ -64,6 +67,10 @@ contract JoepegExchange is
     event NewProtocolFeeRecipient(address indexed protocolFeeRecipient);
     event NewRoyaltyFeeManager(address indexed royaltyFeeManager);
     event NewTransferSelectorNFT(address indexed transferSelectorNFT);
+    event NewCallbackRecipientUpdate(
+        address indexed callbackRecipient,
+        bool isAllowed
+    );
 
     event RoyaltyPayment(
         address indexed collection,
@@ -448,6 +455,16 @@ contract JoepegExchange is
             takerAsk.minPercentageToAsk
         );
 
+        if (isAllowedCallbackRecipient[makerBid.signer]) {
+            ICallbackRecipient(makerBid.signer).saleCallback(
+                bidHash,
+                takerAsk.taker,
+                tokenId,
+                takerAsk.price,
+                takerAsk.params
+            );
+        }
+
         emit TakerAsk(
             bidHash,
             makerBid.nonce,
@@ -556,6 +573,20 @@ contract JoepegExchange is
     }
 
     /**
+     * @notice Update callback recipient
+     * @param _callbackRecipient The address of the callback recipient
+     * @param _isAllowed Whether the callback recipient is allowed or not
+     */
+    function setCallbackRecipientAllowed(
+        address _callbackRecipient,
+        bool _isAllowed
+    ) external onlyOwner {
+        isAllowedCallbackRecipient[_callbackRecipient] = _isAllowed;
+
+        emit NewCallbackRecipientUpdate(_callbackRecipient, _isAllowed);
+    }
+
+    /**
      * @notice Check whether user order nonce is executed or cancelled
      * @param user address of user
      * @param orderNonce nonce of the order
@@ -633,9 +664,9 @@ contract JoepegExchange is
         // Match orders
         for (uint256 i; i < trades.length; ++i) {
             bool status = _matchAskWithTakerBidUsingAVAXAndWAVAXIgnoringExpiredAsks(
-                trades[i].takerBid,
-                trades[i].makerAsk
-            );
+                    trades[i].takerBid,
+                    trades[i].makerAsk
+                );
             transferStatus[i] = status;
         }
 
@@ -862,14 +893,12 @@ contract JoepegExchange is
     }
 
     /**
-      * @notice Check whether the maker order has expired or not
-      * @param makerOrder maker order  
+     * @notice Check whether the maker order has expired or not
+     * @param makerOrder maker order
      */
-    function _checkMakerOrderNotExpired(OrderTypes.MakerOrder calldata makerOrder)
-        internal
-        view
-        returns (bool)
-    {
+    function _checkMakerOrderNotExpired(
+        OrderTypes.MakerOrder calldata makerOrder
+    ) internal view returns (bool) {
         return
             !_isUserOrderNonceExecutedOrCancelled[makerOrder.signer][
                 makerOrder.nonce

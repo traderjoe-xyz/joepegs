@@ -29,12 +29,7 @@ contract ERC721Token is ERC721("Sample NFT", "NFT"), Ownable, IERC2981 {
         return newTokenId;
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        pure
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256) public pure override returns (string memory) {
         return
             "https://ikzttp.mypinata.cloud/ipfs/QmQFkLSQysj94s5GvTHPyzTxrawwtjgiiYS2TBLgrvw8CW/5629";
     }
@@ -43,7 +38,7 @@ contract ERC721Token is ERC721("Sample NFT", "NFT"), Ownable, IERC2981 {
      * @dev Returns how much royalty is owed and to whom, based on a sale price that may be denominated in any unit of
      * exchange. The royalty amount is denominated and should be payed in that same unit of exchange.
      */
-    function royaltyInfo(uint256 _tokenId, uint256 _salePrice)
+    function royaltyInfo(uint256, uint256 _salePrice)
         external
         view
         override

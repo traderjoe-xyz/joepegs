@@ -1,7 +1,7 @@
 const { config, ethers, network } = require("hardhat");
 const { expect } = require("chai");
 
-const { WAVAX, ZERO_ADDRESS } = require("./utils/constants");
+const { WAVAX } = require("./utils/constants");
 const {
   buildMakerAskOrderAndTakerBidOrder,
 } = require("./utils/maker-order.js");
@@ -44,6 +44,9 @@ describe("JoepegExchange", function () {
     );
     this.TransferSelectorNFTCF = await ethers.getContractFactory(
       "TransferSelectorNFT"
+    );
+    this.MockCallbackReceiverCF = await ethers.getContractFactory(
+      "MockCallbackReceiver"
     );
 
     this.signers = await ethers.getSigners();
@@ -134,6 +137,8 @@ describe("JoepegExchange", function () {
       this.transferManagerERC721.address,
       this.transferManagerERC1155.address
     );
+
+    this.mockCallbackReceiver = await this.MockCallbackReceiverCF.deploy();
 
     // Mint
     await this.erc721Token.mint(this.alice.address);
@@ -1092,12 +1097,225 @@ describe("JoepegExchange", function () {
         });
       });
     });
+  });
 
-    after(async function () {
+  describe("triggers callback on sales", function () {
+    const startTime = parseInt(Date.now() / 1000) - 1000;
+    const endTime = startTime + 100000;
+    const minPercentageToAsk = 9000;
+
+    beforeEach(async function () {
+      const mockAddress = this.mockCallbackReceiver.address;
+
       await network.provider.request({
-        method: "hardhat_reset",
-        params: [],
+        method: "hardhat_impersonateAccount",
+        params: [mockAddress],
       });
+
+      await network.provider.request({
+        method: "hardhat_setBalance",
+        params: [mockAddress, ethers.utils.parseEther("1000")._hex],
+      });
+
+      await this.erc721Token.mint(mockAddress);
+    });
+
+    it("triggers callback on bids", async function () {
+      const mockSigner = ethers.provider.getSigner(
+        this.mockCallbackReceiver.address
+      );
+      const tokenId = 1;
+
+      // Create maker bid order
+      const price = ethers.utils.parseEther("1");
+      const makerBidOrder = {
+        isOrderAsk: false,
+        signer: this.mockCallbackReceiver.address,
+        collection: this.erc721Token.address,
+        price,
+        tokenId,
+        amount: 1,
+        strategy: this.strategyStandardSaleForFixedPrice.address,
+        currency: WAVAX,
+        nonce: 1,
+        startTime,
+        endTime,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+        v: 0,
+        r: ethers.utils.formatBytes32String(""),
+        s: ethers.utils.formatBytes32String(""),
+      };
+
+      // Create taker ask order
+      const takerAskOrder = {
+        isOrderAsk: true,
+        taker: this.alice.address,
+        price,
+        tokenId,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.transferManagerERC721.address, tokenId);
+
+      // Approve exchange to transfer WAVAX
+      await this.wavax
+        .connect(mockSigner)
+        .deposit({ value: ethers.utils.parseEther("1") });
+      await this.wavax
+        .connect(mockSigner)
+        .approve(this.exchange.address, price);
+
+      // Set mock as callback receiver
+      await this.exchange.setCallbackRecipientAllowed(
+        this.mockCallbackReceiver.address,
+        true
+      );
+
+      // Match taker ask order with maker bid order
+      await expect(
+        this.exchange
+          .connect(this.alice)
+          .matchBidWithTakerAsk(takerAskOrder, makerBidOrder)
+      ).to.emit(this.mockCallbackReceiver, "CallbackCalled");
+    });
+
+    it("doesn't trigger callback on asks", async function () {
+      const mockSigner = ethers.provider.getSigner(
+        this.mockCallbackReceiver.address
+      );
+      const tokenId = 3;
+
+      // Create maker ask order
+      const price = ethers.utils.parseEther("1");
+      const makerAskOrder = {
+        isOrderAsk: true,
+        signer: this.mockCallbackReceiver.address,
+        collection: this.erc721Token.address,
+        price,
+        tokenId,
+        amount: 1,
+        strategy: this.strategyStandardSaleForFixedPrice.address,
+        currency: WAVAX,
+        nonce: 1,
+        startTime,
+        endTime,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+        v: 0,
+        r: ethers.utils.formatBytes32String(""),
+        s: ethers.utils.formatBytes32String(""),
+      };
+
+      // Create taker bid order
+      const takerBidOrder = {
+        isOrderAsk: false,
+        taker: this.alice.address,
+        price,
+        tokenId,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(mockSigner)
+        .setApprovalForAll(this.transferManagerERC721.address, true);
+
+      // Get WAVAX and approve exchange to transfer
+      await this.wavax
+        .connect(this.alice)
+        .deposit({ value: ethers.utils.parseEther("1") });
+      await this.wavax
+        .connect(this.alice)
+        .approve(this.exchange.address, price);
+
+      // Set mock as callback receiver
+      await this.exchange.setCallbackRecipientAllowed(
+        this.mockCallbackReceiver.address,
+        true
+      );
+
+      // Match taker bid order with maker ask order
+      await expect(
+        this.exchange
+          .connect(this.alice)
+          .matchAskWithTakerBid(takerBidOrder, makerAskOrder)
+      ).not.to.emit(this.mockCallbackReceiver, "CallbackCalled");
+    });
+
+    it("doesn't trigger if the address has been removed", async function () {
+      const mockSigner = ethers.provider.getSigner(
+        this.mockCallbackReceiver.address
+      );
+      const tokenId = 1;
+
+      // Create maker bid order
+      const price = ethers.utils.parseEther("1");
+      const makerBidOrder = {
+        isOrderAsk: false,
+        signer: this.mockCallbackReceiver.address,
+        collection: this.erc721Token.address,
+        price,
+        tokenId,
+        amount: 1,
+        strategy: this.strategyStandardSaleForFixedPrice.address,
+        currency: WAVAX,
+        nonce: 1,
+        startTime,
+        endTime,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+        v: 0,
+        r: ethers.utils.formatBytes32String(""),
+        s: ethers.utils.formatBytes32String(""),
+      };
+
+      // Create taker ask order
+      const takerAskOrder = {
+        isOrderAsk: true,
+        taker: this.alice.address,
+        price,
+        tokenId,
+        minPercentageToAsk,
+        params: ethers.utils.formatBytes32String(""),
+      };
+
+      // Approve transferManagerERC721 to transfer NFT
+      await this.erc721Token
+        .connect(this.alice)
+        .approve(this.transferManagerERC721.address, tokenId);
+
+      // Approve exchange to transfer WAVAX
+      await this.wavax
+        .connect(mockSigner)
+        .deposit({ value: ethers.utils.parseEther("1") });
+      await this.wavax
+        .connect(mockSigner)
+        .approve(this.exchange.address, price);
+
+      // Set mock as callback receiver
+      await this.exchange.setCallbackRecipientAllowed(
+        this.mockCallbackReceiver.address,
+        true
+      );
+
+      // Removes mock as callback receiver
+      await this.exchange.setCallbackRecipientAllowed(
+        this.mockCallbackReceiver.address,
+        false
+      );
+
+      // Match taker ask order with maker bid order
+      await expect(
+        this.exchange
+          .connect(this.alice)
+          .matchBidWithTakerAsk(takerAskOrder, makerBidOrder)
+      ).to.not.emit(this.mockCallbackReceiver, "CallbackCalled");
     });
   });
 });
